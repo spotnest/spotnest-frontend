@@ -1,56 +1,60 @@
+import Link from "next/link";
+
 export default function Navbar() {
   return (
-    <header className="border-b bg-white">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        
-        {/* Logo */}
-        <div className="text-2xl font-bold">
-          Spotnest
-        </div>
+    <header className="border-b border-[#e7e8e9] bg-[#f8f9fa]/95 px-4 backdrop-blur sm:px-6 lg:px-10">
+      <nav className="mx-auto flex h-16 max-w-[1280px] items-center justify-between">
+        <Link
+          href="/"
+          className="text-xl font-bold tracking-[-0.04em] text-[#191c1d] sm:text-2xl"
+        >
+          SpotNest
+        </Link>
 
-        {/* Navigation */}
-        <div className="hidden items-center gap-8 md:flex">
-          <a href="/" className="text-sm font-medium hover:text-gray-600">
+        <div className="hidden items-center gap-7 lg:flex">
+          <Link
+            href="/"
+            className="border-b-2 border-[#191c1d] py-1 text-sm font-medium text-[#191c1d] transition hover:text-[#00696b]"
+          >
             Home
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/properties"
-            className="text-sm font-medium hover:text-gray-600"
+            className="border-b-2 border-transparent py-1 text-sm font-medium text-[#191c1d] transition hover:border-[#00696b] hover:text-[#00696b]"
           >
             Properties
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/about"
-            className="text-sm font-medium hover:text-gray-600"
+            className="border-b-2 border-transparent py-1 text-sm font-medium text-[#191c1d] transition hover:border-[#00696b] hover:text-[#00696b]"
           >
             About
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/contact"
-            className="text-sm font-medium hover:text-gray-600"
+            className="border-b-2 border-transparent py-1 text-sm font-medium text-[#191c1d] transition hover:border-[#00696b] hover:text-[#00696b]"
           >
             Contact
-          </a>
+          </Link>
         </div>
 
-        {/* Auth buttons */}
-        <div className="flex items-center gap-3">
-          <a
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <Link
             href="/login"
-            className="rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-100"
+            className="rounded-full px-3 py-2 text-sm font-medium text-[#191c1d] transition hover:bg-[#edeeef] sm:px-4"
           >
             Login
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/register"
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            className="rounded-full bg-[#191c1d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#00696b] sm:px-5"
           >
             Register
-          </a>
+          </Link>
         </div>
 
       </nav>

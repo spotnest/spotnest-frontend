@@ -1,0 +1,1 @@
+export default function OtpPage() { return <main>OTP verification</main>; }
