@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import axios from "axios";
+import { Eye, EyeOff } from "lucide-react";
 
 import { login } from "../services/authServices";
 
@@ -65,6 +67,7 @@ export default function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -73,11 +76,22 @@ export default function LoginForm() {
     event.preventDefault();
 
     setErrorMessage("");
+
+    if (!email.trim()) {
+      setErrorMessage("Please enter your email address.");
+      return;
+    }
+
+    if (!password) {
+      setErrorMessage("Please enter your password.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const response = await login({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -92,6 +106,24 @@ export default function LoginForm() {
 
       router.push("/dashboard");
     } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const data = error.response?.data;
+        if (data?.errors?.fieldErrors) {
+          const firstFieldErr = Object.values(data.errors.fieldErrors).flat()[0];
+          if (typeof firstFieldErr === "string") {
+            setErrorMessage(firstFieldErr);
+            return;
+          }
+        }
+        if (data?.message) {
+          setErrorMessage(data.message);
+          return;
+        }
+        if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+          setErrorMessage("Cannot connect to server. Please ensure the backend is running.");
+          return;
+        }
+      }
       if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
@@ -206,13 +238,26 @@ export default function LoginForm() {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Enter your password"
-                  className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
+                  className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-12 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                 />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#9A968F] hover:text-[#1C1B1A] focus:outline-none transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-6 w-6" />
+                  ) : (
+                    <Eye className="h-6 w-6" />
+                  )}
+                </button>
               </div>
             </div>
 
