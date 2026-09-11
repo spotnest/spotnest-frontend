@@ -243,57 +243,66 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-[#FAF8F5] text-slate-900 selection:bg-[#6C5CE7] selection:text-white font-sans">
-      {/* LEFT HERO SECTION */}
-      <div className="hidden lg:flex lg:w-1/2 relative p-6 bg-slate-950 flex-col justify-end overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=1600&auto=format&fit=crop')",
-          }}
-        />
+    <main className="min-h-screen bg-[#F7F5F0] text-[#1C1B1A] md:grid md:grid-cols-2">
+      {/* LEFT HERO SECTION (TOWER + BRANDING) */}
+      <section className="relative hidden min-h-screen overflow-hidden md:block">
+        <div className="absolute inset-0 bg-[url('/images/spotnest-login-tower.png')] bg-cover bg-center" />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1C1B1A]/90 via-[#1C1B1A]/40 to-[#1C1B1A]/10" />
 
-        <div className="relative z-10 bg-[#FAF8F5]/90 backdrop-blur-xl p-8 sm:p-10 rounded-[32px] border border-white/50 shadow-2xl max-w-lg mb-4">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-[#6C5CE7] flex items-center justify-center text-white font-black text-xl shadow-lg shadow-[#6C5CE7]/30">
+        <div className="absolute inset-x-10 bottom-14 rounded-2xl border border-white/30 bg-white/70 p-8 shadow-[0_10px_30px_rgba(28,27,26,0.15)] backdrop-blur-xl lg:inset-x-12 lg:bottom-16 lg:p-12">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xl font-bold tracking-tight text-[#1C1B1A]"
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#6C4CE6] text-sm text-white">
               S
-            </div>
-
-            <span className="text-2xl font-bold text-slate-900 tracking-tight">
-              Spot<span className="text-[#6C5CE7]">Nest</span>
             </span>
-          </div>
+            SpotNest
+          </Link>
 
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-4">
+          <h1 className="mt-8 max-w-lg text-4xl font-bold leading-tight tracking-tight text-[#1C1B1A] lg:text-5xl">
             Find a place. Request it. Make it home.
-          </h2>
+          </h1>
 
-          <p className="text-slate-600 text-base leading-relaxed">
+          <p className="mt-6 max-w-lg text-lg leading-9 text-[#6F6B65]">
             Discover rental properties, connect with owners, and find a place
             that feels like home.
           </p>
         </div>
-      </div>
+      </section>
 
       {/* RIGHT FORM SECTION */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-16 overflow-y-auto">
-        <div className="w-full max-w-md space-y-6">
+      <section className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-10 md:px-12 lg:px-20 overflow-y-auto">
+        <div className="w-full max-w-[525px]">
+          {/* MOBILE LOGO */}
+          <Link
+            href="/"
+            className="mb-8 inline-flex items-center gap-2 text-xl font-bold tracking-tight md:hidden"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6C4CE6] text-sm text-white">
+              S
+            </span>
+            SpotNest
+          </Link>
+
           {isSuccess ? (
-            <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-xl text-center flex flex-col items-center animate-in fade-in zoom-in duration-300">
+            <div className="rounded-2xl border border-[#CFCBC3]/60 bg-white p-8 sm:p-10 shadow-[0_10px_30px_rgba(28,27,26,0.08)] text-center flex flex-col items-center animate-in fade-in zoom-in duration-300">
               <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5 ring-8 ring-emerald-50/50">
                 <CheckCircle2 className="w-9 h-9" />
               </div>
 
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              <h2 className="text-3xl font-bold tracking-tight text-[#1C1B1A] mb-2">
                 Account Created!
               </h2>
 
-              <p className="text-slate-600 text-sm max-w-xs mb-8 leading-relaxed">
-                {successMessage ||
-                  "Your account has been created. Please verify your email."}
+              <p className="text-[#6F6B65] text-base max-w-sm mb-8 leading-relaxed">
+                {successMessage || (
+                  <>
+                    Welcome to SpotNest! Your account has been registered with{" "}
+                    <span className="font-semibold text-[#1C1B1A]">{email}</span>. Please verify your email before logging in.
+                  </>
+                )}
               </p>
 
               <div className="w-full space-y-3">
@@ -304,7 +313,7 @@ export default function RegisterForm() {
                       `/otp?email=${encodeURIComponent(email.trim())}`
                     )
                   }
-                  className="w-full flex items-center justify-center gap-2 bg-[#6C5CE7] hover:bg-[#5A4BD1] text-white font-medium py-3.5 px-4 rounded-xl shadow-lg shadow-[#6C5CE7]/25 transition-all"
+                  className="flex h-[58px] w-full items-center justify-center gap-2 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] cursor-pointer"
                 >
                   <span>Verify Email</span>
                   <ArrowRight className="w-4 h-4" />
@@ -312,7 +321,7 @@ export default function RegisterForm() {
 
                 <Link
                   href="/login"
-                  className="w-full block text-center text-sm font-medium text-slate-600 hover:text-slate-900 py-2 transition-colors"
+                  className="block text-center text-base font-semibold text-[#6F6B65] hover:text-[#1C1B1A] py-2 transition-colors"
                 >
                   Return to Login
                 </Link>
@@ -321,39 +330,39 @@ export default function RegisterForm() {
           ) : (
             <div>
               {/* HEADER */}
-              <div className="mb-6">
-                <span className="text-[#6C5CE7] font-bold text-xs tracking-[0.25em] uppercase block mb-1">
-                  SPOTNEST
-                </span>
+              <header className="mb-8">
+                <p className="mb-2 text-sm font-semibold uppercase tracking-[0.16em] text-[#6C4CE6]">
+                  SpotNest
+                </p>
 
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="text-4xl font-bold tracking-tight text-[#1C1B1A]">
                   Create an account
-                </h1>
+                </h2>
 
-                <p className="text-slate-500 text-sm mt-2">
+                <p className="mt-3 text-lg text-[#6F6B65]">
                   Please enter your details to create your account.
                 </p>
-              </div>
+              </header>
 
               {/* ACCOUNT TYPE */}
               <div className="mb-6">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#6F6B65] mb-2">
                   Account Type
                 </label>
 
-                <div className="grid grid-cols-2 gap-2 p-1 bg-slate-200/60 rounded-2xl">
+                <div className="grid grid-cols-2 gap-2 p-1 bg-[#EAE6DF] rounded-2xl">
                   <button
                     type="button"
                     onClick={() => setRole("renter")}
-                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
                       role === "renter"
-                        ? "bg-white text-slate-900 shadow-sm font-semibold"
-                        : "text-slate-600 hover:text-slate-900"
+                        ? "bg-white text-[#1C1B1A] shadow-sm font-semibold"
+                        : "text-[#6F6B65] hover:text-[#1C1B1A]"
                     }`}
                   >
                     <HomeIcon
                       className={`w-4 h-4 ${
-                        role === "renter" ? "text-[#6C5CE7]" : ""
+                        role === "renter" ? "text-[#6C4CE6]" : ""
                       }`}
                     />
 
@@ -363,15 +372,15 @@ export default function RegisterForm() {
                   <button
                     type="button"
                     onClick={() => setRole("agent")}
-                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
                       role === "agent"
-                        ? "bg-white text-slate-900 shadow-sm font-semibold"
-                        : "text-slate-600 hover:text-slate-900"
+                        ? "bg-white text-[#1C1B1A] shadow-sm font-semibold"
+                        : "text-[#6F6B65] hover:text-[#1C1B1A]"
                     }`}
                   >
                     <Building2
                       className={`w-4 h-4 ${
-                        role === "agent" ? "text-[#6C5CE7]" : ""
+                        role === "agent" ? "text-[#6C4CE6]" : ""
                       }`}
                     />
 
@@ -382,9 +391,8 @@ export default function RegisterForm() {
 
               {/* ERROR */}
               {errorMessage && (
-                <div className="mb-6 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm flex items-center gap-2.5">
+                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 flex items-center gap-2.5">
                   <X className="w-4 h-4 flex-shrink-0" />
-
                   <span>{errorMessage}</span>
                 </div>
               )}
@@ -393,12 +401,12 @@ export default function RegisterForm() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* FULL NAME */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                  <label className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]">
                     Full Name
                   </label>
 
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9A968F]">
                       <User className="w-5 h-5" />
                     </div>
 
@@ -408,19 +416,19 @@ export default function RegisterForm() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="John Doe"
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]/30 focus:border-[#6C5CE7] transition-all shadow-sm"
+                      className="h-[54px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-11 pr-4 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                     />
                   </div>
                 </div>
 
                 {/* EMAIL */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                  <label className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]">
                     Email
                   </label>
 
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9A968F]">
                       <Mail className="w-5 h-5" />
                     </div>
 
@@ -430,19 +438,19 @@ export default function RegisterForm() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]/30 focus:border-[#6C5CE7] transition-all shadow-sm"
+                      className="h-[54px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-11 pr-4 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                     />
                   </div>
                 </div>
 
                 {/* PASSWORD */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                  <label className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]">
                     Password
                   </label>
 
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9A968F]">
                       <Lock className="w-5 h-5" />
                     </div>
 
@@ -452,13 +460,14 @@ export default function RegisterForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
-                      className="w-full pl-11 pr-11 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]/30 focus:border-[#6C5CE7] transition-all shadow-sm"
+                      className="h-[54px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-11 pr-11 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                     />
 
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#9A968F] hover:text-[#1C1B1A] focus:outline-none transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? (
                         <EyeOff className="w-5 h-5" />
@@ -472,7 +481,7 @@ export default function RegisterForm() {
                   {password && (
                     <div className="mt-2.5 space-y-2 animate-in fade-in duration-200">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">
+                        <span className="text-[#6F6B65]">
                           Password strength:
                         </span>
 
@@ -492,7 +501,7 @@ export default function RegisterForm() {
                             className={`h-full rounded-full transition-colors duration-300 ${
                               step <= passwordStrengthScore
                                 ? getStrengthLabel(passwordStrengthScore).color
-                                : "bg-slate-200"
+                                : "bg-[#EAE6DF]"
                             }`}
                           />
                         ))}
@@ -503,7 +512,7 @@ export default function RegisterForm() {
                           className={`flex items-center gap-1 ${
                             passwordCriteria.length
                               ? "text-emerald-600 font-medium"
-                              : "text-slate-400"
+                              : "text-[#9A968F]"
                           }`}
                         >
                           {passwordCriteria.length ? (
@@ -519,7 +528,7 @@ export default function RegisterForm() {
                           className={`flex items-center gap-1 ${
                             passwordCriteria.uppercase
                               ? "text-emerald-600 font-medium"
-                              : "text-slate-400"
+                              : "text-[#9A968F]"
                           }`}
                         >
                           {passwordCriteria.uppercase ? (
@@ -535,7 +544,7 @@ export default function RegisterForm() {
                           className={`flex items-center gap-1 ${
                             passwordCriteria.number
                               ? "text-emerald-600 font-medium"
-                              : "text-slate-400"
+                              : "text-[#9A968F]"
                           }`}
                         >
                           {passwordCriteria.number ? (
@@ -551,7 +560,7 @@ export default function RegisterForm() {
                           className={`flex items-center gap-1 ${
                             passwordCriteria.special
                               ? "text-emerald-600 font-medium"
-                              : "text-slate-400"
+                              : "text-[#9A968F]"
                           }`}
                         >
                           {passwordCriteria.special ? (
@@ -569,12 +578,12 @@ export default function RegisterForm() {
 
                 {/* CONFIRM PASSWORD */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                  <label className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]">
                     Confirm Password
                   </label>
 
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9A968F]">
                       <ShieldCheck className="w-5 h-5" />
                     </div>
 
@@ -586,7 +595,7 @@ export default function RegisterForm() {
                         setConfirmPassword(e.target.value)
                       }
                       placeholder="Confirm your password"
-                      className="w-full pl-11 pr-11 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]/30 focus:border-[#6C5CE7] transition-all shadow-sm"
+                      className="h-[54px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-11 pr-11 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                     />
 
                     <button
@@ -594,7 +603,8 @@ export default function RegisterForm() {
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#9A968F] hover:text-[#1C1B1A] focus:outline-none transition-colors"
+                      aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="w-5 h-5" />
@@ -609,10 +619,10 @@ export default function RegisterForm() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-2 py-3.5 px-4 bg-[#6C5CE7] hover:bg-[#5A4BD1] active:bg-[#4D3EB9] text-white font-semibold rounded-xl shadow-lg shadow-[#6C5CE7]/25 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-75 cursor-pointer"
+                  className="mt-4 flex h-[58px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
                 >
                   {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   ) : (
                     <>
                       <span>Sign Up</span>
@@ -623,55 +633,44 @@ export default function RegisterForm() {
               </form>
 
               {/* OR */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200" />
-                </div>
-
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-[#FAF8F5] px-3 text-slate-400 font-semibold tracking-wider">
-                    OR
-                  </span>
-                </div>
+              <div className="my-8 flex items-center gap-5">
+                <div className="h-px flex-1 bg-[#D8D4CC]" />
+                <span className="text-sm font-medium text-[#6F6B65]">OR</span>
+                <div className="h-px flex-1 bg-[#D8D4CC]" />
               </div>
 
               {/* GOOGLE */}
               <button
                 type="button"
-                onClick={() => alert("Google Auth integration spot")}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 shadow-sm transition-colors"
+                className="flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold text-[#1C1B1A] transition hover:bg-[#EEE9FF]"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
                     fill="#EA4335"
                     d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
                   />
-
                   <path
                     fill="#4285F4"
                     d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
                   />
-
                   <path
                     fill="#FBBC05"
                     d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 10.8 0 12.5s.7 2.8 1.9 5.2l3.7-2.9z"
                   />
-
                   <path
                     fill="#34A853"
                     d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
                   />
                 </svg>
-
-                <span>Continue with Google</span>
+                Continue with Google
               </button>
 
               {/* LOGIN */}
-              <p className="text-center text-sm text-slate-600 mt-8">
+              <p className="mt-8 text-center text-lg text-[#6F6B65]">
                 Already have an account?{" "}
                 <Link
                   href="/login"
-                  className="font-semibold text-[#6C5CE7] hover:underline"
+                  className="font-semibold text-[#1C1B1A] transition hover:text-[#6C4CE6]"
                 >
                   Log in
                 </Link>
@@ -679,7 +678,7 @@ export default function RegisterForm() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
