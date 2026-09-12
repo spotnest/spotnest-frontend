@@ -71,6 +71,12 @@ export default function LoginForm() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const handleGoogleLogin = () => {
+  const apiUrl =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+
+  window.location.href = `${apiUrl}/auth/google`;
+};
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -317,9 +323,10 @@ export default function LoginForm() {
           </div>
 
           <button
-            type="button"
-            className="flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold transition hover:bg-[#EEE9FF]"
-          >
+  type="button"
+  onClick={handleGoogleLogin}
+  className="flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold transition hover:bg-[#EEE9FF]"
+>
             <GoogleIcon />
             Continue with Google
           </button>

@@ -639,7 +639,7 @@ export default function RegisterForm() {
                 <div className="h-px flex-1 bg-[#D8D4CC]" />
               </div>
 
-              {/* GOOGLE */}
+              {/* GOOGLE
               <button
                 type="button"
                 className="flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold text-[#1C1B1A] transition hover:bg-[#EEE9FF]"
@@ -663,7 +663,7 @@ export default function RegisterForm() {
                   />
                 </svg>
                 Continue with Google
-              </button>
+              </button> */}
 
               {/* LOGIN */}
               <p className="mt-8 text-center text-lg text-[#6F6B65]">

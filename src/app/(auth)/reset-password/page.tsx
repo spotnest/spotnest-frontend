@@ -1,5 +1,10 @@
-import {ResetPasswordForm }from "@/src/modules/auth"
+import { Suspense } from "react";
+import { ResetPasswordForm } from "@/src/modules/auth";
 
 export default function ResetPasswordPage() {
-  return <ResetPasswordForm />;
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
+  );
 }

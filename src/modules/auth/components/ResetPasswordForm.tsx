@@ -1,64 +1,22 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Check,
+  X,
+  CheckCircle2,
+  ArrowRight,
+} from "lucide-react";
 
 import { resetPassword, forgotPassword } from "../services/authServices";
-
-const EmailIcon = () => (
-  <svg
-    aria-hidden="true"
-    className="h-6 w-6"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <rect x="3" y="5" width="18" height="14" rx="2" />
-    <path d="m3 7 9 6 9-6" />
-  </svg>
-);
-
-const LockIcon = () => (
-  <svg
-    aria-hidden="true"
-    className="h-6 w-6"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <rect x="5" y="10" width="14" height="10" rx="2" />
-    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-  </svg>
-);
-
-const EyeIcon = ({ hidden }: { hidden: boolean }) => (
-  <svg
-    aria-hidden="true"
-    className="h-6 w-6"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    {hidden ? (
-      <>
-        <path d="m3 3 18 18" />
-        <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-        <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.7 3.2 10 8-0.4 1.4-1.1 2.6-2 3.6" />
-        <path d="M6.2 6.2C4.6 7.5 3.4 9.3 2 12c1.3 4.8 5 8 10 8 1.7 0 3.2-.4 4.6-1.1" />
-      </>
-    ) : (
-      <>
-        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
-        <circle cx="12" cy="12" r="3" />
-      </>
-    )}
-  </svg>
-);
 
 export default function ResetPasswordForm() {
   const router = useRouter();
@@ -74,11 +32,71 @@ export default function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [touched, setTouched] = useState<{
+    email?: boolean;
+    otp?: boolean;
+    newPassword?: boolean;
+    confirmPassword?: boolean;
+  }>({});
+
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Password criteria computation consistent with RegisterForm
+  const passwordCriteria = useMemo(() => {
+    return {
+      length: newPassword.length >= 8,
+      minBackend: newPassword.length >= 6,
+      uppercase: /[A-Z]/.test(newPassword),
+      number: /[0-9]/.test(newPassword),
+      special: /[^A-Za-z0-9]/.test(newPassword),
+    };
+  }, [newPassword]);
+
+  const passwordStrengthScore = useMemo(() => {
+    if (!newPassword) return 0;
+    const criteriaList = [
+      passwordCriteria.length,
+      passwordCriteria.uppercase,
+      passwordCriteria.number,
+      passwordCriteria.special,
+    ];
+    return criteriaList.filter(Boolean).length;
+  }, [passwordCriteria, newPassword]);
+
+  const getStrengthLabel = (score: number) => {
+    switch (score) {
+      case 0:
+        return { label: "", color: "bg-[#EAE6DF]", text: "text-[#9A968F]" };
+      case 1:
+        return { label: "Weak", color: "bg-red-500", text: "text-red-500" };
+      case 2:
+        return { label: "Fair", color: "bg-amber-500", text: "text-amber-500" };
+      case 3:
+        return { label: "Good", color: "bg-blue-500", text: "text-blue-500" };
+      case 4:
+        return { label: "Strong", color: "bg-emerald-500", text: "text-emerald-500" };
+      default:
+        return { label: "", color: "bg-[#EAE6DF]", text: "text-[#9A968F]" };
+    }
+  };
+
+  // Inline validation checks
+  const isPasswordsMatching =
+    confirmPassword.length > 0 && newPassword === confirmPassword;
+  const isPasswordsMismatched =
+    confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const isOtpIncomplete =
+    touched.otp && otp.length > 0 && otp.length < 6;
+  const isEmailInvalid =
+    touched.email && email.trim().length > 0 && !email.includes("@");
+
+  const handleBlur = (field: "email" | "otp" | "newPassword" | "confirmPassword") => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -94,13 +112,23 @@ export default function ResetPasswordForm() {
       return;
     }
 
+    if (!trimmedEmail.includes("@")) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
     if (!/^\d{6}$/.test(trimmedOtp)) {
-      setErrorMessage("OTP must be exactly 6 digits.");
+      setErrorMessage("Verification code must be exactly 6 digits.");
       return;
     }
 
     if (newPassword.length < 6) {
       setErrorMessage("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (newPassword.length > 255) {
+      setErrorMessage("Password must not exceed 255 characters.");
       return;
     }
 
@@ -119,7 +147,7 @@ export default function ResetPasswordForm() {
       );
 
       setSuccessMessage(
-        response.message || "Password updated. You can now log in."
+        response.message || "Password updated. Redirecting to login..."
       );
 
       setTimeout(() => {
@@ -130,9 +158,9 @@ export default function ResetPasswordForm() {
         const data = error.response?.data;
 
         if (data?.errors?.fieldErrors) {
-          const firstFieldErr = Object.values(
-            data.errors.fieldErrors
-          ).flat()[0];
+          const firstFieldErr = Object.values(data.errors.fieldErrors)
+            .flat()
+            .find((val) => typeof val === "string");
 
           if (typeof firstFieldErr === "string") {
             setErrorMessage(firstFieldErr);
@@ -140,7 +168,7 @@ export default function ResetPasswordForm() {
           }
         }
 
-        if (data?.message) {
+        if (typeof data?.message === "string") {
           setErrorMessage(data.message);
           return;
         }
@@ -151,6 +179,13 @@ export default function ResetPasswordForm() {
         ) {
           setErrorMessage(
             "Cannot connect to server. Please ensure the backend is running."
+          );
+          return;
+        }
+
+        if (error.response?.status) {
+          setErrorMessage(
+            `Request failed with status code ${error.response.status}.`
           );
           return;
         }
@@ -173,7 +208,7 @@ export default function ResetPasswordForm() {
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail) {
-      setErrorMessage("Please enter your email address.");
+      setErrorMessage("Please enter your email address to receive a code.");
       return;
     }
 
@@ -183,13 +218,13 @@ export default function ResetPasswordForm() {
       const response = await forgotPassword(trimmedEmail);
 
       setSuccessMessage(
-        response.message || "A new reset code has been sent."
+        response.message || "A new verification code has been sent to your email."
       );
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
 
-        if (data?.message) {
+        if (typeof data?.message === "string") {
           setErrorMessage(data.message);
           return;
         }
@@ -213,7 +248,7 @@ export default function ResetPasswordForm() {
 
   return (
     <main className="min-h-screen bg-[#F7F5F0] text-[#1C1B1A] md:grid md:grid-cols-2">
-      {/* Left side */}
+      {/* LEFT HERO SECTION (TOWER + BRANDING) */}
       <section className="relative hidden min-h-screen overflow-hidden md:block">
         <div className="absolute inset-0 bg-[url('/images/spotnest-login-tower.png')] bg-cover bg-center" />
 
@@ -235,19 +270,19 @@ export default function ResetPasswordForm() {
           </h1>
 
           <p className="mt-6 max-w-lg text-lg leading-9 text-[#6F6B65]">
-            Discover rental properties, connect with owners, and find a
-            place that feels like home.
+            Discover rental properties, connect with owners, and find a place
+            that feels like home.
           </p>
         </div>
       </section>
 
-      {/* Right side */}
-      <section className="flex min-h-screen items-center justify-center overflow-y-auto px-5 py-12 sm:px-10 md:px-12 lg:px-20">
+      {/* RIGHT FORM SECTION */}
+      <section className="flex min-h-screen items-center justify-center overflow-y-auto px-5 py-10 sm:px-10 md:px-12 lg:px-20">
         <div className="w-full max-w-[525px]">
-          {/* Mobile logo */}
+          {/* MOBILE LOGO */}
           <Link
             href="/"
-            className="mb-12 inline-flex items-center gap-2 text-xl font-bold tracking-tight md:hidden"
+            className="mb-8 inline-flex items-center gap-2 text-xl font-bold tracking-tight md:hidden"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6C4CE6] text-sm text-white">
               S
@@ -255,49 +290,51 @@ export default function ResetPasswordForm() {
             SpotNest
           </Link>
 
-          {/* Header */}
-          <header className="mb-10">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[#6C4CE6]">
+          {/* HEADER */}
+          <header className="mb-8">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.16em] text-[#6C4CE6]">
               SpotNest
             </p>
 
-            <h2 className="text-4xl font-bold tracking-tight text-[#1C1B1A]">
+            <h1 className="text-4xl font-bold tracking-tight text-[#1C1B1A]">
               Reset your password
-            </h2>
+            </h1>
 
-            <p className="mt-4 text-lg text-[#6F6B65]">
-              Enter the verification code sent to your email and create a
-              new password.
+            <p className="mt-3 text-lg text-[#6F6B65]">
+              Enter the verification code sent to your email and create a new password.
             </p>
           </header>
 
-          {/* Messages */}
+          {/* ERROR ALERT */}
           {errorMessage && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {errorMessage}
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm text-red-600 flex items-center gap-2.5">
+              <X className="w-4 h-4 flex-shrink-0" />
+              <span>{errorMessage}</span>
             </div>
           )}
 
+          {/* SUCCESS ALERT */}
           {successMessage && (
-            <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-600">
-              {successMessage}
+            <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm text-emerald-700 flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600" />
+              <span className="font-medium">{successMessage}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* EMAIL */}
             <div>
               <label
                 htmlFor="email"
-                className="mb-3 block text-base font-semibold"
+                className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]"
               >
-                Email
+                Email Address
               </label>
 
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]">
-                  <EmailIcon />
-                </span>
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9A968F]">
+                  <Mail className="w-5 h-5" />
+                </div>
 
                 <input
                   id="email"
@@ -306,19 +343,33 @@ export default function ResetPasswordForm() {
                   required
                   autoComplete="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (errorMessage) setErrorMessage("");
+                  }}
+                  onBlur={() => handleBlur("email")}
                   placeholder="you@example.com"
-                  className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
+                  className={`h-[54px] w-full rounded-xl border bg-white pl-11 pr-4 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] focus:ring-4 ${
+                    isEmailInvalid
+                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                      : "border-[#CFCBC3] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-[#EEE9FF]"
+                  }`}
                 />
               </div>
+
+              {isEmailInvalid && (
+                <p className="mt-1 text-xs text-red-500">
+                  Please enter a valid email address.
+                </p>
+              )}
             </div>
 
-            {/* OTP */}
+            {/* OTP CODE */}
             <div>
-              <div className="mb-3 flex items-center justify-between gap-4">
+              <div className="mb-1.5 flex items-center justify-between gap-4">
                 <label
                   htmlFor="otp"
-                  className="block text-base font-semibold"
+                  className="block text-sm font-semibold text-[#1C1B1A]"
                 >
                   Verification Code
                 </label>
@@ -327,44 +378,59 @@ export default function ResetPasswordForm() {
                   type="button"
                   onClick={handleResend}
                   disabled={isResending}
-                  className="text-sm font-semibold text-[#6C4CE6] transition hover:text-[#5738C7] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="text-xs font-semibold text-[#6C4CE6] transition hover:text-[#5738C7] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                 >
                   {isResending ? "Sending..." : "Resend code"}
                 </button>
               </div>
 
-              <input
-                id="otp"
-                name="otp"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                required
-                value={otp}
-                onChange={(event) =>
-                  setOtp(
-                    event.target.value.replace(/\D/g, "").slice(0, 6)
-                  )
-                }
-                placeholder="Enter 6-digit code"
-                className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white px-4 text-lg tracking-[0.25em] outline-none transition placeholder:tracking-normal placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
-              />
+              <div className="relative">
+                <input
+                  id="otp"
+                  name="otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  required
+                  value={otp}
+                  onChange={(event) => {
+                    const value = event.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 6);
+                    setOtp(value);
+                    if (errorMessage) setErrorMessage("");
+                  }}
+                  onBlur={() => handleBlur("otp")}
+                  placeholder="Enter 6-digit code"
+                  className={`h-[54px] w-full rounded-xl border bg-white px-4 text-center font-mono text-xl font-bold tracking-[0.3em] sm:tracking-[0.4em] text-[#1C1B1A] outline-none transition placeholder:tracking-normal placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:text-[#9A968F] focus:ring-4 ${
+                    isOtpIncomplete
+                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                      : "border-[#CFCBC3] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-[#EEE9FF]"
+                  }`}
+                />
+              </div>
+
+              {isOtpIncomplete && (
+                <p className="mt-1 text-xs text-red-500">
+                  Verification code must be exactly 6 digits.
+                </p>
+              )}
             </div>
 
-            {/* New Password */}
+            {/* NEW PASSWORD */}
             <div>
               <label
                 htmlFor="newPassword"
-                className="mb-3 block text-base font-semibold"
+                className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]"
               >
                 New Password
               </label>
 
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]">
-                  <LockIcon />
-                </span>
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9A968F]">
+                  <Lock className="w-5 h-5" />
+                </div>
 
                 <input
                   id="newPassword"
@@ -373,39 +439,134 @@ export default function ResetPasswordForm() {
                   required
                   autoComplete="new-password"
                   value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
+                  onChange={(event) => {
+                    setNewPassword(event.target.value);
+                    if (errorMessage) setErrorMessage("");
+                  }}
+                  onBlur={() => handleBlur("newPassword")}
                   placeholder="Enter new password"
-                  className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-14 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
+                  className="h-[54px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-11 pr-11 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                 />
 
                 <button
                   type="button"
-                  onClick={() => setShowPassword((value) => !value)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9A968F] transition hover:text-[#6C4CE6]"
-                  aria-label={
-                    showPassword
-                      ? "Hide new password"
-                      : "Show new password"
-                  }
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#9A968F] hover:text-[#1C1B1A] focus:outline-none transition-colors"
+                  aria-label={showPassword ? "Hide new password" : "Show new password"}
                 >
-                  <EyeIcon hidden={!showPassword} />
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
+
+              {/* PASSWORD STRENGTH & CRITERIA (Matching RegisterForm) */}
+              {newPassword && (
+                <div className="mt-2.5 space-y-2 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#6F6B65]">Password strength:</span>
+                    <span
+                      className={`font-semibold ${
+                        getStrengthLabel(passwordStrengthScore).text
+                      }`}
+                    >
+                      {getStrengthLabel(passwordStrengthScore).label}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-1.5 h-1.5">
+                    {[1, 2, 3, 4].map((step) => (
+                      <div
+                        key={step}
+                        className={`h-full rounded-full transition-colors duration-300 ${
+                          step <= passwordStrengthScore
+                            ? getStrengthLabel(passwordStrengthScore).color
+                            : "bg-[#EAE6DF]"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
+                    <div
+                      className={`flex items-center gap-1 ${
+                        passwordCriteria.minBackend
+                          ? "text-emerald-600 font-medium"
+                          : "text-[#9A968F]"
+                      }`}
+                    >
+                      {passwordCriteria.minBackend ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        <X className="w-3 h-3" />
+                      )}
+                      <span>6+ characters</span>
+                    </div>
+
+                    <div
+                      className={`flex items-center gap-1 ${
+                        passwordCriteria.uppercase
+                          ? "text-emerald-600 font-medium"
+                          : "text-[#9A968F]"
+                      }`}
+                    >
+                      {passwordCriteria.uppercase ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        <X className="w-3 h-3" />
+                      )}
+                      <span>1 uppercase letter</span>
+                    </div>
+
+                    <div
+                      className={`flex items-center gap-1 ${
+                        passwordCriteria.number
+                          ? "text-emerald-600 font-medium"
+                          : "text-[#9A968F]"
+                      }`}
+                    >
+                      {passwordCriteria.number ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        <X className="w-3 h-3" />
+                      )}
+                      <span>1 number</span>
+                    </div>
+
+                    <div
+                      className={`flex items-center gap-1 ${
+                        passwordCriteria.special
+                          ? "text-emerald-600 font-medium"
+                          : "text-[#9A968F]"
+                      }`}
+                    >
+                      {passwordCriteria.special ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        <X className="w-3 h-3" />
+                      )}
+                      <span>1 special character</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Confirm Password */}
+            {/* CONFIRM PASSWORD */}
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="mb-3 block text-base font-semibold"
+                className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]"
               >
                 Confirm Password
               </label>
 
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]">
-                  <LockIcon />
-                </span>
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9A968F]">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
 
                 <input
                   id="confirmPassword"
@@ -414,60 +575,74 @@ export default function ResetPasswordForm() {
                   required
                   autoComplete="new-password"
                   value={confirmPassword}
-                  onChange={(event) =>
-                    setConfirmPassword(event.target.value)
-                  }
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value);
+                    if (errorMessage) setErrorMessage("");
+                  }}
+                  onBlur={() => handleBlur("confirmPassword")}
                   placeholder="Confirm new password"
-                  className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-14 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
+                  className={`h-[54px] w-full rounded-xl border bg-white pl-11 pr-11 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] focus:ring-4 ${
+                    isPasswordsMismatched && touched.confirmPassword
+                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                      : isPasswordsMatching
+                      ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-100"
+                      : "border-[#CFCBC3] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-[#EEE9FF]"
+                  }`}
                 />
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowConfirmPassword((value) => !value)
-                  }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9A968F] transition hover:text-[#6C4CE6]"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#9A968F] hover:text-[#1C1B1A] focus:outline-none transition-colors"
                   aria-label={
                     showConfirmPassword
                       ? "Hide confirm password"
                       : "Show confirm password"
                   }
                 >
-                  <EyeIcon hidden={!showConfirmPassword} />
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
+
+              {/* INLINE PASSWORD MATCH FEEDBACK */}
+              {isPasswordsMismatched && touched.confirmPassword && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
+                  <X className="w-3 h-3" />
+                  Passwords do not match.
+                </p>
+              )}
+
+              {isPasswordsMatching && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
+                  <Check className="w-3 h-3" />
+                  Passwords match.
+                </p>
+              )}
             </div>
 
-            {/* Submit */}
+            {/* SUBMIT BUTTON */}
             <button
               type="submit"
               disabled={isLoading}
-              className="flex h-[62px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-2 flex h-[58px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition-all duration-200 hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer shadow-lg shadow-[#6C4CE6]/20"
             >
               {isLoading ? (
                 <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <>
-                  Reset Password
-
-                  <svg
-                    aria-hidden="true"
-                    className="h-6 w-6"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.3"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="m13 6 6 6-6 6" />
-                  </svg>
+                  <span>Reset Password</span>
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Back to login */}
-          <p className="mt-10 text-center text-lg text-[#6F6B65]">
+          {/* BACK TO LOGIN */}
+          <p className="mt-8 text-center text-lg text-[#6F6B65]">
             Remember your password?{" "}
             <Link
               href="/login"
