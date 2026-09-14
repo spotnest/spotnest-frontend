@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function OAuthCallbackPage() {
+function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -26,7 +26,13 @@ export default function OAuthCallbackPage() {
       localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("user", JSON.stringify(user));
 
-      router.replace("/dashboard");
+      if (user.role === "user") {
+        router.replace("/user/dashboard");
+      } else if (user.role === "owner") {
+        router.replace("/owner/dashboard");
+      } else {
+        router.replace("/dashboard");
+      }
     } catch {
       setError("Google authentication failed. Please try again.");
     }
@@ -66,5 +72,22 @@ export default function OAuthCallbackPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function OAuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-[#F7F5F0]">
+          <div className="text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#6C4CE6]/30 border-t-[#6C4CE6]" />
+            <p className="mt-4 text-[#6F6B65]">Signing you in...</p>
+          </div>
+        </main>
+      }
+    >
+      <OAuthCallbackContent />
+    </Suspense>
   );
 }

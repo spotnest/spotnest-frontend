@@ -2,9 +2,10 @@ export interface AuthUser {
     id: string;
     name: string;
     email: string;
-    role: "owner" | "admin" | "customer" | "tanant";
-    isVerified: boolean;
-    isBlock: boolean;
+    role: "owner" | "admin" | "customer" | "tanant" | "user";
+    isVerified?: boolean;
+    isBlock?: boolean;
+    image?: string;
 }
 
 export interface AuthState {
