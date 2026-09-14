@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import Sidebar from "./sidebar";
 
 export type IconName =
     | "grid"
@@ -49,73 +48,62 @@ export function Icon({ name, className = "h-5 w-5" }: { name: IconName; classNam
     );
 }
 
-const navigation = [
-    { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
-    { label: "Users", href: "/users", icon: "users" as IconName },
-    { label: "Properties", href: "/properties", icon: "home" as IconName },
-    { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
-    { label: "Reports", href: "/dashboard#reports", icon: "chart" as IconName },
-    { label: "Settings", href: "/settings", icon: "settings" as IconName },
-];
+// const navigation = [
+//     { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
+//     { label: "Users", href: "/users", icon: "users" as IconName },
+//     { label: "Properties", href: "/properties", icon: "home" as IconName },
+//     { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
+//     { label: "Reports", href: "/dashboard#reports", icon: "chart" as IconName },
+//     { label: "Settings", href: "/settings", icon: "settings" as IconName },
+// ];
 
-function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
-    const pathname = usePathname();
+// function Sidebar() {
+//     const pathname = usePathname();
 
-    return (
-        <aside className="flex h-full w-[250px] shrink-0 flex-col border-r border-[#e1e3e4] bg-white px-4 py-5">
-            <Link href="/" className="flex items-center gap-2 px-3" onClick={onNavigate}>
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#00696b] text-sm font-bold text-white">S</span>
-                <span className="text-xl font-bold tracking-[-0.04em] text-[#191c1d]">SpotNest</span>
-            </Link>
+//     return (
+//         <aside className="flex h-full w-[250px] shrink-0 flex-col border-r border-[#e1e3e4] bg-white px-4 py-5">
+//             <Link href="/" className="flex items-center gap-2 px-3">
+//                 <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#00696b] text-sm font-bold text-white">S</span>
+//                 <span className="text-xl font-bold tracking-[-0.04em] text-[#191c1d]">SpotNest</span>
+//             </Link>
 
-            <div className="mt-12 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#75777e]">Workspace</div>
-            <nav className="mt-3 space-y-1" aria-label="Admin navigation">
-                {navigation.map((item) => {
-                    const isActive = item.href === "/dashboard" ? pathname === "/dashboard" : item.href.startsWith(pathname);
-                    return (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            onClick={onNavigate}
-                            className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-[#d9f4f3] text-[#00696b]" : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"}`}
-                        >
-                            <Icon name={item.icon} className="h-[18px] w-[18px]" />
-                            {item.label}
-                            {item.label === "Requests" && <span className="ml-auto rounded-full bg-[#00696b] px-2 py-0.5 text-[10px] font-bold text-white">8</span>}
-                        </Link>
-                    );
-                })}
-            </nav>
+//             <div className="mt-12 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#75777e]">Workspace</div>
+//             <nav className="mt-3 space-y-1" aria-label="Admin navigation">
+//                 {navigation.map((item) => {
+//                     const isActive = item.href === "/dashboard" ? pathname === "/dashboard" : item.href.startsWith(pathname);
+//                     return (
+//                         <Link
+//                             key={item.label}
+//                             href={item.href}
+//                             className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-[#d9f4f3] text-[#00696b]" : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"}`}
+//                         >
+//                             <Icon name={item.icon} className="h-[18px] w-[18px]" />
+//                             {item.label}
+//                             {item.label === "Requests" && <span className="ml-auto rounded-full bg-[#00696b] px-2 py-0.5 text-[10px] font-bold text-white">8</span>}
+//                         </Link>
+//                     );
+//                 })}
+//             </nav>
 
-            <div className="mt-auto rounded-2xl bg-[#eef6f5] p-4">
-                <div className="grid h-9 w-9 place-items-center rounded-xl bg-white text-sm font-bold text-[#00696b]">SN</div>
-                <p className="mt-4 text-sm font-semibold text-[#191c1d]">Need a hand?</p>
-                <p className="mt-1 text-xs leading-5 text-[#44474d]">Our support team is ready to help.</p>
-                <button type="button" className="mt-3 text-xs font-bold text-[#00696b] transition hover:text-[#004f51]">Contact support <span aria-hidden="true">→</span></button>
-            </div>
-        </aside>
-    );
-}
+//             <div className="mt-auto rounded-2xl bg-[#eef6f5] p-4">
+//                 <div className="grid h-9 w-9 place-items-center rounded-xl bg-white text-sm font-bold text-[#00696b]">SN</div>
+//                 <p className="mt-4 text-sm font-semibold text-[#191c1d]">Need a hand?</p>
+//                 <p className="mt-1 text-xs leading-5 text-[#44474d]">Our support team is ready to help.</p>
+//                 <button type="button" className="mt-3 text-xs font-bold text-[#00696b] transition hover:text-[#004f51]">Contact support <span aria-hidden="true">→</span></button>
+//             </div>
+//         </aside>
+//     );
+// }
 
 export default function DashboardShell({ children }: { children: ReactNode }) {
-    const [mobileOpen, setMobileOpen] = useState(false);
-
     return (
         <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]">
             <div className="fixed inset-y-0 left-0 z-40 hidden lg:block">
                 <Sidebar />
             </div>
-            {mobileOpen && <button type="button" aria-label="Close navigation" className="fixed inset-0 z-40 bg-[#191c1d]/30 lg:hidden" onClick={() => setMobileOpen(false)} />}
-            <div className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
-                <div className="relative h-full">
-                    <Sidebar onNavigate={() => setMobileOpen(false)} />
-                    <button type="button" aria-label="Close navigation" className="absolute right-3 top-4 grid h-8 w-8 place-items-center rounded-full bg-[#f3f4f5] text-[#44474d]" onClick={() => setMobileOpen(false)}><Icon name="close" className="h-4 w-4" /></button>
-                </div>
-            </div>
 
             <div className="lg:pl-[250px]">
                 <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-[#e1e3e4] bg-[#f8f9fa]/95 px-4 backdrop-blur sm:px-6 lg:px-10">
-                    <button type="button" aria-label="Open navigation" className="grid h-10 w-10 place-items-center rounded-xl border border-[#e1e3e4] bg-white text-[#44474d] lg:hidden" onClick={() => setMobileOpen(true)}><Icon name="menu" /></button>
                     <div className="hidden items-center gap-3 text-sm text-[#75777e] sm:flex"><span>Workspace</span><span aria-hidden="true">/</span><span className="font-semibold text-[#191c1d]">Admin overview</span></div>
                     <div className="ml-auto flex items-center gap-2 sm:gap-4">
                         <button type="button" aria-label="Search" className="hidden h-10 w-10 place-items-center rounded-full text-[#44474d] transition hover:bg-[#e7e8e9] sm:grid"><Icon name="search" className="h-[18px] w-[18px]" /></button>

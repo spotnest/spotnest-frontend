@@ -1,4 +1,19 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import axios from "axios";
+import apiClient from "@/src/lib/axios";
+import { useAppDispatch } from "@/src/store/hook";
+import { signInSucceeded } from "@/src/store/slices/authSlice";
+import type { AuthUser } from "@/src/store/type";
+import { useRouter } from "next/navigation";
+
+interface LoginResponse {
+  user: AuthUser;
+  token: string;
+  refreshToken: string;
+}
 
 const EmailIcon = () => (
   <svg aria-hidden="true" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -25,6 +40,45 @@ const GoogleIcon = () => (
 );
 
 export default function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await apiClient.post<{ data: LoginResponse }>("/auth/login", { email, password });
+      const { user, token, refreshToken } = response.data.data;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("refreshToken", refreshToken);
+
+      dispatch(signInSucceeded(user));
+
+      if (user.role === "admin") {
+        router.push("/admin/dashboard");
+      } else if (user.role === "owner") {
+        router.push("/owner/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        setErrorMessage(error.response?.data?.message ?? "Unable to sign in. Please try again.");
+      } else {
+        setErrorMessage("Unable to sign in. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#F7F5F0] text-[#1C1B1A] md:grid md:grid-cols-2">
       <section className="relative hidden min-h-screen overflow-hidden md:block">
@@ -58,12 +112,12 @@ export default function LoginForm() {
             <p className="mt-4 text-lg text-[#6F6B65]">Please enter your details to access your account.</p>
           </header>
 
-          <form className="space-y-7">
+          <form className="space-y-7" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="mb-3 block text-base font-semibold">Email</label>
               <div className="relative">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]"><EmailIcon /></span>
-                <input id="email" name="email" type="email" placeholder="you@example.com" className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]" />
+                <input id="email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]" />
               </div>
             </div>
 
@@ -71,7 +125,7 @@ export default function LoginForm() {
               <label htmlFor="password" className="mb-3 block text-base font-semibold">Password</label>
               <div className="relative">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]"><LockIcon /></span>
-                <input id="password" name="password" type="password" placeholder="Enter your password" className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]" />
+                <input id="password" name="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]" />
               </div>
             </div>
 
@@ -83,8 +137,10 @@ export default function LoginForm() {
               <Link href="/forgot-password" className="text-base font-semibold transition hover:text-[#6C4CE6]">Forgot password?</Link>
             </div>
 
-            <button type="submit" className="flex h-[62px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99]">
-              Sign In
+            {errorMessage && <p role="alert" className="text-sm font-medium text-red-600">{errorMessage}</p>}
+
+            <button type="submit" disabled={isSubmitting} className="flex h-[62px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">
+              {isSubmitting ? "Signing in..." : "Sign In"}
               <svg aria-hidden="true" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
             </button>
           </form>

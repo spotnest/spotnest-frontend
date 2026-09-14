@@ -1,2 +1,8 @@
-// HTTP client configuration will be added when backend integration begins.
-export {};
+import axios from "axios";
+
+const apiClient = axios.create({
+    baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1",
+    withCredentials: true,
+});
+
+export default apiClient;

@@ -1,2 +1,10 @@
-// Query-client configuration will be added when server-state tooling is selected.
-export {};
+import { QueryClient } from "@tanstack/react-query";
+
+export const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 30_000,
+            refetchOnWindowFocus: false,
+        },
+    },
+});
