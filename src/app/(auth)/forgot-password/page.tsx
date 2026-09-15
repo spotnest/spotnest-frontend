@@ -1,1 +1,5 @@
-export default function ForgotPasswordPage() { return <main>Forgot password</main>; }
+import { ForgotPasswordForm } from "@/src/modules/auth";
+
+export default function ForgotPasswordPage() {
+  return <ForgotPasswordForm />;
+}

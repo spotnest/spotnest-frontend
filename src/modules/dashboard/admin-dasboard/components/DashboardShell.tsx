@@ -67,23 +67,24 @@ export function Icon({ name, className = "h-5 w-5" }: { name: IconName; classNam
 //                 <span className="text-xl font-bold tracking-[-0.04em] text-[#191c1d]">SpotNest</span>
 //             </Link>
 
-//             <div className="mt-12 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#75777e]">Workspace</div>
-//             <nav className="mt-3 space-y-1" aria-label="Admin navigation">
-//                 {navigation.map((item) => {
-//                     const isActive = item.href === "/dashboard" ? pathname === "/dashboard" : item.href.startsWith(pathname);
-//                     return (
-//                         <Link
-//                             key={item.label}
-//                             href={item.href}
-//                             className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-[#d9f4f3] text-[#00696b]" : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"}`}
-//                         >
-//                             <Icon name={item.icon} className="h-[18px] w-[18px]" />
-//                             {item.label}
-//                             {item.label === "Requests" && <span className="ml-auto rounded-full bg-[#00696b] px-2 py-0.5 text-[10px] font-bold text-white">8</span>}
-//                         </Link>
-//                     );
-//                 })}
-//             </nav>
+// <div className="mt-12 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#75777e]">Workspace</div>
+// <nav className="mt-3 space-y-1" aria-label="Admin navigation">
+//     {navigation.map((item) => {
+//         const isActive = item.href === "/dashboard" ? pathname === "/dashboard" : item.href.startsWith(pathname);
+//         return (
+//             <Link
+//                 key={item.label}
+//                 href={item.href}
+//                 onClick={onNavigate}
+//                 className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-[#d9f4f3] text-[#00696b]" : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"}`}
+//             >
+//                 <Icon name={item.icon} className="h-[18px] w-[18px]" />
+//                 {item.label}
+//                 {item.label === "Requests" && <span className="ml-auto rounded-full bg-[#00696b] px-2 py-0.5 text-[10px] font-bold text-white">8</span>}
+//             </Link>
+//         );
+//     })}
+// </nav>
 
 //             <div className="mt-auto rounded-2xl bg-[#eef6f5] p-4">
 //                 <div className="grid h-9 w-9 place-items-center rounded-xl bg-white text-sm font-bold text-[#00696b]">SN</div>
@@ -98,20 +99,44 @@ export function Icon({ name, className = "h-5 w-5" }: { name: IconName; classNam
 export default function DashboardShell({ children }: { children: ReactNode }) {
     return (
         <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]">
+            {/* Desktop Sidebar */}
             <div className="fixed inset-y-0 left-0 z-40 hidden lg:block">
-                <Sidebar />
+                <Sidebar role={role} onLogout={handleLogout} />
+            </div>
+            {mobileOpen && <button type="button" aria-label="Close navigation" className="fixed inset-0 z-40 bg-[#191c1d]/30 lg:hidden" onClick={() => setMobileOpen(false)} />}
+            <div className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                <div className="relative h-full">
+                    <Sidebar onNavigate={() => setMobileOpen(false)} />
+                    <button type="button" aria-label="Close navigation" className="absolute right-3 top-4 grid h-8 w-8 place-items-center rounded-full bg-[#f3f4f5] text-[#44474d]" onClick={() => setMobileOpen(false)}><Icon name="close" className="h-4 w-4" /></button>
+                </div>
             </div>
 
             <div className="lg:pl-[250px]">
                 <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-[#e1e3e4] bg-[#f8f9fa]/95 px-4 backdrop-blur sm:px-6 lg:px-10">
+                    <button type="button" aria-label="Open navigation" className="grid h-10 w-10 place-items-center rounded-xl border border-[#e1e3e4] bg-white text-[#44474d] lg:hidden" onClick={() => setMobileOpen(true)}><Icon name="menu" /></button>
                     <div className="hidden items-center gap-3 text-sm text-[#75777e] sm:flex"><span>Workspace</span><span aria-hidden="true">/</span><span className="font-semibold text-[#191c1d]">Admin overview</span></div>
                     <div className="ml-auto flex items-center gap-2 sm:gap-4">
                         <button type="button" aria-label="Search" className="hidden h-10 w-10 place-items-center rounded-full text-[#44474d] transition hover:bg-[#e7e8e9] sm:grid"><Icon name="search" className="h-[18px] w-[18px]" /></button>
                         <button type="button" aria-label="Notifications" className="relative grid h-10 w-10 place-items-center rounded-full text-[#44474d] transition hover:bg-[#e7e8e9]"><Icon name="bell" className="h-[18px] w-[18px]" /><span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-[#f8f9fa] bg-[#00696b]" /></button>
                         <div className="h-7 w-px bg-[#e1e3e4]" />
-                        <button type="button" className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-[#e7e8e9]"><span className="grid h-8 w-8 place-items-center rounded-full bg-[#191c1d] text-xs font-bold text-white">AM</span><span className="hidden text-left sm:block"><span className="block text-xs font-bold text-[#191c1d]">Amina Malik</span><span className="block text-[11px] text-[#75777e]">Administrator</span></span><Icon name="chevron" className="hidden h-4 w-4 text-[#75777e] sm:block" /></button>
+
+                        {/* User Profile Badge */}
+                        <div className="flex items-center gap-2.5">
+                            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#00696b] text-xs font-bold text-white shadow-xs">
+                                {initials}
+                            </span>
+                            <div className="hidden text-left sm:block">
+                                <span className="block text-xs font-bold text-[#191c1d] leading-tight truncate max-w-[140px]">
+                                    {displayName}
+                                </span>
+                                <span className="block text-[11px] text-[#75777e] leading-tight">
+                                    {displayRole}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </header>
+
                 <main>{children}</main>
             </div>
         </div>
