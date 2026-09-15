@@ -11,9 +11,23 @@ export interface AuthUser {
 
 export interface AuthState {
     user: AuthUser | null;
+
     isAuthenticated: boolean;
-    status: 'idle' | 'loading' | 'succeeded' | 'failed';
+
+    status:
+        | "idle"
+        | "loading"
+        | "succeeded"
+        | "failed";
+
     error: string | null;
+
     pendingEmail: string | null;
-    otpPurpose: 'login' | 'forgot-password' | null;
+
+    otpPurpose:
+        | "login"
+        | "forgot-password"
+        | null;
+
+    isInitialized: boolean;
 }

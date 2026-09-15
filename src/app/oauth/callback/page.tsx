@@ -1,42 +1,56 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useAppDispatch } from "@/src/store/hook";
+import { signInSucceeded } from "@/src/store/slices/authSlice";
+import { getCurrentUser } from "@/src/modules/auth/services/authServices";
 
 function OAuthCallbackContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-
+  const dispatch = useAppDispatch();
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    const refreshToken = searchParams.get("refreshToken");
-    const userParam = searchParams.get("user");
+    let isMounted = true;
 
-    if (!token || !refreshToken || !userParam) {
-      setError("Google authentication failed. Missing authentication data.");
-      return;
-    }
+    const completeAuthentication = async () => {
+      try {
+        /**
+         * The browser automatically sends the HttpOnly accessToken cookie
+         * that was set by the backend during the Google OAuth callback.
+         */
+        const user = await getCurrentUser();
 
-    try {
-      const user = JSON.parse(userParam);
+        if (!isMounted) return;
 
-      localStorage.setItem("accessToken", token);
-      localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("user", JSON.stringify(user));
+        if (!user) {
+          setError("Google authentication failed. No user profile received.");
+          return;
+        }
 
-      if (user.role === "user") {
-        router.replace("/user/dashboard");
-      } else if (user.role === "owner") {
-        router.replace("/owner/dashboard");
-      } else {
-        router.replace("/dashboard");
+        dispatch(signInSucceeded(user));
+
+        if (user.role === "owner") {
+          router.replace("/owner/dashboard");
+        } else if (user.role === "admin") {
+          router.replace("/dashboard");
+        } else {
+          router.replace("/user/dashboard");
+        }
+      } catch {
+        if (isMounted) {
+          setError("Google authentication failed. Please try again.");
+        }
       }
-    } catch {
-      setError("Google authentication failed. Please try again.");
-    }
-  }, [router, searchParams]);
+    };
+
+    void completeAuthentication();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, router]);
 
   if (error) {
     return (
@@ -46,9 +60,7 @@ function OAuthCallbackContent() {
             Authentication failed
           </h1>
 
-          <p className="mt-3 text-[#6F6B65]">
-            {error}
-          </p>
+          <p className="mt-3 text-[#6F6B65]">{error}</p>
 
           <button
             type="button"
@@ -66,10 +78,7 @@ function OAuthCallbackContent() {
     <main className="flex min-h-screen items-center justify-center bg-[#F7F5F0]">
       <div className="text-center">
         <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#6C4CE6]/30 border-t-[#6C4CE6]" />
-
-        <p className="mt-4 text-[#6F6B65]">
-          Signing you in...
-        </p>
+        <p className="mt-4 text-[#6F6B65]">Signing you in...</p>
       </div>
     </main>
   );
