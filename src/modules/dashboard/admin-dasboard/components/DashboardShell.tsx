@@ -4,7 +4,11 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import Sidebar from "./sidebar";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/src/store/hook";
+import { logout } from "@/src/modules/auth/services/authServices";
+import { signedOut } from "@/src/store/slices/authSlice";
+import { store } from "@/src/store/store";
 
 export type IconName =
     | "grid"
@@ -106,6 +110,9 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ children, role }: DashboardShellProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const router = useRouter();
     const user = useAppSelector((state) => state.auth.user);
     const displayName = user?.name?.trim() || user?.email?.split("@")[0] || "User";
     const initials = displayName
@@ -118,6 +125,16 @@ export default function DashboardShell({ children, role }: DashboardShellProps) 
     const displayRole = currentRole
         ? currentRole.charAt(0).toUpperCase() + currentRole.slice(1)
         : "User";
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        try {
+            await logout();
+        } finally {
+            store.dispatch(signedOut());
+            router.push("/login");
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]">
@@ -143,18 +160,26 @@ export default function DashboardShell({ children, role }: DashboardShellProps) 
                         <div className="h-7 w-px bg-[#e1e3e4]" />
 
                         {/* User Profile Badge */}
-                        <div className="flex items-center gap-2.5">
-                            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#00696b] text-xs font-bold text-white shadow-xs">
-                                {initials}
-                            </span>
-                            <div className="hidden text-left sm:block">
-                                <span className="block text-xs font-bold text-[#191c1d] leading-tight truncate max-w-[140px]">
-                                    {displayName}
+                        <div className="relative">
+                            <button type="button" aria-expanded={isProfileOpen} aria-label="Open user menu" className="flex items-center gap-2.5" onClick={() => setIsProfileOpen((isOpen) => !isOpen)}>
+                                <span className="grid h-9 w-9 place-items-center rounded-full bg-[#00696b] text-xs font-bold text-white shadow-xs">
+                                    {initials}
                                 </span>
-                                <span className="block text-[11px] text-[#75777e] leading-tight">
-                                    {displayRole}
+                                <span className="hidden text-left sm:block">
+                                    <span className="block max-w-[140px] truncate text-xs font-bold leading-tight text-[#191c1d]">
+                                        {displayName}
+                                    </span>
+                                    <span className="block text-[11px] leading-tight text-[#75777e]">
+                                        {displayRole}
+                                    </span>
                                 </span>
-                            </div>
+                            </button>
+                            {isProfileOpen && <div className="absolute right-0 top-12 z-50 w-40 rounded-xl border border-[#e1e3e4] bg-white p-1 shadow-lg">
+                                <button type="button" disabled={isLoggingOut} onClick={handleLogout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-[#44474d] transition hover:bg-[#f3f4f5] disabled:cursor-not-allowed disabled:opacity-60">
+                                    <Icon name="logout" className="h-4 w-4" />
+                                    {isLoggingOut ? "Logging out..." : "Logout"}
+                                </button>
+                            </div>}
                         </div>
                     </div>
                 </header>
