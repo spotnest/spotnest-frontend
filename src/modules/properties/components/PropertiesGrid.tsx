@@ -1,0 +1,67 @@
+"use client";
+
+import PropertyCard from "./PropertyCard";
+import type { Property } from "../types";
+
+interface PropertiesGridProps {
+  properties: Property[];
+  loading?: boolean;
+  error?: string | null;
+}
+
+export default function PropertiesGrid({ properties, loading, error }: PropertiesGridProps) {
+  if (loading) {
+    return (
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-7">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="animate-pulse overflow-hidden rounded-2xl border border-[#e1e3e4] bg-white"
+          >
+            <div className="aspect-[1.55/1] bg-[#e7e8e9]" />
+            <div className="space-y-3 p-5">
+              <div className="h-6 w-28 rounded bg-[#e7e8e9]" />
+              <div className="h-5 w-3/4 rounded bg-[#e7e8e9]" />
+              <div className="h-4 w-1/2 rounded bg-[#e7e8e9]" />
+              <div className="h-9 w-full rounded-lg bg-[#e7e8e9]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-[#ffdad6] bg-[#fff5f4] p-8 text-center">
+        <p className="text-lg font-semibold text-[#ba1a1a]">Something went wrong</p>
+        <p className="mt-2 text-sm text-[#8c3a3a]">{error}</p>
+      </div>
+    );
+  }
+
+  if (properties.length === 0) {
+    return (
+      <div className="rounded-2xl border border-[#e1e3e4] bg-white p-12 text-center">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#eef6f5]">
+          <svg aria-hidden="true" className="h-7 w-7 text-[#00696b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 10c0 5.25-7 10-7 10S5 15.25 5 10a7 7 0 1 1 14 0Z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 10a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+          </svg>
+        </div>
+        <p className="mt-4 text-lg font-semibold text-[#191c1d]">No properties found</p>
+        <p className="mt-2 text-sm text-[#75777e]">
+          Try adjusting your filters or check back later.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-7">
+      {properties.map((property) => (
+        <PropertyCard key={property._id} property={property} />
+      ))}
+    </div>
+  );
+}
