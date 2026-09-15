@@ -99,7 +99,12 @@ const navigation = [
 //     );
 // }
 
-export default function DashboardShell({ children }: { children: ReactNode }) {
+interface DashboardShellProps {
+    children: ReactNode;
+    role?: string;
+}
+
+export default function DashboardShell({ children, role }: DashboardShellProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const user = useAppSelector((state) => state.auth.user);
     const displayName = user?.name?.trim() || user?.email?.split("@")[0] || "User";
@@ -109,8 +114,9 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
         .join("")
         .slice(0, 2)
         .toUpperCase() || "?";
-    const displayRole = user?.role
-        ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+    const currentRole = role || user?.role;
+    const displayRole = currentRole
+        ? currentRole.charAt(0).toUpperCase() + currentRole.slice(1)
         : "User";
 
     return (

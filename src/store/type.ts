@@ -2,7 +2,7 @@ export interface AuthUser {
     id: string;
     name: string;
     email: string;
-    role: "owner" | "admin" | "customer" | "tenant";
+    role: "user" | "owner" | "admin" | "customer" | "tenant";
     image?: string;
     isVerified?: boolean;
     isBlock?: boolean;
