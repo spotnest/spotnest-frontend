@@ -1,3 +1,9 @@
-import type { ReactNode } from "react";
+"use client";
 
-export function QueryProvider({ children }: { children: ReactNode }) { return children; }
+import { QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { queryClient } from "../lib/queryClient";
+
+export function QueryProvider({ children }: { children: ReactNode }) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}

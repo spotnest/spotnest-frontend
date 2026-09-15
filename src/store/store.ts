@@ -8,6 +8,8 @@ export const makeStore = () => {
     })
 }
 
-export type AppStore = ReturnType<typeof makeStore>;
+export const store = makeStore();
+
+export type AppStore = typeof store;
 export type RootState = ReturnType<AppStore['getState']>;
 export type AppDispatch = AppStore['dispatch'];
