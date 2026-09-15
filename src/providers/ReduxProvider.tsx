@@ -1,30 +1,69 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import {
+    useEffect,
+    useState,
+    type ReactNode,
+} from "react";
+
 import { Provider } from "react-redux";
-import { makeStore, type AppStore } from "../store/store";
-import { signInSucceeded } from "../store/slices/authSlice";
 
-export function ReduxProvider({ children }: { children: ReactNode }) {
-  const storeRef = useRef<AppStore | null>(null);
-  if (!storeRef.current) {
-    storeRef.current = makeStore();
-  }
+import { makeStore } from "../store/store";
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && storeRef.current) {
-      const storedUser = localStorage.getItem("user");
-      const token = localStorage.getItem("accessToken");
-      if (storedUser && token) {
-        try {
-          const parsed = JSON.parse(storedUser);
-          storeRef.current.dispatch(signInSucceeded(parsed));
-        } catch {
-          // ignore parsing error
-        }
-      }
-    }
-  }, []);
+import {
+    signInSucceeded,
+    signedOut,
+} from "../store/slices/authSlice";
 
-  return <Provider store={storeRef.current}>{children}</Provider>;
+import { getCurrentUser } from "../modules/auth/services/authServices";
+import { setOnUnauthorizedCallback } from "../lib/axios";
+
+export function ReduxProvider({
+    children,
+}: {
+    children: ReactNode;
+}) {
+    /**
+     * Lazy initializer ensures makeStore() is called exactly once
+     * and preserved across re-renders without creating a new store.
+     */
+    const [store] = useState(() => makeStore());
+
+    useEffect(() => {
+        // Register Axios 401 callback to synchronize Redux state
+        setOnUnauthorizedCallback(() => {
+            store.dispatch(signedOut());
+        });
+
+        const restoreAuthentication = async (): Promise<void> => {
+            try {
+                /**
+                 * The browser automatically sends the HttpOnly accessToken cookie.
+                 * If the access token is expired, the Axios response interceptor
+                 * will attempt a silent refresh via the HttpOnly refreshToken cookie.
+                 */
+                const user = await getCurrentUser();
+
+                if (user) {
+                    store.dispatch(signInSucceeded(user));
+                } else {
+                    store.dispatch(signedOut());
+                }
+            } catch {
+                /**
+                 * Unauthenticated or expired session on startup is normal.
+                 * Clear client authentication state cleanly without logging errors.
+                 */
+                store.dispatch(signedOut());
+            }
+        };
+
+        void restoreAuthentication();
+    }, [store]);
+
+    return (
+        <Provider store={store}>
+            {children}
+        </Provider>
+    );
 }

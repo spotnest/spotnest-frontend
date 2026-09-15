@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 
+import { useAppDispatch, useAppSelector } from "@/src/store/hook";
+import { signInSucceeded } from "@/src/store/slices/authSlice";
 import { login } from "../services/authServices";
 
 const EmailIcon = () => (
@@ -47,14 +49,17 @@ const GoogleIcon = () => (
       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.05 5.05 0 0 1-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"
       fill="#4285F4"
     />
+
     <path
       d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"
       fill="#34A853"
     />
+
     <path
       d="M5.84 14.09A6.96 6.96 0 0 1 5.49 12c0-.73.13-1.43.35-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84Z"
       fill="#FBBC05"
     />
+
     <path
       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15A10.94 10.94 0 0 0 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"
       fill="#EA4335"
@@ -64,6 +69,20 @@ const GoogleIcon = () => (
 
 export default function LoginForm() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (user?.role === "owner") {
+        router.replace("/owner/dashboard");
+      } else if (user?.role === "admin") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/user/dashboard");
+      }
+    }
+  }, [isAuthenticated, user, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,14 +90,18 @@ export default function LoginForm() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
   const handleGoogleLogin = () => {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:5000/api/v1";
 
-  window.location.href = `${apiUrl}/auth/google`;
-};
+    window.location.href = `${apiUrl}/auth/google`;
+  };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
     setErrorMessage("");
@@ -102,52 +125,101 @@ export default function LoginForm() {
       });
 
       /*
-       * For now we store the tokens locally.
-       * Later we can move authentication state into Redux
-       * and improve token handling with interceptors.
+       * Update Redux immediately after successful login.
+       * Tokens are stored automatically by the browser as HttpOnly cookies.
        */
-      localStorage.setItem("accessToken", response.token);
-      localStorage.setItem("refreshToken", response.refreshToken);
-      localStorage.setItem("user", JSON.stringify(response.user));
+      dispatch(signInSucceeded(response.user));
 
-      router.push("/dashboard");
+      /*
+       * Redirect based on authenticated user's role.
+       */
+      if (response.user.role === "owner") {
+        router.push("/owner/dashboard");
+      } else if (response.user.role === "admin") {
+        router.push("/dashboard");
+      } else {
+        router.push("/user/dashboard");
+      }
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
+
+        /*
+         * Validation errors from backend.
+         */
         if (data?.errors?.fieldErrors) {
-          const firstFieldErr = Object.values(data.errors.fieldErrors).flat()[0];
-          if (typeof firstFieldErr === "string") {
-            setErrorMessage(firstFieldErr);
+          const firstFieldError = Object.values(
+            data.errors.fieldErrors
+          ).flat()[0];
+
+          if (typeof firstFieldError === "string") {
+            setErrorMessage(firstFieldError);
             return;
           }
         }
-        if (data?.message) {
+
+        /*
+         * Normal backend error.
+         */
+        if (typeof data?.message === "string") {
           setErrorMessage(data.message);
           return;
         }
-        if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
-          setErrorMessage("Cannot connect to server. Please ensure the backend is running.");
+
+        /*
+         * Backend unavailable.
+         */
+        if (
+          error.code === "ERR_NETWORK" ||
+          error.message === "Network Error"
+        ) {
+          setErrorMessage(
+            "Cannot connect to server. Please ensure the backend is running."
+          );
+          return;
+        }
+
+        /*
+         * HTTP status fallback.
+         */
+        if (error.response?.status) {
+          setErrorMessage(
+            `Login failed with status code ${error.response.status}.`
+          );
           return;
         }
       }
+
       if (error instanceof Error) {
         setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Login failed. Please check your credentials.");
+        return;
       }
+
+      setErrorMessage(
+        "Login failed. Please check your credentials."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (isAuthenticated) {
+    return null;
+  }
+
   return (
     <main className="min-h-screen bg-[#F7F5F0] text-[#1C1B1A] md:grid md:grid-cols-2">
+
+      {/* =====================================================
+          LEFT HERO SECTION
+          ===================================================== */}
       <section className="relative hidden min-h-screen overflow-hidden md:block">
         <div className="absolute inset-0 bg-[url('/images/spotnest-login-tower.png')] bg-cover bg-center" />
 
         <div className="absolute inset-0 bg-gradient-to-t from-[#1C1B1A]/90 via-[#1C1B1A]/40 to-[#1C1B1A]/10" />
 
         <div className="absolute inset-x-10 bottom-14 rounded-2xl border border-white/30 bg-white/70 p-8 shadow-[0_10px_30px_rgba(28,27,26,0.15)] backdrop-blur-xl lg:inset-x-12 lg:bottom-16 lg:p-12">
+
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-xl font-bold tracking-tight text-[#1C1B1A]"
@@ -155,6 +227,7 @@ export default function LoginForm() {
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#6C4CE6] text-sm text-white">
               S
             </span>
+
             SpotNest
           </Link>
 
@@ -169,8 +242,14 @@ export default function LoginForm() {
         </div>
       </section>
 
-      <section className="flex min-h-screen items-center justify-center px-5 py-12 sm:px-10 md:px-12 lg:px-20 overflow-y-auto">
+      {/* =====================================================
+          RIGHT LOGIN SECTION
+          ===================================================== */}
+      <section className="flex min-h-screen items-center justify-center overflow-y-auto px-5 py-12 sm:px-10 md:px-12 lg:px-20">
+
         <div className="w-full max-w-[525px]">
+
+          {/* Mobile logo */}
           <Link
             href="/"
             className="mb-12 inline-flex items-center gap-2 text-xl font-bold tracking-tight md:hidden"
@@ -178,9 +257,11 @@ export default function LoginForm() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6C4CE6] text-sm text-white">
               S
             </span>
+
             SpotNest
           </Link>
 
+          {/* Header */}
           <header className="mb-12">
             <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[#6C4CE6]">
               SpotNest
@@ -195,13 +276,23 @@ export default function LoginForm() {
             </p>
           </header>
 
+          {/* Error message */}
           {errorMessage && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div
+              role="alert"
+              className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+            >
               {errorMessage}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-7">
+          {/* Login form */}
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-7"
+          >
+
+            {/* Email */}
             <div>
               <label
                 htmlFor="email"
@@ -219,15 +310,23 @@ export default function LoginForm() {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+
+                    if (errorMessage) {
+                      setErrorMessage("");
+                    }
+                  }}
                   placeholder="you@example.com"
                   className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                 />
               </div>
             </div>
 
+            {/* Password */}
             <div>
               <label
                 htmlFor="password"
@@ -237,6 +336,7 @@ export default function LoginForm() {
               </label>
 
               <div className="relative">
+
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]">
                   <LockIcon />
                 </span>
@@ -245,18 +345,31 @@ export default function LoginForm() {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   required
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+
+                    if (errorMessage) {
+                      setErrorMessage("");
+                    }
+                  }}
                   placeholder="Enter your password"
                   className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-12 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                 />
 
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#9A968F] hover:text-[#1C1B1A] focus:outline-none transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() =>
+                    setShowPassword((current) => !current)
+                  }
+                  className="absolute inset-y-0 right-0 flex items-center pr-4 text-[#9A968F] transition-colors hover:text-[#1C1B1A] focus:outline-none"
+                  aria-label={
+                    showPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
                 >
                   {showPassword ? (
                     <EyeOff className="h-6 w-6" />
@@ -267,18 +380,8 @@ export default function LoginForm() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4 pt-2">
-              <label className="flex cursor-pointer items-center gap-2 text-base font-medium text-[#6F6B65]">
-                <input
-                  id="remember"
-                  name="remember"
-                  type="checkbox"
-                  className="h-5 w-5 rounded border-[#CFCBC3] accent-[#6C4CE6]"
-                />
-
-                Remember me
-              </label>
-
+            {/* Forgot password */}
+            <div className="flex items-center justify-end">
               <Link
                 href="/forgot-password"
                 className="text-base font-semibold transition hover:text-[#6C4CE6]"
@@ -287,13 +390,17 @@ export default function LoginForm() {
               </Link>
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={isLoading}
               className="flex h-[62px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isLoading ? (
-                <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <span
+                  className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                  aria-hidden="true"
+                />
               ) : (
                 <>
                   Sign In
@@ -314,25 +421,32 @@ export default function LoginForm() {
             </button>
           </form>
 
+          {/* Divider */}
           <div className="my-10 flex items-center gap-5">
             <div className="h-px flex-1 bg-[#D8D4CC]" />
 
-            <span className="text-sm font-medium text-[#6F6B65]">OR</span>
+            <span className="text-sm font-medium text-[#6F6B65]">
+              OR
+            </span>
 
             <div className="h-px flex-1 bg-[#D8D4CC]" />
           </div>
 
+          {/* Google Login */}
           <button
-  type="button"
-  onClick={handleGoogleLogin}
-  className="flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold transition hover:bg-[#EEE9FF]"
->
+            type="button"
+            onClick={handleGoogleLogin}
+            className="flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold transition hover:bg-[#EEE9FF]"
+          >
             <GoogleIcon />
+
             Continue with Google
           </button>
 
+          {/* Register */}
           <p className="mt-12 text-center text-lg text-[#6F6B65]">
             Don&apos;t have an account?{" "}
+
             <Link
               href="/register"
               className="font-semibold text-[#1C1B1A] transition hover:text-[#6C4CE6]"
@@ -340,6 +454,7 @@ export default function LoginForm() {
               Create an account
             </Link>
           </p>
+
         </div>
       </section>
     </main>

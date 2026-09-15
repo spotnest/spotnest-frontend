@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import { signedOut } from "@/src/store/slices/authSlice";
+import { logout } from "@/src/modules/auth/services/authServices";
 
 export type IconName =
     | "grid"
@@ -170,17 +171,38 @@ export default function DashboardShell({ children, role = "user" }: DashboardShe
     const [mobileOpen, setMobileOpen] = useState(false);
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const user = useAppSelector((state) => state.auth.user);
+    const { user, isAuthenticated, isInitialized, status } = useAppSelector(
+        (state) => state.auth
+    );
 
-    const handleLogout = () => {
-        dispatch(signedOut());
-        if (typeof window !== "undefined") {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            localStorage.removeItem("user");
+    useEffect(() => {
+        if (isInitialized && !isAuthenticated && status !== "loading") {
+            router.push("/login");
         }
-        router.push("/login");
+    }, [isInitialized, isAuthenticated, status, router]);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+        } catch (error) {
+            console.error("Logout request failed:", error);
+        } finally {
+            dispatch(signedOut());
+            router.push("/login");
+        }
     };
+
+    if (!isInitialized || status === "loading") {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[#f8f9fa]">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#00696b]/30 border-t-[#00696b]" />
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) {
+        return null;
+    }
 
     const displayName = user?.name || user?.email?.split("@")[0] || (role === "admin" ? "Administrator" : "Tenant");
     const displayRole = role === "admin" ? "Administrator" : role === "owner" ? "Property Owner" : "Tenant";
