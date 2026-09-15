@@ -8,8 +8,10 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: UserRole | "user" | "admin" | "owner";
   image?: string;
+  isVerified?: boolean;
+  isBlock?: boolean;
 }
 
 export interface LoginPayload {
@@ -19,8 +21,6 @@ export interface LoginPayload {
 
 export interface LoginResponse {
   user: AuthUser;
-  token: string;
-  refreshToken: string;
 }
 
 export interface SignupPayload {
