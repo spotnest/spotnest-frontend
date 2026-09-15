@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import type { ReactNode } from "react";
 import Sidebar from "./sidebar";
+import Link from "next/link";
+import { useAppSelector } from "@/src/store/hook";
 
 export type IconName =
     | "grid"
@@ -48,14 +51,14 @@ export function Icon({ name, className = "h-5 w-5" }: { name: IconName; classNam
     );
 }
 
-// const navigation = [
-//     { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
-//     { label: "Users", href: "/users", icon: "users" as IconName },
-//     { label: "Properties", href: "/properties", icon: "home" as IconName },
-//     { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
-//     { label: "Reports", href: "/dashboard#reports", icon: "chart" as IconName },
-//     { label: "Settings", href: "/settings", icon: "settings" as IconName },
-// ];
+const navigation = [
+    { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
+    { label: "Users", href: "/users", icon: "users" as IconName },
+    { label: "Properties", href: "/properties", icon: "home" as IconName },
+    { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
+    { label: "Reports", href: "/dashboard#reports", icon: "chart" as IconName },
+    { label: "Settings", href: "/settings", icon: "settings" as IconName },
+];
 
 // function Sidebar() {
 //     const pathname = usePathname();
@@ -97,11 +100,24 @@ export function Icon({ name, className = "h-5 w-5" }: { name: IconName; classNam
 // }
 
 export default function DashboardShell({ children }: { children: ReactNode }) {
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const user = useAppSelector((state) => state.auth.user);
+    const displayName = user?.name?.trim() || user?.email?.split("@")[0] || "User";
+    const initials = displayName
+        .split(/\s+/)
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "?";
+    const displayRole = user?.role
+        ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+        : "User";
+
     return (
         <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]">
             {/* Desktop Sidebar */}
             <div className="fixed inset-y-0 left-0 z-40 hidden lg:block">
-                <Sidebar role={role} onLogout={handleLogout} />
+                <Sidebar />
             </div>
             {mobileOpen && <button type="button" aria-label="Close navigation" className="fixed inset-0 z-40 bg-[#191c1d]/30 lg:hidden" onClick={() => setMobileOpen(false)} />}
             <div className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>

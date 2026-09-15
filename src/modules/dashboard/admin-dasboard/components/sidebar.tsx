@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon, IconName } from "./DashboardShell";
+import { Icon, type IconName } from "./DashboardShell";
 
 const navigation = [
-    { label: "Dashboard", href: "/admin-dashboard", icon: "grid" as IconName },
+    { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
     { label: "Users", href: "/users", icon: "users" as IconName },
     { label: "Properties", href: "/properties", icon: "home" as IconName },
     { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
@@ -11,7 +11,11 @@ const navigation = [
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+    onNavigate?: () => void;
+}
+
+export default function Sidebar({ onNavigate }: SidebarProps) {
     const pathname = usePathname();
 
     return (
@@ -24,11 +28,15 @@ export default function Sidebar() {
             <div className="mt-12 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#75777e]">Workspace</div>
             <nav className="mt-3 space-y-1" aria-label="Admin navigation">
                 {navigation.map((item) => {
-                    const isActive = item.href === "/dashboard" ? pathname === "/dashboard" : item.href.startsWith(pathname);
+                    const routePath = item.href.split("#")[0];
+                    const isActive = routePath === "/dashboard"
+                        ? pathname === "/dashboard"
+                        : pathname === routePath || pathname.startsWith(`${routePath}/`);
                     return (
                         <Link
                             key={item.label}
                             href={item.href}
+                            onClick={onNavigate}
                             className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-[#d9f4f3] text-[#00696b]" : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"}`}
                         >
                             <Icon name={item.icon} className="h-[18px] w-[18px]" />
