@@ -1,3 +1,5 @@
-export default function ContactPage() {
-  return <h1>Contact SpotNest</h1>;
+import ContactPage from "@/src/modules/contact/page";
+
+export default function Page() {
+  return <ContactPage />;
 }

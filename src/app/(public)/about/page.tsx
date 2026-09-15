@@ -1,3 +1,5 @@
-export default function AboutPage() {
-  return <h1>About SpotNest</h1>;
+import AboutPage from "@/src/modules/about/page";
+
+export default function Page() {
+  return <AboutPage />;
 }
