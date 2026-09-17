@@ -22,7 +22,7 @@ import {
 import { useAppSelector } from "@/src/store/hook";
 import { signup } from "../services/authServices";
 
-type RoleType = "renter" | "agent";
+type RoleType = "user" | "owner";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -40,7 +40,7 @@ export default function RegisterForm() {
     }
   }, [isAuthenticated, user, router]);
 
-  const [role, setRole] = useState<RoleType>("renter");
+  const [role, setRole] = useState<RoleType>("user");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -115,6 +115,14 @@ export default function RegisterForm() {
     }
   };
 
+  const handleGoogleLogin = () => {
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:5000/api/v1";
+
+    window.location.href = `${apiUrl}/auth/google`;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -157,22 +165,11 @@ export default function RegisterForm() {
     try {
       setIsLoading(true);
 
-      /*
-       * Your backend signup schema accepts:
-       * name
-       * email
-       * password
-       * phone (optional)
-       * image (optional)
-       *
-       * Role is currently only a frontend UI selection.
-       * We do NOT send it because your backend signup schema
-       * does not accept a role field.
-       */
       const result = await signup({
         name: trimmedName,
         email: trimmedEmail,
         password,
+        role: role === "owner" ? "owner" : "user",
       });
 
       setSuccessMessage(
@@ -371,38 +368,38 @@ export default function RegisterForm() {
                 <div className="grid grid-cols-2 gap-2 p-1 bg-[#EAE6DF] rounded-2xl">
                   <button
                     type="button"
-                    onClick={() => setRole("renter")}
+                    onClick={() => setRole("user")}
                     className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-                      role === "renter"
+                      role === "user"
                         ? "bg-white text-[#1C1B1A] shadow-sm font-semibold"
                         : "text-[#6F6B65] hover:text-[#1C1B1A]"
                     }`}
                   >
                     <HomeIcon
                       className={`w-4 h-4 ${
-                        role === "renter" ? "text-[#6C4CE6]" : ""
+                        role === "user" ? "text-[#6C4CE6]" : ""
                       }`}
                     />
 
-                    <span>Renter / Buyer</span>
+                    <span>User / Renter</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setRole("agent")}
+                    onClick={() => setRole("owner")}
                     className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-                      role === "agent"
+                      role === "owner"
                         ? "bg-white text-[#1C1B1A] shadow-sm font-semibold"
                         : "text-[#6F6B65] hover:text-[#1C1B1A]"
                     }`}
                   >
                     <Building2
                       className={`w-4 h-4 ${
-                        role === "agent" ? "text-[#6C4CE6]" : ""
+                        role === "owner" ? "text-[#6C4CE6]" : ""
                       }`}
                     />
 
-                    <span>Property Agent</span>
+                    <span>Property Owner</span>
                   </button>
                 </div>
               </div>
@@ -657,9 +654,10 @@ export default function RegisterForm() {
                 <div className="h-px flex-1 bg-[#D8D4CC]" />
               </div>
 
-              {/* GOOGLE
+              {/* GOOGLE */}
               <button
                 type="button"
+                onClick={handleGoogleLogin}
                 className="flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold text-[#1C1B1A] transition hover:bg-[#EEE9FF]"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -681,7 +679,7 @@ export default function RegisterForm() {
                   />
                 </svg>
                 Continue with Google
-              </button> */}
+              </button>
 
               {/* LOGIN */}
               <p className="mt-8 text-center text-lg text-[#6F6B65]">

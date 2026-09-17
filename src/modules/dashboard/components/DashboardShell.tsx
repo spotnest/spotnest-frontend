@@ -176,10 +176,20 @@ export default function DashboardShell({ children, role = "user" }: DashboardShe
     );
 
     useEffect(() => {
-        if (isInitialized && !isAuthenticated && status !== "loading") {
-            router.push("/login");
+        if (isInitialized && status !== "loading") {
+            if (!isAuthenticated) {
+                router.push("/login");
+            } else if (user && user.role !== role) {
+                if (user.role === "owner") {
+                    router.replace("/owner/dashboard");
+                } else if (user.role === "admin") {
+                    router.replace("/dashboard");
+                } else {
+                    router.replace("/user/dashboard");
+                }
+            }
         }
-    }, [isInitialized, isAuthenticated, status, router]);
+    }, [isInitialized, isAuthenticated, status, user, role, router]);
 
     const handleLogout = async () => {
         try {
@@ -200,7 +210,7 @@ export default function DashboardShell({ children, role = "user" }: DashboardShe
         );
     }
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || (user && user.role !== role)) {
         return null;
     }
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
@@ -67,10 +67,18 @@ const GoogleIcon = () => (
   </svg>
 );
 
-export default function LoginForm() {
+function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -84,12 +92,12 @@ export default function LoginForm() {
     }
   }, [isAuthenticated, user, router]);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      setErrorMessage(errorParam);
+    }
+  }, [searchParams]);
 
   const handleGoogleLogin = () => {
     const apiUrl =
@@ -458,5 +466,19 @@ export default function LoginForm() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function LoginForm() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#F7F5F0]">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#6C4CE6]/30 border-t-[#6C4CE6]" />
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
   );
 }

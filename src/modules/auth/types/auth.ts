@@ -29,6 +29,7 @@ export interface SignupPayload {
   password: string;
   phone?: string;
   image?: string;
+  role?: "user" | "owner";
 }
 
 export interface SignupPendingResponse {
