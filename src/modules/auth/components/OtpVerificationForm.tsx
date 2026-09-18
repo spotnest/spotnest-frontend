@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
@@ -10,32 +10,132 @@ import {
   resendVerification,
 } from "../services/authServices";
 
+import { signInSucceeded } from "@/src/store/slices/authSlice";
+import { useAppDispatch } from "@/src/store/hook";
+
+const OTP_LENGTH = 6;
+
 export default function OtpVerificationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const dispatch = useAppDispatch();
 
   const email = searchParams.get("email") || "";
 
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState<string[]>(
+    Array(OTP_LENGTH).fill("")
+  );
+
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+
+  const otpValue = otp.join("");
+
+  useEffect(() => {
+    inputRefs.current[0]?.focus();
+  }, []);
+
+  const handleOtpChange = (
+    index: number,
+    value: string
+  ) => {
+    const digit = value.replace(/\D/g, "").slice(-1);
+
+    const nextOtp = [...otp];
+    nextOtp[index] = digit;
+
+    setOtp(nextOtp);
+    setErrorMessage("");
+
+    if (digit && index < OTP_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (
+    index: number,
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (
+      event.key === "Backspace" &&
+      !otp[index] &&
+      index > 0
+    ) {
+      inputRefs.current[index - 1]?.focus();
+    }
+
+    if (
+      event.key === "ArrowLeft" &&
+      index > 0
+    ) {
+      inputRefs.current[index - 1]?.focus();
+    }
+
+    if (
+      event.key === "ArrowRight" &&
+      index < OTP_LENGTH - 1
+    ) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (
+    event: React.ClipboardEvent<HTMLInputElement>
+  ) => {
+    event.preventDefault();
+
+    const pastedValue = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
+
+    if (!pastedValue) {
+      return;
+    }
+
+    const nextOtp = Array(OTP_LENGTH).fill("");
+
+    pastedValue
+      .split("")
+      .forEach((digit, index) => {
+        nextOtp[index] = digit;
+      });
+
+    setOtp(nextOtp);
+    setErrorMessage("");
+
+    const nextFocusIndex = Math.min(
+      pastedValue.length,
+      OTP_LENGTH - 1
+    );
+
+    inputRefs.current[nextFocusIndex]?.focus();
+  };
+
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
 
     setErrorMessage("");
     setSuccessMessage("");
 
     if (!email) {
-      setErrorMessage("Email is missing. Please register again.");
+      setErrorMessage(
+        "Email is missing. Please register again."
+      );
       return;
     }
 
-    if (!/^\d{6}$/.test(otp)) {
-      setErrorMessage("Please enter the 6-digit verification code.");
+    if (!/^\d{6}$/.test(otpValue)) {
+      setErrorMessage(
+        "Please enter the 6-digit verification code."
+      );
       return;
     }
 
@@ -44,17 +144,41 @@ export default function OtpVerificationForm() {
 
       const result = await verifyEmail({
         email,
-        otp,
+        otp: otpValue,
       });
 
-      /*
-       * Store auth data matching LoginForm storage architecture
-       */
-      localStorage.setItem("accessToken", result.token);
-      localStorage.setItem("refreshToken", result.refreshToken);
-      localStorage.setItem("user", JSON.stringify(result.user));
+      if ("user" in result && result.user) {
+        dispatch(signInSucceeded(result.user));
 
-      setSuccessMessage("Email verified successfully! Redirecting to login...");
+        setSuccessMessage(
+          "Email verified successfully! Redirecting..."
+        );
+
+        setTimeout(() => {
+          switch (result.user.role) {
+            case "admin":
+              router.push("/admin/dashboard");
+              break;
+
+            case "owner":
+              router.push("/owner/dashboard");
+              break;
+
+            case "tenant":
+            case "customer":
+            case "user":
+            default:
+              router.push("/dashboard");
+              break;
+          }
+        }, 800);
+
+        return;
+      }
+
+     setSuccessMessage(
+  "Email verified successfully! Please sign in."
+);
 
       setTimeout(() => {
         router.push("/login");
@@ -64,9 +188,12 @@ export default function OtpVerificationForm() {
         const data = error.response?.data;
 
         if (data?.errors?.fieldErrors) {
-          const firstFieldErr = Object.values(data.errors.fieldErrors).flat()[0];
-          if (typeof firstFieldErr === "string") {
-            setErrorMessage(firstFieldErr);
+          const firstFieldError = Object.values(
+            data.errors.fieldErrors
+          ).flat()[0];
+
+          if (typeof firstFieldError === "string") {
+            setErrorMessage(firstFieldError);
             return;
           }
         }
@@ -76,7 +203,10 @@ export default function OtpVerificationForm() {
           return;
         }
 
-        if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+        if (
+          error.code === "ERR_NETWORK" ||
+          error.message === "Network Error"
+        ) {
           setErrorMessage(
             "Cannot connect to server. Please ensure the backend is running."
           );
@@ -96,7 +226,9 @@ export default function OtpVerificationForm() {
         return;
       }
 
-      setErrorMessage("Unable to verify your email. Please try again.");
+      setErrorMessage(
+        "Unable to verify your email. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -107,17 +239,22 @@ export default function OtpVerificationForm() {
     setSuccessMessage("");
 
     if (!email) {
-      setErrorMessage("Email is missing. Please register again.");
+      setErrorMessage(
+        "Email is missing. Please register again."
+      );
       return;
     }
 
     try {
       setIsResending(true);
 
-      const result = await resendVerification(email);
+      const result = await resendVerification({
+        email,
+      });
 
       setSuccessMessage(
-        result.message || "A new verification code has been sent to your email."
+        result.message ||
+          "A new verification code has been sent to your email."
       );
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
@@ -128,7 +265,10 @@ export default function OtpVerificationForm() {
           return;
         }
 
-        if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+        if (
+          error.code === "ERR_NETWORK" ||
+          error.message === "Network Error"
+        ) {
           setErrorMessage(
             "Cannot connect to server. Please ensure the backend is running."
           );
@@ -141,7 +281,9 @@ export default function OtpVerificationForm() {
         return;
       }
 
-      setErrorMessage("Unable to resend the verification code.");
+      setErrorMessage(
+        "Unable to resend the verification code."
+      );
     } finally {
       setIsResending(false);
     }
@@ -149,7 +291,7 @@ export default function OtpVerificationForm() {
 
   return (
     <main className="min-h-screen bg-[#F7F5F0] text-[#1C1B1A] md:grid md:grid-cols-2">
-      {/* LEFT HERO SECTION (TOWER + BRANDING) */}
+      {/* LEFT HERO SECTION */}
       <section className="relative hidden min-h-screen overflow-hidden md:block">
         <div className="absolute inset-0 bg-[url('/images/spotnest-login-tower.png')] bg-cover bg-center" />
 
@@ -171,16 +313,15 @@ export default function OtpVerificationForm() {
           </h1>
 
           <p className="mt-6 max-w-lg text-lg leading-9 text-[#6F6B65]">
-            Discover rental properties, connect with owners, and find a place
-            that feels like home.
+            Discover rental properties, connect with owners,
+            and find a place that feels like home.
           </p>
         </div>
       </section>
 
       {/* RIGHT FORM SECTION */}
-      <section className="flex min-h-screen items-center justify-center px-5 py-12 sm:px-10 md:px-12 lg:px-20 overflow-y-auto">
+      <section className="flex min-h-screen items-center justify-center overflow-y-auto px-5 py-12 sm:px-10 md:px-12 lg:px-20">
         <div className="w-full max-w-[525px]">
-          {/* MOBILE LOGO */}
           <Link
             href="/"
             className="mb-12 inline-flex items-center gap-2 text-xl font-bold tracking-tight md:hidden"
@@ -202,7 +343,7 @@ export default function OtpVerificationForm() {
 
             <p className="mt-4 text-lg text-[#6F6B65]">
               Enter the 6-digit verification code sent to{" "}
-              <span className="font-semibold text-[#1C1B1A] break-all">
+              <span className="break-all font-semibold text-[#1C1B1A]">
                 {email || "your email"}
               </span>
               .
@@ -210,57 +351,92 @@ export default function OtpVerificationForm() {
           </header>
 
           {errorMessage && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div
+              role="alert"
+              className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+            >
               {errorMessage}
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600">
+            <div
+              role="status"
+              className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-600"
+            >
               {successMessage}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-7">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-7"
+          >
             <div>
               <label
-                htmlFor="otp"
-                className="mb-3 block text-base font-semibold"
+                htmlFor="otp-0"
+                className="mb-4 block text-base font-semibold"
               >
                 Verification Code
               </label>
 
-              <div className="relative">
-                <input
-                  id="otp"
-                  name="otp"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => {
-                    const value = e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 6);
-                    setOtp(value);
-                  }}
-                  placeholder="000000"
-                  className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white px-4 text-center font-mono text-2xl font-bold tracking-[0.4em] sm:tracking-[0.6em] text-[#1C1B1A] outline-none transition placeholder:tracking-normal placeholder:font-sans placeholder:text-lg placeholder:font-normal placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
-                />
+              <div
+                className="flex justify-between gap-2 sm:gap-3"
+                role="group"
+                aria-label="Verification code"
+              >
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(element) => {
+                      inputRefs.current[index] = element;
+                    }}
+                    id={`otp-${index}`}
+                    name={`otp-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete={
+                      index === 0
+                        ? "one-time-code"
+                        : "off"
+                    }
+                    maxLength={1}
+                    value={digit}
+                    onChange={(event) =>
+                      handleOtpChange(
+                        index,
+                        event.target.value
+                      )
+                    }
+                    onKeyDown={(event) =>
+                      handleKeyDown(index, event)
+                    }
+                    onPaste={handlePaste}
+                    aria-label={`Verification digit ${
+                      index + 1
+                    }`}
+                    className="h-[62px] w-full max-w-[68px] rounded-xl border border-[#CFCBC3] bg-white text-center font-mono text-2xl font-bold text-[#1C1B1A] outline-none transition hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF] sm:h-[68px] sm:max-w-[72px] sm:text-3xl"
+                  />
+                ))}
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={isLoading || otp.length !== 6}
+              disabled={
+                isLoading || otpValue.length !== OTP_LENGTH
+              }
               className="flex h-[62px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isLoading ? (
-                <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <span
+                  className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                  aria-label="Verifying"
+                />
               ) : (
                 <>
                   Verify Email
+
                   <svg
                     aria-hidden="true"
                     className="h-6 w-6"
@@ -279,6 +455,12 @@ export default function OtpVerificationForm() {
 
           <div className="my-10 flex items-center gap-5">
             <div className="h-px flex-1 bg-[#D8D4CC]" />
+
+            <span className="text-sm font-medium text-[#6F6B65]">
+              OR
+            </span>
+
+            <div className="h-px flex-1 bg-[#D8D4CC]" />
           </div>
 
           <div className="flex flex-col items-center gap-4 text-center text-base text-[#6F6B65]">
@@ -288,9 +470,11 @@ export default function OtpVerificationForm() {
                 type="button"
                 onClick={handleResend}
                 disabled={isResending}
-                className="font-semibold text-[#6C4CE6] transition hover:text-[#5738C7] disabled:opacity-50 cursor-pointer"
+                className="cursor-pointer font-semibold text-[#6C4CE6] transition hover:text-[#5738C7] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isResending ? "Sending..." : "Resend code"}
+                {isResending
+                  ? "Sending..."
+                  : "Resend code"}
               </button>
             </p>
 

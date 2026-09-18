@@ -1,29 +1,12 @@
 "use client";
 
-<<<<<<< HEAD
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import axios from "axios";
-import apiClient from "@/src/lib/axios";
-import { useAppDispatch } from "@/src/store/hook";
-import { signInSucceeded } from "@/src/store/slices/authSlice";
-import type { AuthUser } from "@/src/store/type";
 import { useRouter } from "next/navigation";
-
-interface LoginResponse {
-  user: AuthUser;
-  token: string;
-  refreshToken: string;
-}
-=======
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 
-import { login } from "../services/authServices";
->>>>>>> dev
+import { useLogin } from "../hooks/useLogin";
 
 const EmailIcon = () => (
   <svg
@@ -80,65 +63,32 @@ const GoogleIcon = () => (
 );
 
 export default function LoginForm() {
-<<<<<<< HEAD
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
-  const dispatch = useAppDispatch();
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setErrorMessage("");
-    setIsSubmitting(true);
-
-    try {
-      const response = await apiClient.post<{ data: LoginResponse }>("/auth/login", { email, password });
-      const { user, token, refreshToken } = response.data.data;
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("refreshToken", refreshToken);
-
-      dispatch(signInSucceeded(user));
-
-      if (user.role === "admin") {
-        router.push("/admin/dashboard");
-      } else if (user.role === "owner") {
-        router.push("/owner/dashboard");
-      } else {
-        router.push("/dashboard");
-      }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        setErrorMessage(error.response?.data?.message ?? "Unable to sign in. Please try again.");
-      } else {
-        setErrorMessage("Unable to sign in. Please try again.");
-      }
-    } finally {
-      setIsSubmitting(false);
-=======
-  const router = useRouter();
+  const { login, isLoading } = useLogin();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
   const handleGoogleLogin = () => {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:5000/api/v1";
 
-  window.location.href = `${apiUrl}/auth/google`;
-};
+    window.location.href = `${apiUrl}/auth/google`;
+  };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
     setErrorMessage("");
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
       setErrorMessage("Please enter your email address.");
       return;
     }
@@ -148,51 +98,85 @@ export default function LoginForm() {
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      const response = await login({
-        email: email.trim(),
+      const result = await login({
+        email: trimmedEmail,
         password,
       });
 
-      /*
-       * For now we store the tokens locally.
-       * Later we can move authentication state into Redux
-       * and improve token handling with interceptors.
-       */
-      localStorage.setItem("accessToken", response.token);
-      localStorage.setItem("refreshToken", response.refreshToken);
-      localStorage.setItem("user", JSON.stringify(response.user));
+if (result.requiresOtp && result.email && result.purpose) {
+  const params = new URLSearchParams({
+    email: result.email,
+    purpose: result.purpose,
+  });
 
-      router.push("/dashboard");
+  router.push(`/otp?${params.toString()}`);
+
+  return;
+}
+
+      if (!result.user) {
+        setErrorMessage(
+          "Login succeeded, but no user session was returned."
+        );
+        return;
+      }
+
+      switch (result.user.role) {
+        case "admin":
+          router.push("/admin/dashboard");
+          break;
+
+        case "owner":
+          router.push("/owner/dashboard");
+          break;
+
+        case "tenant":
+        case "customer":
+        case "user":
+        default:
+          router.push("/dashboard");
+          break;
+      }
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
+
         if (data?.errors?.fieldErrors) {
-          const firstFieldErr = Object.values(data.errors.fieldErrors).flat()[0];
-          if (typeof firstFieldErr === "string") {
-            setErrorMessage(firstFieldErr);
+          const firstFieldError = Object.values(
+            data.errors.fieldErrors
+          ).flat()[0];
+
+          if (typeof firstFieldError === "string") {
+            setErrorMessage(firstFieldError);
             return;
           }
         }
-        if (data?.message) {
+
+        if (typeof data?.message === "string") {
           setErrorMessage(data.message);
           return;
         }
-        if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
-          setErrorMessage("Cannot connect to server. Please ensure the backend is running.");
+
+        if (
+          error.code === "ERR_NETWORK" ||
+          error.message === "Network Error"
+        ) {
+          setErrorMessage(
+            "Cannot connect to server. Please ensure the backend is running."
+          );
           return;
         }
       }
+
       if (error instanceof Error) {
         setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Login failed. Please check your credentials.");
+        return;
       }
-    } finally {
-      setIsLoading(false);
->>>>>>> dev
+
+      setErrorMessage(
+        "Login failed. Please check your credentials and try again."
+      );
     }
   };
 
@@ -225,7 +209,7 @@ export default function LoginForm() {
         </div>
       </section>
 
-      <section className="flex min-h-screen items-center justify-center px-5 py-12 sm:px-10 md:px-12 lg:px-20 overflow-y-auto">
+      <section className="flex min-h-screen items-center justify-center overflow-y-auto px-5 py-12 sm:px-10 md:px-12 lg:px-20">
         <div className="w-full max-w-[525px]">
           <Link
             href="/"
@@ -251,17 +235,19 @@ export default function LoginForm() {
             </p>
           </header>
 
-<<<<<<< HEAD
-          <form className="space-y-7" onSubmit={handleSubmit}>
-=======
           {errorMessage && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div
+              role="alert"
+              className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+            >
               {errorMessage}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-7">
->>>>>>> dev
+          <form
+            className="space-y-7"
+            onSubmit={handleSubmit}
+          >
             <div>
               <label
                 htmlFor="email"
@@ -271,10 +257,6 @@ export default function LoginForm() {
               </label>
 
               <div className="relative">
-<<<<<<< HEAD
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]"><EmailIcon /></span>
-                <input id="email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]" />
-=======
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]">
                   <EmailIcon />
                 </span>
@@ -283,13 +265,15 @@ export default function LoginForm() {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) =>
+                    setEmail(event.target.value)
+                  }
                   placeholder="you@example.com"
                   className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                 />
->>>>>>> dev
               </div>
             </div>
 
@@ -302,10 +286,6 @@ export default function LoginForm() {
               </label>
 
               <div className="relative">
-<<<<<<< HEAD
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]"><LockIcon /></span>
-                <input id="password" name="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-4 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]" />
-=======
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A968F]">
                   <LockIcon />
                 </span>
@@ -314,18 +294,27 @@ export default function LoginForm() {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   required
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) =>
+                    setPassword(event.target.value)
+                  }
                   placeholder="Enter your password"
                   className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-14 pr-12 text-lg outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                 />
 
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#9A968F] hover:text-[#1C1B1A] focus:outline-none transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() =>
+                    setShowPassword((current) => !current)
+                  }
+                  className="absolute inset-y-0 right-0 flex items-center pr-4 text-[#9A968F] transition-colors hover:text-[#1C1B1A] focus:outline-none"
+                  aria-label={
+                    showPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
                 >
                   {showPassword ? (
                     <EyeOff className="h-6 w-6" />
@@ -333,7 +322,6 @@ export default function LoginForm() {
                     <Eye className="h-6 w-6" />
                   )}
                 </button>
->>>>>>> dev
               </div>
             </div>
 
@@ -345,7 +333,6 @@ export default function LoginForm() {
                   type="checkbox"
                   className="h-5 w-5 rounded border-[#CFCBC3] accent-[#6C4CE6]"
                 />
-
                 Remember me
               </label>
 
@@ -357,20 +344,16 @@ export default function LoginForm() {
               </Link>
             </div>
 
-<<<<<<< HEAD
-            {errorMessage && <p role="alert" className="text-sm font-medium text-red-600">{errorMessage}</p>}
-
-            <button type="submit" disabled={isSubmitting} className="flex h-[62px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">
-              {isSubmitting ? "Signing in..." : "Sign In"}
-              <svg aria-hidden="true" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
-=======
             <button
               type="submit"
               disabled={isLoading}
               className="flex h-[62px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isLoading ? (
-                <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <span
+                  className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                  aria-label="Signing in"
+                />
               ) : (
                 <>
                   Sign In
@@ -388,23 +371,25 @@ export default function LoginForm() {
                   </svg>
                 </>
               )}
->>>>>>> dev
             </button>
           </form>
 
           <div className="my-10 flex items-center gap-5">
             <div className="h-px flex-1 bg-[#D8D4CC]" />
 
-            <span className="text-sm font-medium text-[#6F6B65]">OR</span>
+            <span className="text-sm font-medium text-[#6F6B65]">
+              OR
+            </span>
 
             <div className="h-px flex-1 bg-[#D8D4CC]" />
           </div>
 
           <button
-  type="button"
-  onClick={handleGoogleLogin}
-  className="flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold transition hover:bg-[#EEE9FF]"
->
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            className="flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold transition hover:bg-[#EEE9FF] disabled:cursor-not-allowed disabled:opacity-70"
+          >
             <GoogleIcon />
             Continue with Google
           </button>

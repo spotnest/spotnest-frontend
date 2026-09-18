@@ -1,36 +1,20 @@
 "use client";
 
+import { useRef, type ReactNode } from "react";
 import { Provider } from "react-redux";
-import type { ReactNode } from "react";
-import { store } from "../store/store";
 
-export function ReduxProvider({ children }: { children: ReactNode }) {
-    return <Provider store={store}>{children}</Provider>;
-    import { useEffect, useRef, type ReactNode } from "react";
-    import { Provider } from "react-redux";
-    import { makeStore, type AppStore } from "../store/store";
-    import { signInSucceeded } from "../store/slices/authSlice";
+import { makeStore, type AppStore } from "../store/store";
 
-    export function ReduxProvider({ children }: { children: ReactNode }) {
-        const storeRef = useRef<AppStore | null>(null);
-        if (!storeRef.current) {
-            storeRef.current = makeStore();
-        }
+interface ReduxProviderProps {
+  children: ReactNode;
+}
 
-        useEffect(() => {
-            if (typeof window !== "undefined" && storeRef.current) {
-                const storedUser = localStorage.getItem("user");
-                const token = localStorage.getItem("accessToken");
-                if (storedUser && token) {
-                    try {
-                        const parsed = JSON.parse(storedUser);
-                        storeRef.current.dispatch(signInSucceeded(parsed));
-                    } catch {
-                        // ignore parsing error
-                    }
-                }
-            }
-        }, []);
+export function ReduxProvider({ children }: ReduxProviderProps) {
+  const storeRef = useRef<AppStore | null>(null);
 
-        return <Provider store={storeRef.current}>{children}</Provider>;
-    }
+  if (!storeRef.current) {
+    storeRef.current = makeStore();
+  }
+
+  return <Provider store={storeRef.current}>{children}</Provider>;
+}
