@@ -23,6 +23,7 @@ export default function UsersPage() {
         onSuccess: async () => {
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+                queryClient.invalidateQueries({ queryKey: ["owner-approval-requests"] }),
                 queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
             ]);
         },
