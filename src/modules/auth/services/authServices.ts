@@ -1,5 +1,6 @@
 import api from "../../../lib/axios";
 import type {
+  AdminUser,
   AuthUser,
   LoginPayload,
   LoginResponse,
@@ -7,6 +8,16 @@ import type {
   SignupPendingResponse,
   VerifyEmailPayload,
 } from "../types/auth";
+
+export const getAdminUsers = async (): Promise<AdminUser[]> => {
+  const response = await api.get<{ success: boolean; data: AdminUser[] }>("/auth/admin/users");
+  return response.data.data;
+};
+
+export const approveOwner = async (userId: string): Promise<{ message: string }> => {
+  const response = await api.patch<{ success: boolean; data: { message: string } }>(`/auth/admin/verifications/${userId}/approve`);
+  return response.data.data;
+};
 
 export const signup = async (
   payload: SignupPayload
@@ -90,6 +101,15 @@ export const resetPassword = async (
     otp,
     newPassword,
   });
+  return response.data.data;
+};
 
+export const updateProfile = async (payload: { name?: string; phone?: string }): Promise<AuthUser> => {
+  const response = await api.patch<{ success: boolean; data: AuthUser }>("/auth/me", payload);
+  return response.data.data;
+};
+
+export const changePassword = async (payload: { currentPassword: string; newPassword: string; confirmPassword: string }): Promise<{ message: string }> => {
+  const response = await api.patch<{ success: boolean; data: { message: string } }>("/auth/me/password", payload);
   return response.data.data;
 };

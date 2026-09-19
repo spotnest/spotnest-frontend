@@ -1,10 +1,5 @@
-import DashboardShell from "@/src/modules/dashboard/components/DashboardShell";
-import AdminDashboard from "@/src/modules/dashboard/components/AdminDashboard";
+import DashboardRouter from "@/src/modules/dashboard/components/DashboardRouter";
 
 export default function DashboardPage() {
-    return (
-        <DashboardShell role="admin">
-            <AdminDashboard />
-        </DashboardShell>
-    );
+    return <DashboardRouter />;
 }
