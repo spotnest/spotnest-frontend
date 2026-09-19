@@ -25,6 +25,18 @@ export interface AdminUser {
   createdAt: string;
 }
 
+export interface OwnerApprovalRequest {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  status: "active" | "inactive" | "suspended";
+  isVerified: boolean;
+  verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
+  createdAt: string;
+  submittedAt?: string;
+}
+
 export interface LoginPayload {
   email: string;
   password: string;
