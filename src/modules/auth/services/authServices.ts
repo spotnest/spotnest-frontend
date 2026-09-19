@@ -1,5 +1,6 @@
 import api from "../../../lib/axios";
 import type {
+  AuthUser,
   LoginPayload,
   LoginResponse,
   SignupPayload,
@@ -29,6 +30,34 @@ export const verifyEmail = async (
   const response = await api.post("/auth/verify-email", payload);
 
   return response.data.data;
+};
+
+export const refresh = async (): Promise<LoginResponse> => {
+  /**
+   * Browser automatically attaches the HttpOnly refreshToken cookie.
+   * No request body is sent.
+   */
+  const response = await api.post("/auth/refresh");
+
+  return response.data.data;
+};
+
+export const getCurrentUser = async (): Promise<AuthUser> => {
+  /**
+   * Browser automatically attaches the HttpOnly accessToken cookie.
+   */
+  const response = await api.get("/auth/me");
+
+  return response.data.data;
+};
+
+export const logout = async (): Promise<{ success: boolean; message: string }> => {
+  /**
+   * Clears HttpOnly cookies on the backend.
+   */
+  const response = await api.post("/auth/logout");
+
+  return response.data;
 };
 
 export const resendVerification = async (
@@ -61,6 +90,5 @@ export const resetPassword = async (
     otp,
     newPassword,
   });
-
   return response.data.data;
 };

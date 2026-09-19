@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Icon, type IconName } from "./DashboardShell";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
 import type { DashboardUser } from "../types/dashboard";
+import { IconName } from "../../types/iconName";
+import { Icon } from "../../components/Icon";
 
 function formatRelativeTime(value: string): string {
     const elapsed = Date.now() - new Date(value).getTime();
@@ -69,7 +70,6 @@ export default function AdminDashboard() {
         { label: "Pending requests", value: overview.pendingRequests, change: "No booking data", note: "available yet", icon: "inbox" as IconName, tone: "warm" },
     ];
     const actions = [
-        { label: "Add property", description: "Create a new listing", href: "/properties", icon: "plus" as IconName },
         { label: "Manage users", description: "View all accounts", href: "/users", icon: "users" as IconName },
         { label: "Review requests", description: `${overview.pendingRequests} requests`, href: "/bookings", icon: "inbox" as IconName },
         { label: "View reports", description: "Track platform health", href: "/dashboard#reports", icon: "chart" as IconName },
@@ -89,7 +89,6 @@ export default function AdminDashboard() {
                     <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#191c1d]">SpotNest platform overview.</h1>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-[#44474d] sm:text-base">Here&apos;s what&apos;s happening across SpotNest today.</p>
                 </div>
-                <Link href="/properties" className="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-full bg-[#00696b] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(0,105,107,0.15)] transition hover:bg-[#004f51]"><Icon name="plus" className="h-4 w-4" /> Add property</Link>
             </section>
 
             <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Platform statistics">

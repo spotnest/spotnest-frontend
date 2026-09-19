@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -19,12 +19,26 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+import { useAppSelector } from "@/src/store/hook";
 import { signup } from "../services/authServices";
 
 type RoleType = "renter" | "agent";
 
 export default function RegisterForm() {
   const router = useRouter();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (user?.role === "owner") {
+        router.replace("/owner/dashboard");
+      } else if (user?.role === "admin") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/user/dashboard");
+      }
+    }
+  }, [isAuthenticated, user, router]);
 
   const [role, setRole] = useState<RoleType>("renter");
   const [fullName, setFullName] = useState("");
@@ -241,6 +255,10 @@ export default function RegisterForm() {
       setIsLoading(false);
     }
   };
+
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-[#F7F5F0] text-[#1C1B1A] md:grid md:grid-cols-2">

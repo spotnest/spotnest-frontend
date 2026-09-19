@@ -1,4 +1,4 @@
-import DashboardShell from "@/src/modules/dashboard/components/DashboardShell";
+import DashboardShell from "@/src/modules/dashboard/admin-dasboard/components/DashboardShell";
 import Link from "next/link";
 
 export default function OwnerDashboardPage() {
