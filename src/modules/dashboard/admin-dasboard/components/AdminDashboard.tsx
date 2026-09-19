@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Icon, type IconName } from "./DashboardShell";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
 import type { DashboardUser } from "../types/dashboard";
+import { IconName } from "../../types/iconName";
+import { Icon } from "../../components/Icon";
 
 function formatRelativeTime(value: string): string {
     const elapsed = Date.now() - new Date(value).getTime();

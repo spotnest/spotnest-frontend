@@ -90,6 +90,5 @@ export const resetPassword = async (
     otp,
     newPassword,
   });
-
   return response.data.data;
 };

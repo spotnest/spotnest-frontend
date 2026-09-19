@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon, type IconName } from "./DashboardShell";
+import { Icon } from "./Icon";
+import { IconName } from "../types/iconName";
+import { SidebarProps } from "../types/sidebarProps";
 
 const navigation = [
     { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
@@ -11,9 +13,6 @@ const navigation = [
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
 
-interface SidebarProps {
-    onNavigate?: () => void;
-}
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
     const pathname = usePathname();

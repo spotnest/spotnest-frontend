@@ -2,8 +2,10 @@
 
 import { useState, useMemo, type FormEvent } from "react";
 import Link from "next/link";
-import DashboardShell, { Icon, type IconName } from "./DashboardShell";
 import { useAppSelector } from "@/src/store/hook";
+import { IconName } from "../types/iconName";
+import DashboardShell from "../components/DashboardShell";
+import { Icon } from "../components/Icon";
 
 interface QuickAction {
     label: string;
@@ -347,11 +349,10 @@ export default function UserDashboard() {
                                     <Link
                                         key={action.label}
                                         href={action.href}
-                                        className={`flex flex-col items-center justify-center rounded-xl p-4 text-center transition ${
-                                            action.accent
-                                                ? "bg-[#00696b] text-white hover:bg-[#004f51] shadow-xs"
-                                                : "bg-[#f8f9fa] text-[#191c1d] hover:bg-[#f3f4f5] border border-transparent hover:border-[#e1e3e4]"
-                                        }`}
+                                        className={`flex flex-col items-center justify-center rounded-xl p-4 text-center transition ${action.accent
+                                            ? "bg-[#00696b] text-white hover:bg-[#004f51] shadow-xs"
+                                            : "bg-[#f8f9fa] text-[#191c1d] hover:bg-[#f3f4f5] border border-transparent hover:border-[#e1e3e4]"
+                                            }`}
                                     >
                                         <span className="mb-2">
                                             <Icon name={action.icon} className="h-5 w-5" />

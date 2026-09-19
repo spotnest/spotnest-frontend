@@ -1,0 +1,18 @@
+export type IconName =
+    | "grid"
+    | "users"
+    | "home"
+    | "inbox"
+    | "chart"
+    | "settings"
+    | "search"
+    | "bell"
+    | "menu"
+    | "close"
+    | "arrow"
+    | "plus"
+    | "chevron"
+    | "check"
+    | "clock"
+    | "alert"
+    | "logout";
