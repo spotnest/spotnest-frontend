@@ -1,4 +1,4 @@
-import UserDashboard from "@/src/modules/dashboard/admin-dasboard/components/UserDashboard";
+import UserDashboard from "@/src/modules/dashboard/tanant-dashboard/UserDashboard";
 
 export default function UserDashboardPage() {
     return <UserDashboard />;

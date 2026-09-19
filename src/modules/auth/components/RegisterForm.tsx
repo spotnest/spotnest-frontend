@@ -157,27 +157,16 @@ export default function RegisterForm() {
     try {
       setIsLoading(true);
 
-      /*
-       * Your backend signup schema accepts:
-       * name
-       * email
-       * password
-       * phone (optional)
-       * image (optional)
-       *
-       * Role is currently only a frontend UI selection.
-       * We do NOT send it because your backend signup schema
-       * does not accept a role field.
-       */
       const result = await signup({
         name: trimmedName,
         email: trimmedEmail,
         password,
+        role: role === "agent" ? "owner" : "user",
       });
 
       setSuccessMessage(
         result.message ||
-          "Account created. Check your email for a verification code."
+        "Account created. Check your email for a verification code."
       );
 
       setIsSuccess(true);
@@ -372,16 +361,14 @@ export default function RegisterForm() {
                   <button
                     type="button"
                     onClick={() => setRole("renter")}
-                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-                      role === "renter"
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${role === "renter"
                         ? "bg-white text-[#1C1B1A] shadow-sm font-semibold"
                         : "text-[#6F6B65] hover:text-[#1C1B1A]"
-                    }`}
+                      }`}
                   >
                     <HomeIcon
-                      className={`w-4 h-4 ${
-                        role === "renter" ? "text-[#6C4CE6]" : ""
-                      }`}
+                      className={`w-4 h-4 ${role === "renter" ? "text-[#6C4CE6]" : ""
+                        }`}
                     />
 
                     <span>Renter / Buyer</span>
@@ -390,16 +377,14 @@ export default function RegisterForm() {
                   <button
                     type="button"
                     onClick={() => setRole("agent")}
-                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-                      role === "agent"
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${role === "agent"
                         ? "bg-white text-[#1C1B1A] shadow-sm font-semibold"
                         : "text-[#6F6B65] hover:text-[#1C1B1A]"
-                    }`}
+                      }`}
                   >
                     <Building2
-                      className={`w-4 h-4 ${
-                        role === "agent" ? "text-[#6C4CE6]" : ""
-                      }`}
+                      className={`w-4 h-4 ${role === "agent" ? "text-[#6C4CE6]" : ""
+                        }`}
                     />
 
                     <span>Property Agent</span>
@@ -504,9 +489,8 @@ export default function RegisterForm() {
                         </span>
 
                         <span
-                          className={`font-semibold ${
-                            getStrengthLabel(passwordStrengthScore).text
-                          }`}
+                          className={`font-semibold ${getStrengthLabel(passwordStrengthScore).text
+                            }`}
                         >
                           {getStrengthLabel(passwordStrengthScore).label}
                         </span>
@@ -516,22 +500,20 @@ export default function RegisterForm() {
                         {[1, 2, 3, 4].map((step) => (
                           <div
                             key={step}
-                            className={`h-full rounded-full transition-colors duration-300 ${
-                              step <= passwordStrengthScore
+                            className={`h-full rounded-full transition-colors duration-300 ${step <= passwordStrengthScore
                                 ? getStrengthLabel(passwordStrengthScore).color
                                 : "bg-[#EAE6DF]"
-                            }`}
+                              }`}
                           />
                         ))}
                       </div>
 
                       <div className="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
                         <div
-                          className={`flex items-center gap-1 ${
-                            passwordCriteria.length
+                          className={`flex items-center gap-1 ${passwordCriteria.length
                               ? "text-emerald-600 font-medium"
                               : "text-[#9A968F]"
-                          }`}
+                            }`}
                         >
                           {passwordCriteria.length ? (
                             <Check className="w-3 h-3" />
@@ -543,11 +525,10 @@ export default function RegisterForm() {
                         </div>
 
                         <div
-                          className={`flex items-center gap-1 ${
-                            passwordCriteria.uppercase
+                          className={`flex items-center gap-1 ${passwordCriteria.uppercase
                               ? "text-emerald-600 font-medium"
                               : "text-[#9A968F]"
-                          }`}
+                            }`}
                         >
                           {passwordCriteria.uppercase ? (
                             <Check className="w-3 h-3" />
@@ -559,11 +540,10 @@ export default function RegisterForm() {
                         </div>
 
                         <div
-                          className={`flex items-center gap-1 ${
-                            passwordCriteria.number
+                          className={`flex items-center gap-1 ${passwordCriteria.number
                               ? "text-emerald-600 font-medium"
                               : "text-[#9A968F]"
-                          }`}
+                            }`}
                         >
                           {passwordCriteria.number ? (
                             <Check className="w-3 h-3" />
@@ -575,11 +555,10 @@ export default function RegisterForm() {
                         </div>
 
                         <div
-                          className={`flex items-center gap-1 ${
-                            passwordCriteria.special
+                          className={`flex items-center gap-1 ${passwordCriteria.special
                               ? "text-emerald-600 font-medium"
                               : "text-[#9A968F]"
-                          }`}
+                            }`}
                         >
                           {passwordCriteria.special ? (
                             <Check className="w-3 h-3" />

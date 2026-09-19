@@ -1,5 +1,6 @@
 export type PropertyType = "apartment" | "house" | "villa" | "studio" | "room";
 export type PropertyStatus = "active" | "inactive" | "archived";
+export type PropertyRentalStatus = "available";
 
 export interface PropertyImage {
     url: string;
@@ -50,4 +51,31 @@ export interface PropertyListResponse {
         total: number;
         pages: number;
     };
+}
+
+export interface AdminPropertyOwner {
+    _id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    isVerified: boolean;
+    verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
+    status: "active" | "inactive" | "suspended";
+}
+
+export interface AdminProperty extends Omit<Property, "owner" | "price"> {
+    owner: AdminPropertyOwner | null;
+    price: number | null;
+    rentalStatus: PropertyRentalStatus;
+}
+
+export interface AdminPropertyListParams extends Omit<PropertyListParams, "city"> {
+    search?: string;
+    status?: PropertyStatus;
+    city?: string;
+}
+
+export interface AdminPropertyListResponse {
+    items: AdminProperty[];
+    pagination: PropertyListResponse["pagination"];
 }
