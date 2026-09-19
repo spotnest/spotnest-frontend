@@ -2,6 +2,7 @@ export interface AuthUser {
     id: string;
     name: string;
     email: string;
+    phone?: string;
     role: "user" | "owner" | "admin" | "customer" | "tenant";
     image?: string;
     isVerified?: boolean;

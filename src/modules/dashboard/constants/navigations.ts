@@ -3,7 +3,7 @@ import { IconName } from "../types/iconName";
 export const adminNavigation = [
     { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
     { label: "Users", href: "/users", icon: "users" as IconName },
-    { label: "Properties", href: "/properties", icon: "home" as IconName },
+    { label: "Properties", href: "/admin/properties", icon: "home" as IconName },
     { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
     { label: "Reports", href: "/dashboard#reports", icon: "chart" as IconName },
     { label: "Settings", href: "/settings", icon: "settings" as IconName },

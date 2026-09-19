@@ -10,8 +10,19 @@ export interface AuthUser {
   email: string;
   role: UserRole | "user" | "admin" | "owner";
   image?: string;
+  phone?: string;
   isVerified?: boolean;
   isBlock?: boolean;
+}
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "owner" | "user";
+  status: "active" | "inactive" | "suspended";
+  isVerified: boolean;
+  createdAt: string;
 }
 
 export interface LoginPayload {
@@ -29,6 +40,7 @@ export interface SignupPayload {
   password: string;
   phone?: string;
   image?: string;
+  role?: "user" | "owner";
 }
 
 export interface SignupPendingResponse {
