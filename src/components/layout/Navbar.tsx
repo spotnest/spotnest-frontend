@@ -1,60 +1,105 @@
 import Link from "next/link";
 
 export default function Navbar() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, user, isInitialized } = useAppSelector(
+    (state) => state.auth
+  );
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout request failed:", error);
+    } finally {
+      dispatch(signedOut());
+      router.push("/login");
+    }
+  };
+
+  const dashboardHref =
+    user?.role === "owner"
+      ? "/owner/dashboard"
+      : user?.role === "admin"
+      ? "/dashboard"
+      : "/user/dashboard";
+
   return (
-    <header className="border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        
-        {/* Logo */}
-        <Link href="/" className="text-2xl font-bold tracking-tight text-slate-900">
-          Spot<span className="text-emerald-600">nest</span>
+    <header className="border-b border-[#e7e8e9] bg-[#f8f9fa]/95 px-4 backdrop-blur sm:px-6 lg:px-10">
+      <nav className="mx-auto flex h-16 max-w-[1280px] items-center justify-between">
+        <Link
+          href="/"
+          className="text-xl font-bold tracking-[-0.04em] text-[#191c1d] sm:text-2xl"
+        >
+          SpotNest
         </Link>
 
-        {/* Navigation */}
-        <div className="hidden items-center gap-8 md:flex text-slate-600">
-          <Link href="/" className="text-sm font-medium hover:text-emerald-600 transition-colors">
+        <div className="hidden items-center gap-7 lg:flex">
+          <Link
+            href="/"
+            className="border-b-2 border-[#191c1d] py-1 text-sm font-medium text-[#191c1d] transition hover:text-[#00696b]"
+          >
             Home
           </Link>
 
           <Link
             href="/properties"
-            className="text-sm font-medium hover:text-emerald-600 transition-colors"
+            className="border-b-2 border-transparent py-1 text-sm font-medium text-[#191c1d] transition hover:border-[#00696b] hover:text-[#00696b]"
           >
             Properties
           </Link>
 
           <Link
             href="/about"
-            className="text-sm font-medium hover:text-emerald-600 transition-colors"
+            className="border-b-2 border-transparent py-1 text-sm font-medium text-[#191c1d] transition hover:border-[#00696b] hover:text-[#00696b]"
           >
             About
           </Link>
 
           <Link
             href="/contact"
-            className="text-sm font-medium hover:text-emerald-600 transition-colors"
+            className="border-b-2 border-transparent py-1 text-sm font-medium text-[#191c1d] transition hover:border-[#00696b] hover:text-[#00696b]"
           >
             Contact
           </Link>
         </div>
 
-        {/* Auth buttons */}
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
-          >
-            Login
-          </Link>
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          {isInitialized && isAuthenticated ? (
+            <>
+              <Link
+                href={dashboardHref}
+                className="rounded-full bg-[#00696b] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#004f51] sm:px-5"
+              >
+                Dashboard
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-full border border-[#ba1a1a]/30 px-3 py-2 text-sm font-medium text-[#ba1a1a] transition hover:bg-[#ffdad6]/40 sm:px-4"
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-full px-3 py-2 text-sm font-medium text-[#191c1d] transition hover:bg-[#edeeef] sm:px-4"
+              >
+                Login
+              </Link>
 
-          <Link
-            href="/register"
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all"
-          >
-            Register
-          </Link>
+              <Link
+                href="/register"
+                className="rounded-full bg-[#191c1d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#00696b] sm:px-5"
+              >
+                Register
+              </Link>
+            </>
+          )}
         </div>
-
       </nav>
     </header>
   );
