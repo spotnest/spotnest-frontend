@@ -75,7 +75,7 @@ export default function AdminDashboard() {
         { label: "View reports", description: "Track platform health", href: "/dashboard#reports", icon: "chart" as IconName },
     ];
     const pendingActions: Array<[string, string, IconName, string]> = [
-        ...(overview.pendingOwnerCount > 0 ? [["Owner approvals", `${overview.pendingOwnerCount} owners waiting for approval`, "users" as IconName, "/users"] as [string, string, IconName, string]] : []),
+        ...(overview.pendingOwnerCount > 0 ? [["Owner approvals", `${overview.pendingOwnerCount} owners waiting for approval`, "users" as IconName, "/admin/requests/owner-approvals"] as [string, string, IconName, string]] : []),
         ["Properties waiting for approval", `${overview.totalProperties - overview.activeListings} properties`, "home" as IconName, "/admin/properties"],
         ["Requests to review", `${overview.pendingRequests} requests`, "inbox" as IconName, "/bookings"],
         ["User verification", `${overview.pendingUserVerification} accounts`, "users" as IconName, "/users"],

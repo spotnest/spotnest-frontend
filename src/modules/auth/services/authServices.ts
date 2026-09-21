@@ -7,7 +7,13 @@ import type {
   SignupPayload,
   SignupPendingResponse,
   VerifyEmailPayload,
+  OwnerApprovalRequest,
 } from "../types/auth";
+
+export const getOwnerApprovalRequests = async (): Promise<OwnerApprovalRequest[]> => {
+  const response = await api.get<{ success: boolean; data: OwnerApprovalRequest[] }>("/auth/admin/verifications");
+  return response.data.data;
+};
 
 export const getAdminUsers = async (): Promise<AdminUser[]> => {
   const response = await api.get<{ success: boolean; data: AdminUser[] }>("/auth/admin/users");

@@ -1,15 +1,22 @@
 import { IconName } from "../types/iconName";
 
-export const adminNavigation = [
+export interface NavigationItem {
+    label: string;
+    href: string;
+    icon: IconName;
+    children?: { label: string; href: string }[];
+}
+
+export const adminNavigation: NavigationItem[] = [
     { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
     { label: "Users", href: "/users", icon: "users" as IconName },
     { label: "Properties", href: "/admin/properties", icon: "home" as IconName },
-    { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
+    { label: "Requests", href: "/bookings", icon: "inbox" as IconName, children: [{ label: "Owner Approval Requests", href: "/admin/requests/owner-approvals" }] },
     { label: "Reports", href: "/dashboard#reports", icon: "chart" as IconName },
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
 
-export const userNavigation = [
+export const userNavigation: NavigationItem[] = [
     { label: "Dashboard", href: "/user/dashboard", icon: "grid" as IconName },
     { label: "My Rental / Properties", href: "/properties", icon: "home" as IconName },
     { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
@@ -19,7 +26,7 @@ export const userNavigation = [
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
 
-export const ownerNavigation = [
+export const ownerNavigation: NavigationItem[] = [
     { label: "Dashboard", href: "/owner/dashboard", icon: "grid" as IconName },
     { label: "Properties", href: "/properties", icon: "home" as IconName },
     { label: "Requests", href: "/bookings", icon: "inbox" as IconName },

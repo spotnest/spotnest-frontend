@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import { signedOut } from "@/src/store/slices/authSlice";
-import { logout } from "@/src/modules/auth/services/authServices";
+import { getOwnerApprovalRequests, logout } from "@/src/modules/auth/services/authServices";
 import { Icon } from "./Icon";
 import { adminNavigation, ownerNavigation, userNavigation } from "../constants/navigations";
 import { SidebarProps } from "../types/sidebarProps";
@@ -15,6 +16,11 @@ import { DashboardShellProps } from "../types/dashboardShell";
 
 function Sidebar({ role, onNavigate }: SidebarProps) {
     const pathname = usePathname();
+    const ownerApprovalsQuery = useQuery({
+        queryKey: ["owner-approval-requests"],
+        queryFn: getOwnerApprovalRequests,
+        enabled: role === "admin",
+    });
 
     const items = role === "admin" ? adminNavigation : role === "owner" ? ownerNavigation : userNavigation;
     const portalTitle = role === "admin" ? "Admin Workspace" : role === "owner" ? "Owner Portal" : "Tenant Portal";
@@ -41,22 +47,9 @@ function Sidebar({ role, onNavigate }: SidebarProps) {
             <nav className="mt-3 flex-1 space-y-1.5" aria-label="Dashboard navigation">
                 {items.map((item) => {
                     const isBase = item.href.split("#")[0];
-                    const isActive = isBase === pathname || (item.href === "/user/dashboard" && pathname === "/user/dashboard");
+                    const isActive = isBase === pathname || (item.href === "/user/dashboard" && pathname === "/user/dashboard") || item.children?.some((child) => pathname === child.href);
 
-                    return (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            onClick={onNavigate}
-                            className={`flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition ${isActive
-                                ? "bg-[#d9f4f3] text-[#00696b]"
-                                : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"
-                                }`}
-                        >
-                            <Icon name={item.icon} className="h-5 w-5" />
-                            <span>{item.label}</span>
-                        </Link>
-                    );
+                    return <div key={item.label}><Link href={item.href} onClick={onNavigate} className={`flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition ${isActive ? "bg-[#d9f4f3] text-[#00696b]" : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"}`}><Icon name={item.icon} className="h-5 w-5" /><span>{item.label}</span></Link>{item.children?.map((child) => <Link key={child.href} href={child.href} onClick={onNavigate} className={`ml-8 flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition ${pathname === child.href ? "bg-[#d9f4f3] text-[#00696b]" : "text-[#75777e] hover:bg-[#f3f4f5] hover:text-[#191c1d]"}`}><span>{child.label}</span>{role === "admin" && child.href === "/admin/requests/owner-approvals" && <span className="ml-2 rounded-full bg-[#00696b] px-2 py-0.5 text-[10px] font-bold text-white">{ownerApprovalsQuery.data?.length ?? 0}</span>}</Link>)}</div>;
                 })}
             </nav>
 
