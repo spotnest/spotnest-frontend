@@ -1,10 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/src/store/hook";
-import { signedOut } from "@/src/store/slices/authSlice";
-import { logout } from "@/src/modules/auth/services/authServices";
 
 export default function Navbar() {
   const router = useRouter();
