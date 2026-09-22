@@ -28,10 +28,11 @@ export function useSignup() {
         message: result.message,
         user: result.user,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
       const message =
-        error?.response?.data?.message ||
-        error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
         "Unable to create your account. Please try again.";
 
       dispatch(authRequestFailed(message));

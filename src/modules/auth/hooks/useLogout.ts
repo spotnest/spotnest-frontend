@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { logout } from "../services/authServices";
 import {
@@ -13,6 +14,7 @@ import { queryClient } from "@/src/lib/queryClient";
 
 export function useLogout() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,21 +27,30 @@ export function useLogout() {
        * The backend clears the HTTP-only authentication cookies.
        */
       await logout();
-    } catch (error: any) {
+    } catch (error: unknown) {
       /*
        * Even if the backend request fails, clear the local
        * authentication state. The user should not remain
        * logged in in the UI after requesting logout.
        */
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
       const message =
-        error?.response?.data?.message ||
-        error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
         "Logout request failed.";
 
       dispatch(authRequestFailed(message));
-
-      throw error;
     } finally {
+      /*
+       * Always clear client storage items if any exist.
+       */
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        sessionStorage.clear();
+      }
+
       /*
        * Always clear Redux authentication state.
        */
@@ -47,13 +58,15 @@ export function useLogout() {
 
       /*
        * Remove private server-state data from TanStack Query.
-       *
-       * This prevents data belonging to the previous user
-       * from remaining in the client cache.
        */
       queryClient.clear();
 
       setIsLoading(false);
+
+      /*
+       * Redirect to login page and replace navigation history.
+       */
+      router.replace("/login");
     }
   };
 
@@ -61,4 +74,4 @@ export function useLogout() {
     logout: executeLogout,
     isLoading,
   };
-}
+}

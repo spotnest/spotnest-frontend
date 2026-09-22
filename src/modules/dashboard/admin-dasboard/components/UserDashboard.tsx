@@ -83,7 +83,7 @@ export default function UserDashboard() {
     };
 
     return (
-        <DashboardShell role="user">
+        <DashboardShell title="Tenant Overview">
             <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10 lg:py-12">
                 {/* Header Greeting */}
                 <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">

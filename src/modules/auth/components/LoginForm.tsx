@@ -7,6 +7,7 @@ import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 
 import { useLogin } from "../hooks/useLogin";
+import { getDashboardRouteForRole } from "../utils/roleUtils";
 
 const EmailIcon = () => (
   <svg
@@ -122,22 +123,8 @@ if (result.requiresOtp && result.email && result.purpose) {
         return;
       }
 
-      switch (result.user.role) {
-        case "admin":
-          router.push("/admin/dashboard");
-          break;
-
-        case "owner":
-          router.push("/owner/dashboard");
-          break;
-
-        case "tenant":
-        case "customer":
-        case "user":
-        default:
-          router.push("/dashboard");
-          break;
-      }
+      const targetRoute = getDashboardRouteForRole(result.user.role);
+      router.push(targetRoute);
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;

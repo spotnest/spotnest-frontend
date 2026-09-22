@@ -1,24 +1,23 @@
 "use client";
 
 import type { ReactNode } from "react";
-
 import { useCurrentUser } from "@/src/modules/auth/hooks/useCurrentUser";
 
 interface AuthProviderProps {
-  children: ReactNode;
+    children: ReactNode;
 }
 
 function AuthSessionInitializer() {
-  useCurrentUser();
+    useCurrentUser();
 
-  return null;
+    return null;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  return (
-    <>
-      <AuthSessionInitializer />
-      {children}
-    </>
-  );
+    return (
+        <>
+            <AuthSessionInitializer />
+            {children}
+        </>
+    );
 }

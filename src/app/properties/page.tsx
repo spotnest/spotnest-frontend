@@ -1,11 +1,21 @@
 import PropertyGrid from "@/src/modules/properties/components/PropertyGrid";
 import { getProperties } from "@/src/modules/properties/services/propertyServer";
+import type { Property } from "@/src/modules/properties/types/property";
+
+export const dynamic = "force-dynamic";
 
 export default async function PropertiesPage() {
-  const result = await getProperties({
-    page: 1,
-    limit: 12,
-  });
+  let items: Property[] = [];
+
+  try {
+    const result = await getProperties({
+      page: 1,
+      limit: 12,
+    });
+    items = result.items;
+  } catch (error) {
+    console.error("Failed to load properties at build/request time:", error);
+  }
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
@@ -19,7 +29,7 @@ export default async function PropertiesPage() {
         </p>
       </div>
 
-      <PropertyGrid properties={result.items} />
+      <PropertyGrid properties={items} />
     </main>
   );
-}
+}

@@ -55,10 +55,11 @@ export function useLogin() {
         requiresOtp: false,
         user: result.user,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
       const message =
-        error?.response?.data?.message ||
-        error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
         "Login failed. Please check your credentials and try again.";
 
       dispatch(authRequestFailed(message));

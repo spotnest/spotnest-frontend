@@ -2,41 +2,58 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getDashboardRouteForRole } from "@/src/modules/auth/utils/roleUtils";
+
+import { getCurrentUser } from "@/src/modules/auth/services/authServices";
+import { signInSucceeded } from "@/src/store/slices/authSlice";
+import { useAppDispatch } from "@/src/store/hook";
 
 function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const dispatch = useAppDispatch();
 
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    const refreshToken = searchParams.get("refreshToken");
-    const userParam = searchParams.get("user");
-
-    if (!token || !refreshToken || !userParam) {
-      setError("Google authentication failed. Missing authentication data.");
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      queueMicrotask(() => {
+        setError(errorParam);
+      });
       return;
     }
 
-    try {
-      const user = JSON.parse(userParam);
+    const processOAuthSession = async () => {
+      try {
+        const { user } = await getCurrentUser();
 
-      localStorage.setItem("accessToken", token);
-      localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("user", JSON.stringify(user));
+        if (user && (user.id || user.email)) {
+          dispatch(signInSucceeded(user));
+          const targetRoute = getDashboardRouteForRole(user.role);
+          router.replace(targetRoute);
+          return;
+        }
 
-      if (user.role === "user") {
-        router.replace("/user/dashboard");
-      } else if (user.role === "owner") {
-        router.replace("/owner/dashboard");
-      } else {
-        router.replace("/dashboard");
+        // Fallback for query param user object if provided
+        const userParam = searchParams.get("user");
+        if (userParam) {
+          const parsedUser = JSON.parse(userParam);
+          dispatch(signInSucceeded(parsedUser));
+          const targetRoute = getDashboardRouteForRole(parsedUser.role);
+          router.replace(targetRoute);
+          return;
+        }
+
+        setError("Google authentication failed. No active session found.");
+      } catch {
+        setError("Google authentication failed. Please try again.");
       }
-    } catch {
-      setError("Google authentication failed. Please try again.");
-    }
-  }, [router, searchParams]);
+    };
+
+    void processOAuthSession();
+  }, [dispatch, router, searchParams]);
+
 
   if (error) {
     return (

@@ -12,6 +12,7 @@ import {
 
 import { signInSucceeded } from "@/src/store/slices/authSlice";
 import { useAppDispatch } from "@/src/store/hook";
+import { getDashboardRouteForRole } from "../utils/roleUtils";
 
 const OTP_LENGTH = 6;
 
@@ -155,22 +156,8 @@ export default function OtpVerificationForm() {
         );
 
         setTimeout(() => {
-          switch (result.user.role) {
-            case "admin":
-              router.push("/admin/dashboard");
-              break;
-
-            case "owner":
-              router.push("/owner/dashboard");
-              break;
-
-            case "tenant":
-            case "customer":
-            case "user":
-            default:
-              router.push("/dashboard");
-              break;
-          }
+          const targetRoute = getDashboardRouteForRole(result.user.role);
+          router.push(targetRoute);
         }, 800);
 
         return;

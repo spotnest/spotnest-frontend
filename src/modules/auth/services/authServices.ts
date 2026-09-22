@@ -3,6 +3,7 @@ import api from "@/src/lib/axios";
 import type {
   AuthMessageResponse,
   AuthResponse,
+  AuthUser,
   CurrentUserResponse,
   ForgotPasswordPayload,
   LoginPayload,
@@ -53,13 +54,21 @@ export const login = async (
  *
  * This is the main endpoint used to restore the frontend session
  * after a page refresh.
+ * Backend `/auth/me` returns `{ success: true, data: req.user }`.
  */
 export const getCurrentUser = async (): Promise<CurrentUserResponse> => {
   const response = await api.get<{
-    data: CurrentUserResponse;
+    success?: boolean;
+    data: AuthUser | { user: AuthUser };
   }>("/auth/me");
 
-  return response.data.data;
+  const rawData = response.data.data;
+  const user =
+    rawData && typeof rawData === "object" && "user" in rawData && rawData.user
+      ? rawData.user
+      : (rawData as AuthUser);
+
+  return { user };
 };
 
 /**
@@ -135,8 +144,14 @@ export const refreshSession = async (): Promise<AuthResponse> => {
  */
 export const logout = async (): Promise<AuthMessageResponse> => {
   const response = await api.post<{
-    data: AuthMessageResponse;
+    data?: AuthMessageResponse;
+    message?: string;
   }>("/auth/logout");
 
-  return response.data.data;
+  const message =
+    response.data.message ||
+    response.data.data?.message ||
+    "Logged out successfully";
+
+  return { message };
 };
