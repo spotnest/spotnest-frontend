@@ -13,6 +13,8 @@ export interface AuthUser {
   phone?: string;
   isVerified?: boolean;
   isBlock?: boolean;
+  locationName?: string;
+  locationResolvedName?: string;
 }
 
 export interface AdminUser {

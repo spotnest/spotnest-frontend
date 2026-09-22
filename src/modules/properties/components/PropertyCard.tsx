@@ -1,21 +1,15 @@
-"use client";
-
 import Link from "next/link";
-import type { Property } from "../types";
+import Image from "next/image";
+import { formatPrice, propertyTypeLabels } from "../utils/format";
+import type { PropertySummary } from "../types";
 
-const propertyTypeLabels: Record<string, string> = {
-  apartment: "Apartment",
-  house: "House",
-  villa: "Villa",
-  studio: "Studio",
-  room: "Room",
-};
+interface PropertyCardProps {
+    property: PropertySummary;
+    // Above-the-fold cards load eagerly so the first rendered row paints fast.
+    imagePriority?: boolean;
+}
 
-const formatPrice = (price: number) => {
-  return `₹${price.toLocaleString("en-IN")}/month`;
-};
-
-export default function PropertyCard({ property }: { property: Property }) {
+export default function PropertyCard({ property, imagePriority = false }: PropertyCardProps) {
   const image = property.images[0]?.url;
   const area = property.areaSqFt ? `${property.areaSqFt.toLocaleString("en-IN")} sq ft` : null;
 
@@ -24,10 +18,13 @@ export default function PropertyCard({ property }: { property: Property }) {
       <div className="flex w-full flex-col">
         <Link href={`/properties/${property._id}`} className="relative block aspect-[1.55/1] overflow-hidden bg-[#e7e8e9]">
           {image ? (
-            <img
+            <Image
               src={image}
               alt={`${property.title} in ${property.address.city}`}
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              loading={imagePriority ? "eager" : "lazy"}
+              className="object-cover transition duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-sm text-[#75777e]">
@@ -37,6 +34,11 @@ export default function PropertyCard({ property }: { property: Property }) {
           <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-[#191c1d] shadow-sm backdrop-blur">
             {propertyTypeLabels[property.propertyType] ?? property.propertyType}
           </span>
+          {property.distanceKm !== undefined && (
+            <span className="absolute right-3 top-3 rounded-full bg-[#00696b]/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm backdrop-blur">
+              {property.distanceKm.toFixed(1)} km away
+            </span>
+          )}
         </Link>
 
         <div className="flex flex-1 flex-col p-5">
