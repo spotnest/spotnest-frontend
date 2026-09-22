@@ -8,6 +8,8 @@ export interface AuthUser {
     isVerified?: boolean;
     isBlock?: boolean;
     status?: string;
+    locationName?: string;
+    locationResolvedName?: string;
 }
 
 export interface AuthState {
