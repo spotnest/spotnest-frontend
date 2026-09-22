@@ -6,9 +6,8 @@ import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import { signInSucceeded } from "@/src/store/slices/authSlice";
 import UpdateLocationForm from "@/src/modules/auth/components/UpdateLocationForm";
-import { IconName } from "../types/iconName";
-import DashboardShell from "../components/DashboardShell";
-import { Icon } from "../components/Icon";
+import { IconName } from "../../types/iconName";
+import { Icon } from "../../components/Icon";
 
 interface QuickAction {
     label: string;
@@ -50,7 +49,7 @@ const recommendedProperties = [
     },
 ];
 
-export default function UserDashboard() {
+export default function TenantDashboard() {
     const user = useAppSelector((state) => state.auth.user);
     const dispatch = useAppDispatch();
 
@@ -96,7 +95,7 @@ export default function UserDashboard() {
     };
 
     return (
-        <DashboardShell role="user">
+        <>
             <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10 lg:py-12">
                 {/* Header Greeting */}
                 <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -585,6 +584,6 @@ export default function UserDashboard() {
                     </div>
                 </div>
             )}
-        </DashboardShell>
+        </>
     );
 }

@@ -2,6 +2,8 @@
 
 import { useAppSelector } from "@/src/store/hook";
 import AdminDashboard from "../admin-dasboard/components/AdminDashboard";
+import OwnerDashboard from "../owner-dashboard/components/ownerDashboard";
+import TenantDashboard from "../tenant-dashboard/components/tenantDashboard";
 
 
 export default function DashboardRouter() {
@@ -14,11 +16,10 @@ export default function DashboardRouter() {
     switch (user.role) {
         case "admin":
             return <AdminDashboard />;
-
-
-
-
-
+        case "owner":
+            return <OwnerDashboard />;
+        case "tenant":
+            return <TenantDashboard />
         default:
             return null;
     }
