@@ -8,11 +8,11 @@ export interface NavigationItem {
 }
 
 export const adminNavigation: NavigationItem[] = [
-    { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
+    { label: "Dashboard", href: "/admin/dashboard", icon: "grid" as IconName },
     { label: "Users", href: "/users", icon: "users" as IconName },
     { label: "Properties", href: "/admin/properties", icon: "home" as IconName },
     { label: "Requests", href: "/bookings", icon: "inbox" as IconName, children: [{ label: "Owner Approval Requests", href: "/admin/requests/owner-approvals" }] },
-    { label: "Reports", href: "/dashboard#reports", icon: "chart" as IconName },
+    { label: "Reports", href: "/admin/dashboard#reports", icon: "chart" as IconName },
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
 

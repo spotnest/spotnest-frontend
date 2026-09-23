@@ -11,6 +11,7 @@ import {
 } from "../services/authServices";
 import { useAppDispatch } from "@/src/store/hook";
 import { signInSucceeded } from "@/src/store/slices/authSlice";
+import { dashboardPathForRole } from "@/src/constants/routes";
 
 export default function OtpVerificationForm() {
   const router = useRouter();
@@ -69,13 +70,7 @@ export default function OtpVerificationForm() {
       );
 
       setTimeout(() => {
-        if (response?.user?.role === "owner") {
-          router.push("/owner/dashboard");
-        } else if (response?.user?.role === "admin") {
-          router.push("/dashboard");
-        } else {
-          router.push("/user/dashboard");
-        }
+        router.replace(dashboardPathForRole(response?.user?.role));
       }, 1000);
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {

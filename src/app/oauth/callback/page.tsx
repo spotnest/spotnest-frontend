@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/src/store/hook";
 import { signInSucceeded } from "@/src/store/slices/authSlice";
 import { getCurrentUser } from "@/src/modules/auth/services/authServices";
+import { dashboardPathForRole } from "@/src/constants/routes";
 
 function OAuthCallbackContent() {
   const router = useRouter();
@@ -31,13 +32,7 @@ function OAuthCallbackContent() {
 
         dispatch(signInSucceeded(user));
 
-        if (user.role === "owner") {
-          router.replace("/owner/dashboard");
-        } else if (user.role === "admin") {
-          router.replace("/dashboard");
-        } else {
-          router.replace("/user/dashboard");
-        }
+        router.replace(dashboardPathForRole(user.role));
       } catch {
         if (isMounted) {
           setError("Google authentication failed. Please try again.");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import { signedOut } from "@/src/store/slices/authSlice";
 import { logout } from "@/src/modules/auth/services/authServices";
+import { dashboardPathForRole } from "@/src/constants/routes";
 
 export default function Navbar() {
   const router = useRouter();
@@ -24,12 +25,7 @@ export default function Navbar() {
     }
   };
 
-  const dashboardHref =
-    user?.role === "owner"
-      ? "/owner/dashboard"
-      : user?.role === "admin"
-      ? "/dashboard"
-      : "/user/dashboard";
+  const dashboardHref = dashboardPathForRole(user?.role);
 
   return (
     <header className="border-b border-[#e7e8e9] bg-[#f8f9fa]/95 px-4 backdrop-blur sm:px-6 lg:px-10">
