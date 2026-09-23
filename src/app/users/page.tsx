@@ -10,9 +10,15 @@ function VerificationStatus({ user }: { user: AdminUser }) {
         return <span className="text-xs font-semibold text-[#75777e]">Not applicable</span>;
     }
 
-    return user.isVerified
-        ? <span className="inline-flex rounded-full bg-[#d9f4f3] px-2.5 py-1 text-xs font-bold text-[#00696b]">Approved</span>
-        : <span className="inline-flex rounded-full bg-[#fff0dc] px-2.5 py-1 text-xs font-bold text-[#95611d]">Pending Approval</span>;
+    if (user.verificationStatus === "approved") {
+        return <span className="inline-flex rounded-full bg-[#d9f4f3] px-2.5 py-1 text-xs font-bold text-[#00696b]">Approved</span>;
+    }
+
+    if (user.verificationStatus === "rejected") {
+        return <span className="inline-flex rounded-full bg-[#fff0ee] px-2.5 py-1 text-xs font-bold text-[#b42318]">Rejected</span>;
+    }
+
+    return <span className="inline-flex rounded-full bg-[#fff0dc] px-2.5 py-1 text-xs font-bold text-[#95611d]">Pending Approval</span>;
 }
 
 export default function UsersPage() {

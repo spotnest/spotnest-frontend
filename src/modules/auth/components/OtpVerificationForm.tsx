@@ -9,13 +9,10 @@ import {
   verifyEmail,
   resendVerification,
 } from "../services/authServices";
-import { useAppDispatch } from "@/src/store/hook";
-import { signInSucceeded } from "@/src/store/slices/authSlice";
 import { dashboardPathForRole } from "@/src/constants/routes";
 
 export default function OtpVerificationForm() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
 
   const email = searchParams.get("email") || "";
@@ -57,12 +54,14 @@ export default function OtpVerificationForm() {
         otp,
       });
 
-      /*
-       * Backend sets HttpOnly auth cookies.
-       * Update Redux state with authenticated user.
-       */
-      if (response?.user) {
-        dispatch(signInSucceeded(response.user));
+      const isAwaitingApproval =
+        response?.user?.role === "owner" &&
+        response.user.verificationStatus === "pending";
+
+      if (isAwaitingApproval) {
+        setSuccessMessage("Your email has been verified. Your account is pending admin approval.");
+        router.replace(`/account-pending?email=${encodeURIComponent(email)}`);
+        return;
       }
 
       setSuccessMessage(

@@ -47,7 +47,7 @@ export default function OwnerApprovalRequestCard({ request, isProcessing, onAppr
                         <p className="mt-0.5 truncate text-sm text-[#44474d]">{request.email}</p>
                         {request.phone && <p className="mt-1 text-xs text-[#75777e]">{request.phone}</p>}
                         <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span className="rounded-full bg-[#eef0f1] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-[#44474d]">Property Owner</span>
+                            <span className="rounded-full bg-[#eef0f1] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-[#44474d]">Owner / Agent</span>
                             <span className="rounded-full bg-[#fff0dc] px-2.5 py-1 text-[11px] font-bold text-[#95611d]">Pending approval</span>
                         </div>
                     </div>

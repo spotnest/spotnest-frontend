@@ -85,12 +85,12 @@ export default function OwnerApprovalRequestsPage() {
             <main className="mx-auto max-w-[1500px] px-4 py-7 sm:px-6 sm:py-9 lg:px-10 lg:py-10">
                 <p className="text-sm font-semibold text-[#00696b]">Admin workspace</p>
                 <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#191c1d]">Requests</h1>
-                <p className="mt-2 text-sm leading-6 text-[#44474d]">Review Property Owner account approval requests.</p>
+                <p className="mt-2 text-sm leading-6 text-[#44474d]">Review Owner/Agent account approval requests.</p>
 
                 {feedback && <p role="status" className="mt-6 rounded-xl border border-[#9bd9d6] bg-[#d9f4f3] px-4 py-3 text-sm font-semibold text-[#00696b]">{feedback}</p>}
                 {error && <p role="alert" className="mt-6 rounded-xl border border-[#f0b5ae] bg-[#fff0ee] px-4 py-3 text-sm font-semibold text-[#b42318]">{error}</p>}
 
-                <section className="mt-8" aria-label="Pending Property Owner approval requests">
+                <section className="mt-8" aria-label="Pending Owner/Agent approval requests">
                     {requestsQuery.isLoading ? (
                         <div className="rounded-2xl border border-[#e1e3e4] bg-white px-5 py-10 text-center text-sm text-[#75777e]">Loading approval requests...</div>
                     ) : requestsQuery.isError ? (
@@ -109,8 +109,8 @@ export default function OwnerApprovalRequestsPage() {
                         </div>
                     ) : (
                         <div className="rounded-2xl border border-dashed border-[#c5c6cd] bg-white px-5 py-12 text-center">
-                            <p className="text-sm font-bold text-[#191c1d]">No approval requests</p>
-                            <p className="mt-1 text-sm text-[#75777e]">New Property Owner requests will appear here.</p>
+                            <p className="text-sm font-bold text-[#191c1d]">No pending approval requests.</p>
+                            <p className="mt-1 text-sm text-[#75777e]">New Owner/Agent requests will appear here.</p>
                         </div>
                     )}
                 </section>

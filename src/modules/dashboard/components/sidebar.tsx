@@ -2,20 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { getOwnerApprovalRequests } from "@/src/modules/auth/services/authServices";
 import { Icon } from "./Icon";
 import { adminNavigation, ownerNavigation, userNavigation } from "../constants/navigations";
 import type { SidebarProps } from "../types/sidebarProps";
 
 export default function Sidebar({ role, onNavigate }: SidebarProps) {
     const pathname = usePathname();
-    const ownerApprovalsQuery = useQuery({
-        queryKey: ["owner-approval-requests"],
-        queryFn: getOwnerApprovalRequests,
-        enabled: role === "admin",
-    });
-
     const items = role === "admin" ? adminNavigation : role === "owner" ? ownerNavigation : userNavigation;
     const portalTitle = role === "admin" ? "Admin Workspace" : role === "owner" ? "Owner Portal" : "Tenant Portal";
 
@@ -44,7 +36,6 @@ export default function Sidebar({ role, onNavigate }: SidebarProps) {
                             {item.children?.map((child) => (
                                 <Link key={child.href} href={child.href} onClick={onNavigate} className={`ml-8 flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition ${pathname === child.href ? "bg-[#d9f4f3] text-[#00696b]" : "text-[#75777e] hover:bg-[#f3f4f5] hover:text-[#191c1d]"}`}>
                                     <span>{child.label}</span>
-                                    {role === "admin" && child.href === "/admin/requests/owner-approvals" && <span className="ml-2 rounded-full bg-[#00696b] px-2 py-0.5 text-[10px] font-bold text-white">{ownerApprovalsQuery.data?.length ?? 0}</span>}
                                 </Link>
                             ))}
                         </div>
