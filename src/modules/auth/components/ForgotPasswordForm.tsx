@@ -43,7 +43,9 @@ export default function ForgotPasswordForm() {
     setIsLoading(true);
 
     try {
-      await forgotPassword(trimmedEmail);
+await forgotPassword({
+  email: trimmedEmail,
+});
 
       router.push(
         `/reset-password?email=${encodeURIComponent(trimmedEmail)}`

@@ -1,109 +1,185 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, {
+    AxiosError,
+    type AxiosInstance,
+    type InternalAxiosRequestConfig,
+} from "axios";
 
-const api = axios.create({
-    baseURL:
-        process.env.NEXT_PUBLIC_API_URL ||
-        "http://localhost:5000/api/v1",
+const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:5000/api/v1";
 
-    /**
-     * Required for HttpOnly authentication cookies.
-     * The browser automatically sends accessToken and refreshToken cookies.
-     */
+const api: AxiosInstance = axios.create({
+    baseURL: API_BASE_URL,
     withCredentials: true,
-
     headers: {
         "Content-Type": "application/json",
     },
 });
 
+/**
+ * Prevent multiple refresh requests from running at the same time.
+ */
 let isRefreshing = false;
-let failedQueue: Array<{
+
+type FailedRequest = {
     resolve: (value?: unknown) => void;
     reject: (reason?: unknown) => void;
-}> = [];
+};
 
+let failedQueue: FailedRequest[] = [];
+
+/**
+ * Callback used by Redux/auth state when the refresh session
+ * is no longer valid.
+ */
 let onUnauthorizedCallback: (() => void) | null = null;
 
 /**
- * Register a callback to clear Redux auth state when refresh fails or session is invalid.
+ * Register a callback to clear Redux auth state when the
+ * authentication session becomes invalid.
  */
 export const setOnUnauthorizedCallback = (callback: () => void) => {
     onUnauthorizedCallback = callback;
 };
 
+/**
+ * Resolve or reject requests that were waiting while the
+ * authentication session was being refreshed.
+ */
 const processQueue = (error: unknown | null) => {
-    failedQueue.forEach((prom) => {
+    failedQueue.forEach(({ resolve, reject }) => {
         if (error) {
-            prom.reject(error);
+            reject(error);
         } else {
-            prom.resolve();
+            resolve();
         }
     });
+
     failedQueue = [];
 };
 
+/**
+ * Request interceptor.
+ *
+ * Authentication is handled through HTTP-only cookies.
+ * We intentionally do NOT read accessToken or refreshToken
+ * from localStorage.
+ */
+api.interceptors.request.use(
+    (config: InternalAxiosRequestConfig) => {
+        config.withCredentials = true;
+
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+/**
+ * Response interceptor.
+ *
+ * When an authenticated request receives 401:
+ *
+ * 1. Try to refresh the session using the HTTP-only refresh cookie.
+ * 2. Retry the original request.
+ * 3. Queue other failed requests while refresh is in progress.
+ *
+ * Public authentication endpoints are never refreshed because
+ * their 401 responses normally represent authentication errors
+ * rather than an expired authenticated session.
+ */
 api.interceptors.response.use(
     (response) => response,
+
     async (error: AxiosError) => {
         const originalRequest = error.config as
-            | (InternalAxiosRequestConfig & { _retry?: boolean })
+            | (InternalAxiosRequestConfig & {
+                  _retry?: boolean;
+              })
             | undefined;
 
-        if (!error.response || error.response.status !== 401 || !originalRequest) {
+        const status = error.response?.status;
+
+        if (!originalRequest || status !== 401) {
             return Promise.reject(error);
         }
 
         const requestUrl = originalRequest.url || "";
 
         /**
-         * Do not attempt token refresh for:
-         * 1. The refresh endpoint itself (prevents infinite loop if refreshToken expired)
-         * 2. Public auth endpoints (login, signup, password resets) where 401 means bad credentials
+         * Never attempt refresh for the refresh endpoint itself.
+         *
+         * If refresh fails, the current session is invalid.
          */
-        if (
-            requestUrl.includes("/auth/refresh") ||
+        if (requestUrl.includes("/auth/refresh")) {
+            onUnauthorizedCallback?.();
+
+            return Promise.reject(error);
+        }
+
+        /**
+         * Public authentication endpoints.
+         *
+         * A 401 here means the request itself failed authentication
+         * and should NOT trigger a refresh attempt.
+         */
+        const isPublicAuthEndpoint =
             requestUrl.includes("/auth/login") ||
             requestUrl.includes("/auth/signup") ||
             requestUrl.includes("/auth/logout") ||
             requestUrl.includes("/auth/forgot-password") ||
-            requestUrl.includes("/auth/reset-password")
-        ) {
-            if (requestUrl.includes("/auth/refresh")) {
-                onUnauthorizedCallback?.();
-            }
+            requestUrl.includes("/auth/reset-password");
+
+        if (isPublicAuthEndpoint) {
             return Promise.reject(error);
         }
 
-        // Prevent infinite retry loop on already retried requests
+        /**
+         * Prevent an infinite retry loop.
+         */
         if (originalRequest._retry) {
             onUnauthorizedCallback?.();
+
             return Promise.reject(error);
         }
 
-        // If a refresh is already in progress, queue this request
-        if (isRefreshing) {
-            return new Promise((resolve, reject) => {
-                failedQueue.push({ resolve, reject });
-            })
-                .then(() => api(originalRequest))
-                .catch((err) => Promise.reject(err));
-        }
-
+        /**
+         * If another request is already refreshing the session,
+         * wait for that refresh to finish.
+         */
+if (isRefreshing) {
+    return new Promise((resolve, reject) => {
+        failedQueue.push({
+            resolve,
+            reject,
+        });
+    }).then(() => {
+        return api(originalRequest);
+    });
+}
         originalRequest._retry = true;
         isRefreshing = true;
 
         try {
             /**
-             * POST /auth/refresh
-             * No request body — browser automatically sends the HttpOnly refreshToken cookie.
+             * IMPORTANT:
+             * No refresh token is manually read here.
+             *
+             * The browser automatically sends the HTTP-only
+             * refresh cookie because withCredentials=true.
              */
             await api.post("/auth/refresh");
 
             processQueue(null);
+
             return api(originalRequest);
         } catch (refreshError) {
             processQueue(refreshError);
+
+            /**
+             * Tell Redux/auth state that the session is no longer valid.
+             */
             onUnauthorizedCallback?.();
+
             return Promise.reject(refreshError);
         } finally {
             isRefreshing = false;

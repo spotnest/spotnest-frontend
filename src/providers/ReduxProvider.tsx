@@ -1,11 +1,6 @@
 "use client";
 
-import {
-    useEffect,
-    useState,
-    type ReactNode,
-} from "react";
-
+import { useEffect, useState, type ReactNode } from "react";
 import { Provider } from "react-redux";
 
 import { makeStore } from "../store/store";
@@ -24,13 +19,17 @@ export function ReduxProvider({
     children: ReactNode;
 }) {
     /**
-     * Lazy initializer ensures makeStore() is called exactly once
-     * and preserved across re-renders without creating a new store.
+     * Create the Redux store once for the lifetime of this provider.
      */
     const [store] = useState(() => makeStore());
 
     useEffect(() => {
-        // Register Axios 401 callback to synchronize Redux state
+        /**
+         * Synchronize Axios authentication failures with Redux.
+         *
+         * When refresh fails, axios calls this callback and the
+         * client authentication state is cleared.
+         */
         setOnUnauthorizedCallback(() => {
             store.dispatch(signedOut());
         });
@@ -38,11 +37,15 @@ export function ReduxProvider({
         const restoreAuthentication = async (): Promise<void> => {
             try {
                 /**
-                 * The browser automatically sends the HttpOnly accessToken cookie.
-                 * If the access token is expired, the Axios response interceptor
-                 * will attempt a silent refresh via the HttpOnly refreshToken cookie.
+                 * Authentication uses HttpOnly cookies.
+                 *
+                 * getCurrentUser() sends the cookies automatically.
+                 * If the access token is expired, axios will attempt
+                 * to refresh the session using the refresh cookie.
                  */
-                const user = await getCurrentUser();
+                const response = await getCurrentUser();
+
+                const user = response?.user;
 
                 if (user) {
                     store.dispatch(signInSucceeded(user));
@@ -51,14 +54,18 @@ export function ReduxProvider({
                 }
             } catch {
                 /**
-                 * Unauthenticated or expired session on startup is normal.
-                 * Clear client authentication state cleanly without logging errors.
+                 * No active session is a normal state on initial load.
                  */
                 store.dispatch(signedOut());
             }
         };
 
         void restoreAuthentication();
+
+        /**
+         * No cleanup is required here because the Axios callback
+         * remains registered for the lifetime of the application.
+         */
     }, [store]);
 
     return (

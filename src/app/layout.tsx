@@ -4,7 +4,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import { ReduxProvider } from "@/src/providers/ReduxProvider";
 import { QueryProvider } from "../providers/QueryProvider";
-
+import { AuthProvider } from "@/src/providers/AuthProvider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -27,9 +27,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ReduxProvider>
-          <QueryProvider>{children}</QueryProvider>
-        </ReduxProvider>
+<ReduxProvider>
+  <QueryProvider>
+    <AuthProvider>{children}</AuthProvider>
+  </QueryProvider>
+</ReduxProvider>
       </body>
     </html>
   );

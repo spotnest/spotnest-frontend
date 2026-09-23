@@ -8,7 +8,7 @@ import DashboardShell from "@/src/modules/dashboard/components/DashboardShell";
 import OwnerApprovalRequestCard from "@/src/modules/auth/components/OwnerApprovalRequestCard";
 import { useOwnerApprovalRequests, ownerApprovalRequestsQueryKey } from "@/src/modules/auth/hooks/useOwnerApprovalRequests";
 import { approveOwner, rejectOwner } from "@/src/modules/auth/services/authServices";
-import { dashboardPathForRole } from "@/src/constants/routes";
+import { getDashboardRouteForRole } from "@/src/modules/auth/utils/roleUtils";
 import { useAppSelector } from "@/src/store/hook";
 
 const messageFromError = (error: unknown, fallback: string) =>
@@ -19,18 +19,18 @@ const messageFromError = (error: unknown, fallback: string) =>
 export default function OwnerApprovalRequestsPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { user, isInitialized } = useAppSelector((state) => state.auth);
+    const { user, initialized } = useAppSelector((state) => state.auth);
     const isAdmin = user?.role === "admin";
-    const requestsQuery = useOwnerApprovalRequests(isInitialized && isAdmin);
+    const requestsQuery = useOwnerApprovalRequests(initialized && isAdmin);
     const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
     const [feedback, setFeedback] = useState("");
     const [error, setError] = useState("");
 
     useEffect(() => {
-        if (isInitialized && user && !isAdmin) {
-            router.replace(dashboardPathForRole(user.role));
+        if (initialized && user && !isAdmin) {
+            router.replace(getDashboardRouteForRole(user.role));
         }
-    }, [isAdmin, isInitialized, router, user]);
+    }, [isAdmin, initialized, router, user]);
 
     const refreshApprovalData = async () => {
         await Promise.all([
@@ -78,19 +78,19 @@ export default function OwnerApprovalRequestsPage() {
         rejectMutation.mutate({ userId, reason });
     };
 
-    if (!isInitialized || !isAdmin) return null;
+    if (!initialized || !isAdmin) return null;
 
     return (
         <DashboardShell role="admin">
             <main className="mx-auto max-w-[1500px] px-4 py-7 sm:px-6 sm:py-9 lg:px-10 lg:py-10">
                 <p className="text-sm font-semibold text-[#00696b]">Admin workspace</p>
                 <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#191c1d]">Requests</h1>
-                <p className="mt-2 text-sm leading-6 text-[#44474d]">Review Owner/Agent account approval requests.</p>
+                <p className="mt-2 text-sm leading-6 text-[#44474d]">Review Owner account approval requests.</p>
 
                 {feedback && <p role="status" className="mt-6 rounded-xl border border-[#9bd9d6] bg-[#d9f4f3] px-4 py-3 text-sm font-semibold text-[#00696b]">{feedback}</p>}
                 {error && <p role="alert" className="mt-6 rounded-xl border border-[#f0b5ae] bg-[#fff0ee] px-4 py-3 text-sm font-semibold text-[#b42318]">{error}</p>}
 
-                <section className="mt-8" aria-label="Pending Owner/Agent approval requests">
+                <section className="mt-8" aria-label="Pending Owner approval requests">
                     {requestsQuery.isLoading ? (
                         <div className="rounded-2xl border border-[#e1e3e4] bg-white px-5 py-10 text-center text-sm text-[#75777e]">Loading approval requests...</div>
                     ) : requestsQuery.isError ? (
@@ -110,7 +110,7 @@ export default function OwnerApprovalRequestsPage() {
                     ) : (
                         <div className="rounded-2xl border border-dashed border-[#c5c6cd] bg-white px-5 py-12 text-center">
                             <p className="text-sm font-bold text-[#191c1d]">No pending approval requests.</p>
-                            <p className="mt-1 text-sm text-[#75777e]">New Owner/Agent requests will appear here.</p>
+                            <p className="mt-1 text-sm text-[#75777e]">New Owner requests will appear here.</p>
                         </div>
                     )}
                 </section>

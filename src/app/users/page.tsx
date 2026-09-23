@@ -32,10 +32,30 @@ export default function UsersPage() {
                 <p className="mt-2 text-sm leading-6 text-[#44474d]">Manage platform accounts and view their verification status.</p>
 
                 <section className="mt-8 overflow-x-auto rounded-2xl border border-[#e1e3e4] bg-white">
-                    {usersQuery.isLoading ? <p className="px-5 py-8 text-sm text-[#75777e]">Loading users...</p> : usersQuery.isError ? <p className="px-5 py-8 text-sm text-[#95611d]">Unable to load users.</p> : (
+                    {usersQuery.isLoading ? (
+                        <p className="px-5 py-8 text-sm text-[#75777e]">Loading users...</p>
+                    ) : usersQuery.isError ? (
+                        <p className="px-5 py-8 text-sm text-[#95611d]">Unable to load users.</p>
+                    ) : (
                         <table className="w-full min-w-[760px] border-collapse text-left">
-                            <thead><tr className="border-b border-[#eef0f1] text-[11px] font-bold uppercase tracking-[0.12em] text-[#75777e]"><th className="px-5 py-4">Name</th><th className="px-3 py-4">Email</th><th className="px-3 py-4">Role</th><th className="px-5 py-4">Verification</th></tr></thead>
-                            <tbody>{usersQuery.data?.map((user) => <tr key={user.id} className="border-b border-[#eef0f1] last:border-0"><td className="px-5 py-4 text-sm font-semibold text-[#191c1d]">{user.name}</td><td className="px-3 py-4 text-sm text-[#44474d]">{user.email}</td><td className="px-3 py-4 text-xs font-bold uppercase text-[#44474d]">{user.role}</td><td className="px-5 py-4"><VerificationStatus user={user} /></td></tr>)}</tbody>
+                            <thead>
+                                <tr className="border-b border-[#eef0f1] text-[11px] font-bold uppercase tracking-[0.12em] text-[#75777e]">
+                                    <th className="px-5 py-4">Name</th>
+                                    <th className="px-3 py-4">Email</th>
+                                    <th className="px-3 py-4">Role</th>
+                                    <th className="px-5 py-4">Verification</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {usersQuery.data?.map((user) => (
+                                    <tr key={user.id} className="border-b border-[#eef0f1] last:border-0">
+                                        <td className="px-5 py-4 text-sm font-semibold text-[#191c1d]">{user.name}</td>
+                                        <td className="px-3 py-4 text-sm text-[#44474d]">{user.email}</td>
+                                        <td className="px-3 py-4 text-xs font-bold uppercase text-[#44474d]">{user.role}</td>
+                                        <td className="px-5 py-4"><VerificationStatus user={user} /></td>
+                                    </tr>
+                                ))}
+                            </tbody>
                         </table>
                     )}
                 </section>

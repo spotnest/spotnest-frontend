@@ -1,4 +1,6 @@
+import type { UserRole } from "@/src/store/type";
+
 export interface SidebarProps {
-    role: "user" | "owner" | "admin" | "tenant";
+    role: UserRole;
     onNavigate?: () => void;
 }

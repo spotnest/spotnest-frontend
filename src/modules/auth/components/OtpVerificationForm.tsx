@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
@@ -9,20 +9,113 @@ import {
   verifyEmail,
   resendVerification,
 } from "../services/authServices";
-import { dashboardPathForRole } from "@/src/constants/routes";
+import { signInSucceeded } from "@/src/store/slices/authSlice";
+import { useAppDispatch } from "@/src/store/hook";
+import { getDashboardRouteForRole } from "../utils/roleUtils";
+
+const OTP_LENGTH = 6;
 
 export default function OtpVerificationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const dispatch = useAppDispatch();
 
   const email = searchParams.get("email") || "";
 
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState<string[]>(
+    Array(OTP_LENGTH).fill("")
+  );
+
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+
+  const otpValue = otp.join("");
+
+  useEffect(() => {
+    inputRefs.current[0]?.focus();
+  }, []);
+
+  const handleOtpChange = (
+    index: number,
+    value: string
+  ) => {
+    const digit = value.replace(/\D/g, "").slice(-1);
+
+    const nextOtp = [...otp];
+    nextOtp[index] = digit;
+
+    setOtp(nextOtp);
+    setErrorMessage("");
+
+    if (digit && index < OTP_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (
+    index: number,
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (
+      event.key === "Backspace" &&
+      !otp[index] &&
+      index > 0
+    ) {
+      inputRefs.current[index - 1]?.focus();
+    }
+
+    if (
+      event.key === "ArrowLeft" &&
+      index > 0
+    ) {
+      inputRefs.current[index - 1]?.focus();
+    }
+
+    if (
+      event.key === "ArrowRight" &&
+      index < OTP_LENGTH - 1
+    ) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (
+    event: React.ClipboardEvent<HTMLInputElement>
+  ) => {
+    event.preventDefault();
+
+    const pastedValue = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
+
+    if (!pastedValue) {
+      return;
+    }
+
+    const nextOtp = Array(OTP_LENGTH).fill("");
+
+    pastedValue
+      .split("")
+      .forEach((digit, index) => {
+        nextOtp[index] = digit;
+      });
+
+    setOtp(nextOtp);
+    setErrorMessage("");
+
+    const nextFocusIndex = Math.min(
+      pastedValue.length,
+      OTP_LENGTH - 1
+    );
+
+    inputRefs.current[nextFocusIndex]?.focus();
+  };
 
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
@@ -39,7 +132,7 @@ export default function OtpVerificationForm() {
       return;
     }
 
-    if (!/^\d{6}$/.test(otp)) {
+    if (!/^\d{6}$/.test(otpValue)) {
       setErrorMessage(
         "Please enter the 6-digit verification code."
       );
@@ -49,35 +142,62 @@ export default function OtpVerificationForm() {
     try {
       setIsLoading(true);
 
-      const response = await verifyEmail({
+      const result = await verifyEmail({
         email,
-        otp,
+        otp: otpValue,
       });
 
-      const isAwaitingApproval =
-        response?.user?.role === "owner" &&
-        response.user.verificationStatus === "pending";
+      if ("user" in result && result.user) {
+        if (result.user.role === "owner") {
+          const vStatus = result.user.verificationStatus;
+          if (vStatus === "pending") {
+            setSuccessMessage(
+              "Your email has been verified. Your account is pending admin approval."
+            );
+            setTimeout(() => {
+              router.replace(
+                `/account-pending?email=${encodeURIComponent(email)}`
+              );
+            }, 800);
+            return;
+          }
 
-      if (isAwaitingApproval) {
-        setSuccessMessage("Your email has been verified. Your account is pending admin approval.");
-        router.replace(`/account-pending?email=${encodeURIComponent(email)}`);
+          setSuccessMessage(
+            "Email verified successfully. Please complete owner verification."
+          );
+          setTimeout(() => {
+            router.push("/owner/verification");
+          }, 800);
+          return;
+        }
+
+        dispatch(signInSucceeded(result.user));
+
+        setSuccessMessage(
+          "Email verified successfully! Redirecting..."
+        );
+
+        setTimeout(() => {
+          const targetRoute = getDashboardRouteForRole(
+            result.user.role
+          );
+          router.push(targetRoute);
+        }, 800);
+
         return;
       }
 
       setSuccessMessage(
-        "Email verified successfully! Redirecting to dashboard..."
+        "Email verified successfully! Please sign in."
       );
 
       setTimeout(() => {
-        router.replace(dashboardPathForRole(response?.user?.role));
+        router.push("/login");
       }, 1000);
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
 
-        /*
-         * Backend validation errors
-         */
         if (data?.errors?.fieldErrors) {
           const firstFieldError = Object.values(
             data.errors.fieldErrors
@@ -89,17 +209,11 @@ export default function OtpVerificationForm() {
           }
         }
 
-        /*
-         * Normal backend error
-         */
         if (typeof data?.message === "string") {
           setErrorMessage(data.message);
           return;
         }
 
-        /*
-         * Backend unavailable
-         */
         if (
           error.code === "ERR_NETWORK" ||
           error.message === "Network Error"
@@ -110,12 +224,9 @@ export default function OtpVerificationForm() {
           return;
         }
 
-        /*
-         * HTTP status fallback
-         */
         if (error.response?.status) {
           setErrorMessage(
-            `Verification failed with status code ${error.response.status}.`
+            `Request failed with status code ${error.response.status}.`
           );
           return;
         }
@@ -148,7 +259,9 @@ export default function OtpVerificationForm() {
     try {
       setIsResending(true);
 
-      const result = await resendVerification(email);
+      const result = await resendVerification({
+        email,
+      });
 
       setSuccessMessage(
         result.message ||
@@ -169,13 +282,6 @@ export default function OtpVerificationForm() {
         ) {
           setErrorMessage(
             "Cannot connect to server. Please ensure the backend is running."
-          );
-          return;
-        }
-
-        if (error.response?.status) {
-          setErrorMessage(
-            `Request failed with status code ${error.response.status}.`
           );
           return;
         }
@@ -210,7 +316,6 @@ export default function OtpVerificationForm() {
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#6C4CE6] text-sm text-white">
               S
             </span>
-
             SpotNest
           </Link>
 
@@ -228,7 +333,6 @@ export default function OtpVerificationForm() {
       {/* RIGHT FORM SECTION */}
       <section className="flex min-h-screen items-center justify-center overflow-y-auto px-5 py-12 sm:px-10 md:px-12 lg:px-20">
         <div className="w-full max-w-[525px]">
-          {/* MOBILE LOGO */}
           <Link
             href="/"
             className="mb-12 inline-flex items-center gap-2 text-xl font-bold tracking-tight md:hidden"
@@ -236,11 +340,9 @@ export default function OtpVerificationForm() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6C4CE6] text-sm text-white">
               S
             </span>
-
             SpotNest
           </Link>
 
-          {/* HEADER */}
           <header className="mb-10">
             <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[#6C4CE6]">
               SpotNest
@@ -259,80 +361,88 @@ export default function OtpVerificationForm() {
             </p>
           </header>
 
-          {/* ERROR MESSAGE */}
           {errorMessage && (
             <div
               role="alert"
-              className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+              className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
             >
               {errorMessage}
             </div>
           )}
 
-          {/* SUCCESS MESSAGE */}
           {successMessage && (
             <div
               role="status"
-              className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600"
+              className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-600"
             >
               {successMessage}
             </div>
           )}
 
-          {/* OTP FORM */}
           <form
             onSubmit={handleSubmit}
             className="space-y-7"
           >
             <div>
               <label
-                htmlFor="otp"
-                className="mb-3 block text-base font-semibold"
+                htmlFor="otp-0"
+                className="mb-4 block text-base font-semibold"
               >
                 Verification Code
               </label>
 
-              <div className="relative">
-                <input
-                  id="otp"
-                  name="otp"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  required
-                  value={otp}
-                  onChange={(event) => {
-                    const value = event.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 6);
-
-                    setOtp(value);
-
-                    if (errorMessage) {
-                      setErrorMessage("");
+              <div
+                className="flex justify-between gap-2 sm:gap-3"
+                role="group"
+                aria-label="Verification code"
+              >
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(element) => {
+                      inputRefs.current[index] = element;
+                    }}
+                    id={`otp-${index}`}
+                    name={`otp-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete={
+                      index === 0
+                        ? "one-time-code"
+                        : "off"
                     }
-
-                    if (successMessage) {
-                      setSuccessMessage("");
+                    maxLength={1}
+                    value={digit}
+                    onChange={(event) =>
+                      handleOtpChange(
+                        index,
+                        event.target.value
+                      )
                     }
-                  }}
-                  placeholder="000000"
-                  className="h-[62px] w-full rounded-xl border border-[#CFCBC3] bg-white px-4 text-center font-mono text-2xl font-bold tracking-[0.4em] text-[#1C1B1A] outline-none transition placeholder:font-sans placeholder:text-lg placeholder:font-normal placeholder:tracking-normal placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF] sm:tracking-[0.6em]"
-                />
+                    onKeyDown={(event) =>
+                      handleKeyDown(index, event)
+                    }
+                    onPaste={handlePaste}
+                    aria-label={`Verification digit ${
+                      index + 1
+                    }`}
+                    className="h-[62px] w-full max-w-[68px] rounded-xl border border-[#CFCBC3] bg-white text-center font-mono text-2xl font-bold text-[#1C1B1A] outline-none transition hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF] sm:h-[68px] sm:max-w-[72px] sm:text-3xl"
+                  />
+                ))}
               </div>
             </div>
 
-            {/* VERIFY BUTTON */}
             <button
               type="submit"
-              disabled={isLoading || otp.length !== 6}
+              disabled={
+                isLoading || otpValue.length !== OTP_LENGTH
+              }
               className="flex h-[62px] w-full items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isLoading ? (
                 <span
                   className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white"
-                  aria-hidden="true"
+                  aria-label="Verifying"
                 />
               ) : (
                 <>
@@ -354,19 +464,23 @@ export default function OtpVerificationForm() {
             </button>
           </form>
 
-          {/* DIVIDER */}
           <div className="my-10 flex items-center gap-5">
+            <div className="h-px flex-1 bg-[#D8D4CC]" />
+
+            <span className="text-sm font-medium text-[#6F6B65]">
+              OR
+            </span>
+
             <div className="h-px flex-1 bg-[#D8D4CC]" />
           </div>
 
-          {/* RESEND */}
           <div className="flex flex-col items-center gap-4 text-center text-base text-[#6F6B65]">
             <p>
               Didn&apos;t receive the code?{" "}
               <button
                 type="button"
                 onClick={handleResend}
-                disabled={isResending || isLoading}
+                disabled={isResending}
                 className="cursor-pointer font-semibold text-[#6C4CE6] transition hover:text-[#5738C7] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isResending
@@ -379,7 +493,7 @@ export default function OtpVerificationForm() {
               href="/login"
               className="font-semibold text-[#1C1B1A] transition hover:text-[#6C4CE6]"
             >
-              ← Back to login
+              ← Back to Login
             </Link>
           </div>
         </div>
