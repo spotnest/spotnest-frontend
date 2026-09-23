@@ -1,206 +1,159 @@
-import Link from "next/link";
+import { cache } from "react";
 import { notFound } from "next/navigation";
-import { getProperty } from "@/src/modules/properties/services/propertyServer";
+import type { Metadata } from "next";
+import Link from "next/link";
+import Navbar from "@/src/components/layout/Navbar";
+import Footer from "@/src/modules/landing/components/Footer";
+import PropertyGallery from "@/src/modules/properties/components/PropertyGallery";
+import { getPropertyById } from "@/src/modules/properties";
+import { formatPrice, propertyTypeLabels } from "@/src/modules/properties/utils/format";
+import type { Property } from "@/src/modules/properties";
 
-interface PropertyDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
+export const revalidate = 300;
 
-export async function generateMetadata({ params }: PropertyDetailPageProps) {
-  const { id } = await params;
-  try {
-    const property = await getProperty(id);
+// React.cache dedupes the fetch between generateMetadata and the page render.
+const getProperty = cache((id: string) => getPropertyById(id));
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+    const { id } = await params;
+    const property = await getProperty(id).catch(() => null);
+    if (!property) return { title: "Property not found | SpotNest" };
+
+    const title = `${property.title} | SpotNest`;
+    const description =
+        property.description?.slice(0, 160) ??
+        `Rent this ${propertyTypeLabels[property.propertyType] ?? property.propertyType} in ${property.address.city}, ${property.address.state}.`;
+
     return {
-      title: `${property.title} | SpotNest`,
-      description: property.description,
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            type: "website",
+            images: property.images[0]?.url ? [property.images[0].url] : [],
+        },
     };
-  } catch {
-    return {
-      title: "Property Details | SpotNest",
-    };
-  }
 }
 
 export default async function PropertyDetailPage({
-  params,
-}: PropertyDetailPageProps) {
-  const { id } = await params;
+    params,
+}: {
+    params: Promise<{ id: string }>;
+}) {
+    const { id } = await params;
+    const property: Property | null = await getProperty(id).catch(() => null);
+    if (!property) notFound();
 
-  let property;
-  try {
-    property = await getProperty(id);
-  } catch {
-    notFound();
-  }
+    const details = [
+        { label: "Property type", value: property.propertyType },
+        { label: "Bedrooms", value: String(property.bedrooms) },
+        { label: "Bathrooms", value: String(property.bathrooms) },
+        ...(property.areaSqFt !== undefined
+            ? [{ label: "Area", value: `${property.areaSqFt.toLocaleString("en-IN")} sq ft` }]
+            : []),
+        { label: "Location", value: property.address.city },
+    ];
 
-  const primaryImage = property.images?.[0]?.url;
-  const additionalImages = property.images?.slice(1) || [];
-
-  return (
-    <main className="min-h-screen bg-[#f8f9fa] py-8 text-[#191c1d]">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb */}
-        <nav className="mb-6 flex items-center gap-2 text-sm text-[#75777e]">
-          <Link href="/properties" className="transition hover:text-[#00696b]">
-            Properties
-          </Link>
-          <span>/</span>
-          <span className="font-medium text-[#191c1d] truncate max-w-[300px]">
-            {property.title}
-          </span>
-        </nav>
-
-        {/* Top Title Bar */}
-        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <div className="mb-2 flex items-center gap-3">
-              <span className="rounded-full bg-[#d9f4f3] px-3.5 py-1 text-xs font-bold capitalize text-[#00696b]">
-                {property.propertyType}
-              </span>
-              <span
-                className={`rounded-full px-3.5 py-1 text-xs font-bold capitalize ${
-                  property.status === "active"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {property.status}
-              </span>
-            </div>
-
-            <h1 className="text-3xl font-bold tracking-tight text-[#191c1d] sm:text-4xl">
-              {property.title}
-            </h1>
-
-            <p className="mt-2 text-base text-[#44474d]">
-              {[property.address.street, property.address.city, property.address.state, property.address.country]
-                .filter(Boolean)
-                .join(", ")}
-            </p>
-          </div>
-
-          <div className="shrink-0 text-left md:text-right">
-            <p className="text-sm font-semibold uppercase tracking-wider text-[#75777e]">
-              Rent Price
-            </p>
-            <p className="text-3xl font-extrabold text-[#00696b]">
-              ₹{property.price.toLocaleString("en-IN")}
-              <span className="text-base font-normal text-[#75777e]">/mo</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Gallery */}
-        <section className="mb-10 overflow-hidden rounded-2xl border border-[#e1e3e4] bg-white shadow-xs">
-          {primaryImage ? (
-            <div className="grid gap-2 md:grid-cols-3">
-              <div className="aspect-[4/3] md:col-span-2 overflow-hidden bg-gray-100">
-                <img
-                  src={primaryImage}
-                  alt={property.title}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              {additionalImages.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-1">
-                  {additionalImages.slice(0, 2).map((img, idx) => (
-                    <div
-                      key={img.publicId || idx}
-                      className="aspect-[4/3] overflow-hidden bg-gray-100"
+    return (
+        <>
+            <Navbar />
+            <main className="bg-[#f8f9fa] px-4 py-10 sm:px-6 lg:px-10">
+                <div className="mx-auto max-w-[1280px]">
+                    <Link
+                        href="/properties"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#00696b] transition hover:text-[#004f51]"
                     >
-                      <img
-                        src={img.url}
-                        alt={`${property.title} - image ${idx + 2}`}
-                        className="h-full w-full object-cover"
-                      />
+                        <span aria-hidden="true">←</span> Back to properties
+                    </Link>
+
+                    <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-[#00696b]">
+                        {propertyTypeLabels[property.propertyType] ?? property.propertyType}
+                    </p>
+                    <h1 className="mt-2 text-3xl font-bold tracking-[-0.035em] text-[#191c1d] sm:text-4xl">
+                        {property.title}
+                    </h1>
+
+                    <p className="mt-3 flex items-center gap-1.5 text-base text-[#44474d]">
+                        <svg aria-hidden="true" className="h-5 w-5 shrink-0 text-[#00696b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 10c0 5.25-7 10-7 10S5 15.25 5 10a7 7 0 1 1 14 0Z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 10a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+                        </svg>
+                        {property.address.street}, {property.address.city}, {property.address.state} {property.address.zipCode}, {property.address.country}
+                    </p>
+
+                    <div className="mt-10 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
+                        <div>
+                            <PropertyGallery property={property} />
+
+                            <div className="mt-10 rounded-2xl border border-[#e1e3e4] bg-white p-6 sm:p-8">
+                                <h2 className="text-xl font-semibold tracking-[-0.02em] text-[#191c1d]">
+                                    About this property
+                                </h2>
+                                <p className="mt-4 leading-7 text-[#44474d]">
+                                    {property.description}
+                                </p>
+                            </div>
+
+                            {property.amenities.length > 0 && (
+                                <div className="mt-6 rounded-2xl border border-[#e1e3e4] bg-white p-6 sm:p-8">
+                                    <h2 className="text-xl font-semibold tracking-[-0.02em] text-[#191c1d]">
+                                        Amenities
+                                    </h2>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        {property.amenities.map((amenity) => (
+                                            <span
+                                                key={amenity}
+                                                className="inline-flex items-center gap-1.5 rounded-full border border-[#c5c6cd] bg-[#f8f9fa] px-3.5 py-1.5 text-sm font-medium text-[#191c1d]"
+                                            >
+                                                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#00696b]" />
+                                                {amenity}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <aside className="lg:sticky lg:top-8 lg:self-start">
+                            <div className="rounded-2xl border border-[#e1e3e4] bg-white p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] sm:p-8">
+                                <p className="text-3xl font-bold tracking-[-0.03em] text-[#191c1d]">
+                                    {formatPrice(property.price)}
+                                </p>
+                                <p className="mt-1 text-sm text-[#75777e]">Rent per month</p>
+
+                                <div className="mt-6 space-y-3 border-t border-[#e7e8e9] pt-6">
+                                    {details.map((detail) => (
+                                        <div key={detail.label} className="flex items-center justify-between text-sm">
+                                            <span className="text-[#75777e]">{detail.label}</span>
+                                            <span className="font-medium capitalize text-[#191c1d]">{detail.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    className="mt-6 w-full rounded-lg bg-[#00696b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#004f51]"
+                                >
+                                    Request to Rent
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="mt-3 w-full rounded-lg border border-[#191c1d] px-4 py-3 text-sm font-semibold text-[#191c1d] transition hover:bg-[#191c1d] hover:text-white"
+                                >
+                                    Save Property
+                                </button>
+                            </div>
+                        </aside>
                     </div>
-                  ))}
                 </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="flex aspect-[21/9] items-center justify-center bg-gray-100 text-gray-400">
-              No image available
-            </div>
-          )}
-        </section>
-
-        {/* Content Layout */}
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Main Details */}
-          <div className="space-y-8 lg:col-span-2">
-            {/* Quick Specs */}
-            <div className="grid grid-cols-3 gap-4 rounded-2xl border border-[#e1e3e4] bg-white p-6 shadow-xs">
-              <div className="text-center">
-                <p className="text-xs font-semibold uppercase text-[#75777e]">Bedrooms</p>
-                <p className="mt-1 text-2xl font-bold text-[#191c1d]">{property.bedrooms}</p>
-              </div>
-              <div className="border-x border-[#e1e3e4] text-center">
-                <p className="text-xs font-semibold uppercase text-[#75777e]">Bathrooms</p>
-                <p className="mt-1 text-2xl font-bold text-[#191c1d]">{property.bathrooms}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs font-semibold uppercase text-[#75777e]">Area</p>
-                <p className="mt-1 text-2xl font-bold text-[#191c1d]">
-                  {property.areaSqFt ? `${property.areaSqFt} sq ft` : "N/A"}
-                </p>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="rounded-2xl border border-[#e1e3e4] bg-white p-6 sm:p-8 shadow-xs">
-              <h2 className="text-xl font-bold text-[#191c1d]">Description</h2>
-              <p className="mt-4 whitespace-pre-line leading-relaxed text-[#44474d]">
-                {property.description || "No description provided."}
-              </p>
-            </div>
-
-            {/* Amenities */}
-            {property.amenities && property.amenities.length > 0 && (
-              <div className="rounded-2xl border border-[#e1e3e4] bg-white p-6 sm:p-8 shadow-xs">
-                <h2 className="text-xl font-bold text-[#191c1d]">Amenities</h2>
-                <div className="mt-4 flex flex-wrap gap-2.5">
-                  {property.amenities.map((amenity, idx) => (
-                    <span
-                      key={idx}
-                      className="rounded-xl bg-[#eef6f5] px-4 py-2 text-sm font-semibold text-[#00696b]"
-                    >
-                      {amenity}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar CTA */}
-          <div>
-            <div className="sticky top-24 space-y-6 rounded-2xl border border-[#e1e3e4] bg-white p-6 sm:p-8 shadow-xs">
-              <h3 className="text-lg font-bold text-[#191c1d]">Interested in this property?</h3>
-              <p className="text-sm text-[#44474d]">
-                Submit a viewing or rental request directly to the property owner.
-              </p>
-
-              <div className="border-t border-[#e1e3e4] pt-4">
-                <p className="text-xs font-semibold uppercase text-[#75777e]">Monthly Rent</p>
-                <p className="mt-1 text-2xl font-bold text-[#00696b]">
-                  ₹{property.price.toLocaleString("en-IN")}
-                </p>
-              </div>
-
-              <Link
-                href={`/bookings?propertyId=${property._id}`}
-                className="block w-full rounded-xl bg-[#00696b] px-5 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-[#004f51] shadow-xs"
-              >
-                Request Booking
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
+            </main>
+            <Footer />
+        </>
+    );
 }

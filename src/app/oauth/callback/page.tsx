@@ -13,20 +13,15 @@ function OAuthCallbackContent() {
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
 
+  const oauthError = searchParams.get("error");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let isMounted = true;
-
-    const oauthError = searchParams.get("error");
-
     if (oauthError) {
-      setError(oauthError);
-
-      return () => {
-        isMounted = false;
-      };
+      return;
     }
+
+    let isMounted = true;
 
     const processOAuthSession = async () => {
       try {
@@ -39,9 +34,7 @@ function OAuthCallbackContent() {
         const user = response?.user;
 
         if (!user) {
-          setError(
-            "Google authentication failed. No active session found."
-          );
+          setError("Google authentication failed. No active session found.");
           return;
         }
 
@@ -52,9 +45,7 @@ function OAuthCallbackContent() {
         router.replace(targetRoute);
       } catch {
         if (isMounted) {
-          setError(
-            "Google authentication failed. Please try again."
-          );
+          setError("Google authentication failed. Please try again.");
         }
       }
     };
@@ -64,9 +55,14 @@ function OAuthCallbackContent() {
     return () => {
       isMounted = false;
     };
-  }, [dispatch, router, searchParams]);
+  }, [dispatch, router, oauthError]);
 
-  if (error) {
+  const displayError =
+    oauthError || error
+      ? oauthError || error
+      : "";
+
+  if (displayError) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#F7F5F0] px-5">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
@@ -74,7 +70,7 @@ function OAuthCallbackContent() {
             Authentication failed
           </h1>
 
-          <p className="mt-3 text-[#6F6B65]">{error}</p>
+          <p className="mt-3 text-[#6F6B65]">{displayError}</p>
 
           <button
             type="button"

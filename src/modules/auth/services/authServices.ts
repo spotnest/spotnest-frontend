@@ -254,6 +254,32 @@ export const updateProfile = async (
 };
 
 /**
+ * Update the user's location used for nearby-property discovery.
+ *
+ * Backend:
+ * PATCH /auth/me/location
+ *
+ * The backend returns the raw response rather than
+ * wrapping it inside { success, data }.
+ */
+export interface UpdateLocationResponse {
+  message: string;
+  locationName: string;
+  resolvedTo: string;
+}
+
+export const updateLocation = async (
+  locationName: string
+): Promise<UpdateLocationResponse> => {
+  const response = await api.patch<UpdateLocationResponse>(
+    "/auth/me/location",
+    { locationName }
+  );
+
+  return response.data;
+};
+
+/**
  * Change the current user's password.
  *
  * Backend:

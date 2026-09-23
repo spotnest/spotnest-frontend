@@ -2,7 +2,10 @@
 
 import { useState, useMemo, type FormEvent } from "react";
 import Link from "next/link";
-import { useAppSelector } from "@/src/store/hook";
+import Image from "next/image";
+import { useAppDispatch, useAppSelector } from "@/src/store/hook";
+import { signInSucceeded } from "@/src/store/slices/authSlice";
+import UpdateLocationForm from "@/src/modules/auth/components/UpdateLocationForm";
 import { IconName } from "../../types/iconName";
 import { Icon } from "../../components/Icon";
 
@@ -71,6 +74,7 @@ const recommendedProperties = [
 
 export default function TenantDashboard() {
     const user = useAppSelector((state) => state.auth.user);
+    const dispatch = useAppDispatch();
 
     const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] =
         useState(false);
@@ -78,6 +82,21 @@ export default function TenantDashboard() {
     const [issueCategory, setIssueCategory] = useState("Plumbing");
     const [issueTitle, setIssueTitle] = useState("");
     const [issueDescription, setIssueDescription] = useState("");
+
+    const handleLocationSaved = (
+        locationName: string,
+        resolvedTo: string
+    ) => {
+        if (!user) return;
+
+        dispatch(
+            signInSucceeded({
+                ...user,
+                locationName,
+                locationResolvedName: resolvedTo,
+            })
+        );
+    };
 
     const greeting = useMemo(() => {
         const hour = new Date().getHours();
@@ -130,7 +149,8 @@ export default function TenantDashboard() {
                         </h1>
 
                         <p className="mt-2 text-base text-[#44474d]">
-                            Here&apos;s what&apos;s happening with your home today.
+                            Here&apos;s what&apos;s happening with your home
+                            today.
                         </p>
                     </div>
 
@@ -141,6 +161,48 @@ export default function TenantDashboard() {
                         <Icon name="search" className="h-4 w-4" />
                         <span>Find a Property</span>
                     </Link>
+                </section>
+
+                {/* Nearby Search Location */}
+                <section className="mt-8 rounded-2xl border border-[#e1e3e4] bg-white p-6 shadow-xs">
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="max-w-sm shrink-0">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#75777e]">
+                                Search Area
+                            </p>
+
+                            <h2 className="mt-1.5 text-lg font-bold tracking-tight text-[#191c1d]">
+                                Nearby search location
+                            </h2>
+
+                            <div className="mt-2 flex items-center gap-2">
+                                {user?.locationResolvedName ? (
+                                    <span className="inline-flex items-center rounded-full bg-[#d9f4f3] px-3 py-1 text-xs font-semibold text-[#00696b]">
+                                        <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#00696b]" />
+                                        {user.locationResolvedName}
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center rounded-full bg-[#f3f4f5] px-3 py-1 text-xs font-semibold text-[#75777e]">
+                                        Not set yet
+                                    </span>
+                                )}
+                            </div>
+
+                            <p className="mt-3 text-xs leading-5 text-[#75777e]">
+                                Set a place name to power the
+                                &ldquo;Near me&rdquo; search on the properties
+                                page. You&apos;ll only see listings within 10
+                                km of this area.
+                            </p>
+                        </div>
+
+                        <div className="w-full max-w-md 2xl:max-w-lg">
+                            <UpdateLocationForm
+                                currentLocationName={user?.locationName}
+                                onSaved={handleLocationSaved}
+                            />
+                        </div>
+                    </div>
                 </section>
 
                 {/* Summary Bento Cards */}
@@ -251,10 +313,13 @@ export default function TenantDashboard() {
 
                         <button
                             type="button"
-                            onClick={() => setIsMaintenanceModalOpen(true)}
+                            onClick={() =>
+                                setIsMaintenanceModalOpen(true)
+                            }
                             className="relative z-10 mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#00696b] hover:text-[#004f51]"
                         >
-                            Report an issue <span aria-hidden="true">+</span>
+                            Report an issue{" "}
+                            <span aria-hidden="true">+</span>
                         </button>
                     </article>
                 </section>
@@ -275,7 +340,8 @@ export default function TenantDashboard() {
                                     </h2>
 
                                     <p className="text-xs text-[#75777e]">
-                                        Your active lease, landlord contact, and property specifications
+                                        Your active lease, landlord contact,
+                                        and property specifications
                                     </p>
                                 </div>
 
@@ -294,7 +360,10 @@ export default function TenantDashboard() {
                                 </h3>
 
                                 <p className="mt-1.5 max-w-md text-sm text-[#75777e]">
-                                    Once your rental application is approved by a property owner, your lease details, agreement copy, and rent schedule will be managed right here.
+                                    Once your rental application is approved by
+                                    a property owner, your lease details,
+                                    agreement copy, and rent schedule will be
+                                    managed right here.
                                 </p>
 
                                 <Link
@@ -315,7 +384,8 @@ export default function TenantDashboard() {
                                     </h2>
 
                                     <p className="text-xs text-[#75777e]">
-                                        Updates regarding requests, viewings, and payments
+                                        Updates regarding requests, viewings,
+                                        and payments
                                     </p>
                                 </div>
                             </div>
@@ -330,7 +400,9 @@ export default function TenantDashboard() {
                                 </p>
 
                                 <p className="mt-1 text-xs text-[#75777e]">
-                                    Your property requests, payment receipts, and maintenance tickets will be logged here.
+                                    Your property requests, payment receipts,
+                                    and maintenance tickets will be logged
+                                    here.
                                 </p>
                             </div>
                         </section>
@@ -344,7 +416,8 @@ export default function TenantDashboard() {
                                     </h2>
 
                                     <p className="text-xs text-[#75777e]">
-                                        Curated premium properties open for rental requests
+                                        Curated premium properties open for
+                                        rental requests
                                     </p>
                                 </div>
 
@@ -363,10 +436,12 @@ export default function TenantDashboard() {
                                         className="group flex flex-col overflow-hidden rounded-2xl border border-[#e1e3e4] bg-white shadow-xs transition hover:shadow-md"
                                     >
                                         <div className="relative h-44 w-full overflow-hidden bg-[#f3f4f5]">
-                                            <img
+                                            <Image
                                                 src={prop.image}
                                                 alt={prop.title}
-                                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                fill
+                                                sizes="(max-width: 640px) 100vw, 50vw"
+                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
                                             />
 
                                             <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-xs">
@@ -481,7 +556,9 @@ export default function TenantDashboard() {
                                 </p>
 
                                 <p className="mt-1 text-xs text-[#75777e]">
-                                    Rent invoices and payment receipts will appear here once your rental lease is activated.
+                                    Rent invoices and payment receipts will
+                                    appear here once your rental lease is
+                                    activated.
                                 </p>
                             </div>
 
@@ -572,10 +649,7 @@ export default function TenantDashboard() {
                                 }
                                 className="rounded-full p-1 text-[#75777e] hover:bg-[#f3f4f5]"
                             >
-                                <Icon
-                                    name="close"
-                                    className="h-5 w-5"
-                                />
+                                <Icon name="close" className="h-5 w-5" />
                             </button>
                         </div>
 
