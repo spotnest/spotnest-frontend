@@ -1,5 +1,6 @@
 export type UserRole =
   | "user"
+  | "tenant"
   | "admin"
   | "owner";
 
