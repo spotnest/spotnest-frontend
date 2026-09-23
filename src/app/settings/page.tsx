@@ -1,1 +1,6 @@
-export default function SettingsPage() { return <h1>Settings</h1>; }
+
+import SettingsPage from "@/src/modules/settings/components/settings";
+
+export default function settingsPage() {
+  return <SettingsPage />
+}

@@ -148,20 +148,38 @@ export default function OtpVerificationForm() {
         otp: otpValue,
       });
 
-      if ("user" in result && result.user) {
-        dispatch(signInSucceeded(result.user));
-
+if ("user" in result && result.user) {
+    if (
+        result.user.role === "owner" &&
+        "verificationStatus" in result.user
+    ) {
         setSuccessMessage(
-          "Email verified successfully! Redirecting..."
+            "Email verified successfully. Please complete owner verification."
         );
 
         setTimeout(() => {
-          const targetRoute = getDashboardRouteForRole(result.user.role);
-          router.push(targetRoute);
+            router.push("/owner/verification");
         }, 800);
 
         return;
-      }
+    }
+
+    dispatch(signInSucceeded(result.user));
+
+    setSuccessMessage(
+        "Email verified successfully! Redirecting..."
+    );
+
+    setTimeout(() => {
+        const targetRoute = getDashboardRouteForRole(
+            result.user.role
+        );
+
+        router.push(targetRoute);
+    }, 800);
+
+    return;
+}
 
      setSuccessMessage(
   "Email verified successfully! Please sign in."

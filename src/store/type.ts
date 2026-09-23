@@ -1,15 +1,13 @@
 export type UserRole =
   | "user"
   | "admin"
-  | "owner"
-  | "tenant"
-  | "customer";
-
+  | "owner";
 
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   image?: string;
   isVerified?: boolean;

@@ -1,1 +1,5 @@
-export default function UsersPage() { return <h1>Users</h1>; }
+import TenantDashboard from "@/src/modules/dashboard/tenant-dashboard/components/tenantDashboard";
+
+export default function UserDashboardPage() {
+    return <TenantDashboard />;
+}

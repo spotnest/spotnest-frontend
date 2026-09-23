@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-
 import {
   Eye,
   EyeOff,
@@ -21,12 +19,31 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-import { useSignup } from "../hooks/useSIgnup";
+import { useAppSelector } from "@/src/store/hook";
+import { signup } from "../services/authServices";
 
 type RoleType = "renter" | "agent";
 
 export default function RegisterForm() {
   const router = useRouter();
+
+  const { isAuthenticated, user } = useAppSelector(
+    (state) => state.auth
+  );
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    if (user?.role === "owner") {
+      router.replace("/owner/dashboard");
+    } else if (user?.role === "admin") {
+      router.replace("/dashboard");
+    } else {
+      router.replace("/user/dashboard");
+    }
+  }, [isAuthenticated, user, router]);
 
   const [role, setRole] = useState<RoleType>("renter");
   const [fullName, setFullName] = useState("");
@@ -37,36 +54,31 @@ export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const { signup, isLoading } = useSignup();
-
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const passwordCriteria = useMemo(() => {
-    return {
+  const passwordCriteria = useMemo(
+    () => ({
       length: password.length >= 8,
       uppercase: /[A-Z]/.test(password),
       number: /[0-9]/.test(password),
       special: /[^A-Za-z0-9]/.test(password),
-    };
-  }, [password]);
+    }),
+    [password]
+  );
 
   const passwordStrengthScore = useMemo(() => {
-    if (!password) return 0;
+    if (!password) {
+      return 0;
+    }
 
     return Object.values(passwordCriteria).filter(Boolean).length;
   }, [passwordCriteria, password]);
 
   const getStrengthLabel = (score: number) => {
     switch (score) {
-      case 0:
-        return {
-          label: "",
-          color: "bg-slate-200",
-          text: "text-slate-400",
-        };
-
       case 1:
         return {
           label: "Weak",
@@ -104,8 +116,10 @@ export default function RegisterForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
 
     if (isLoading) {
       return;
@@ -132,11 +146,6 @@ export default function RegisterForm() {
       return;
     }
 
-    /*
-     * Backend requires a minimum of 6 characters.
-     * We keep the existing password-strength UI,
-     * but allow any password that satisfies the backend requirement.
-     */
     if (password.length < 6) {
       setErrorMessage("Password must be at least 6 characters.");
       return;
@@ -148,14 +157,22 @@ export default function RegisterForm() {
     }
 
     try {
+      setIsLoading(true);
+
       /*
-       * The useSignup hook now owns the loading state.
-       * Do not call isLoading() because isLoading is a boolean.
+       * UI role mapping:
+       *
+       * renter -> user
+       * agent  -> owner
+       *
+       * The backend uses only:
+       * "user" | "owner"
        */
       const result = await signup({
         name: trimmedName,
         email: trimmedEmail,
         password,
+        role: role === "agent" ? "owner" : "user",
       });
 
       setSuccessMessage(
@@ -166,12 +183,14 @@ export default function RegisterForm() {
       setIsSuccess(true);
 
       /*
-       * Backend has created the user and sent the OTP.
+       * Signup creates the account and sends the OTP.
        *
-       * The email is passed to the OTP page so it knows
-       * which account needs verification.
+       * No authenticated session should be created here.
+       * The user must verify their email first.
        */
-      router.push(`/otp?email=${encodeURIComponent(trimmedEmail)}`);
+      router.push(
+        `/otp?email=${encodeURIComponent(trimmedEmail)}`
+      );
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
@@ -193,7 +212,7 @@ export default function RegisterForm() {
         }
 
         /*
-         * Normal backend AppError message
+         * Normal backend error
          */
         if (typeof data?.message === "string") {
           setErrorMessage(data.message);
@@ -201,7 +220,7 @@ export default function RegisterForm() {
         }
 
         /*
-         * Backend not reachable
+         * Backend unavailable
          */
         if (
           error.code === "ERR_NETWORK" ||
@@ -229,9 +248,17 @@ export default function RegisterForm() {
         return;
       }
 
-      setErrorMessage("Unable to create your account. Please try again.");
+      setErrorMessage(
+        "Unable to create your account. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-[#F7F5F0] text-[#1C1B1A] md:grid md:grid-cols-2">
@@ -249,6 +276,7 @@ export default function RegisterForm() {
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#6C4CE6] text-sm text-white">
               S
             </span>
+
             SpotNest
           </Link>
 
@@ -274,9 +302,11 @@ export default function RegisterForm() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6C4CE6] text-sm text-white">
               S
             </span>
+
             SpotNest
           </Link>
 
+          {/* SUCCESS STATE */}
           {isSuccess ? (
             <div className="flex animate-in flex-col items-center rounded-2xl border border-[#CFCBC3]/60 bg-white p-8 text-center shadow-[0_10px_30px_rgba(28,27,26,0.08)] fade-in zoom-in duration-300 sm:p-10">
               <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/50">
@@ -345,6 +375,7 @@ export default function RegisterForm() {
                 </label>
 
                 <div className="grid grid-cols-2 gap-2 rounded-2xl bg-[#EAE6DF] p-1">
+                  {/* RENTER */}
                   <button
                     type="button"
                     onClick={() => setRole("renter")}
@@ -356,13 +387,16 @@ export default function RegisterForm() {
                   >
                     <HomeIcon
                       className={`h-4 w-4 ${
-                        role === "renter" ? "text-[#6C4CE6]" : ""
+                        role === "renter"
+                          ? "text-[#6C4CE6]"
+                          : ""
                       }`}
                     />
 
                     <span>Renter / Buyer</span>
                   </button>
 
+                  {/* OWNER */}
                   <button
                     type="button"
                     onClick={() => setRole("agent")}
@@ -374,7 +408,9 @@ export default function RegisterForm() {
                   >
                     <Building2
                       className={`h-4 w-4 ${
-                        role === "agent" ? "text-[#6C4CE6]" : ""
+                        role === "agent"
+                          ? "text-[#6C4CE6]"
+                          : ""
                       }`}
                     />
 
@@ -385,17 +421,27 @@ export default function RegisterForm() {
 
               {/* ERROR */}
               {errorMessage && (
-                <div className="mb-6 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                <div
+                  role="alert"
+                  className="mb-6 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+                >
                   <X className="h-4 w-4 flex-shrink-0" />
+
                   <span>{errorMessage}</span>
                 </div>
               )}
 
               {/* FORM */}
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-4"
+              >
                 {/* FULL NAME */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]">
+                  <label
+                    htmlFor="fullName"
+                    className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]"
+                  >
                     Full Name
                   </label>
 
@@ -405,10 +451,15 @@ export default function RegisterForm() {
                     </div>
 
                     <input
+                      id="fullName"
+                      name="fullName"
                       type="text"
+                      autoComplete="name"
                       required
                       value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      onChange={(event) =>
+                        setFullName(event.target.value)
+                      }
                       placeholder="John Doe"
                       className="h-[54px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-11 pr-4 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                     />
@@ -417,7 +468,10 @@ export default function RegisterForm() {
 
                 {/* EMAIL */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]">
+                  <label
+                    htmlFor="email"
+                    className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]"
+                  >
                     Email
                   </label>
 
@@ -427,10 +481,15 @@ export default function RegisterForm() {
                     </div>
 
                     <input
+                      id="email"
+                      name="email"
                       type="email"
+                      autoComplete="email"
                       required
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(event) =>
+                        setEmail(event.target.value)
+                      }
                       placeholder="you@example.com"
                       className="h-[54px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-11 pr-4 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                     />
@@ -439,7 +498,10 @@ export default function RegisterForm() {
 
                 {/* PASSWORD */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]">
+                  <label
+                    htmlFor="password"
+                    className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]"
+                  >
                     Password
                   </label>
 
@@ -449,20 +511,29 @@ export default function RegisterForm() {
                     </div>
 
                     <input
+                      id="password"
+                      name="password"
                       type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
                       required
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(event) =>
+                        setPassword(event.target.value)
+                      }
                       placeholder="Enter your password"
                       className="h-[54px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-11 pr-11 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
                     />
 
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() =>
+                        setShowPassword((current) => !current)
+                      }
                       className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#9A968F] transition-colors hover:text-[#1C1B1A] focus:outline-none"
                       aria-label={
-                        showPassword ? "Hide password" : "Show password"
+                        showPassword
+                          ? "Hide password"
+                          : "Show password"
                       }
                     >
                       {showPassword ? (
@@ -483,10 +554,16 @@ export default function RegisterForm() {
 
                         <span
                           className={`font-semibold ${
-                            getStrengthLabel(passwordStrengthScore).text
+                            getStrengthLabel(
+                              passwordStrengthScore
+                            ).text
                           }`}
                         >
-                          {getStrengthLabel(passwordStrengthScore).label}
+                          {
+                            getStrengthLabel(
+                              passwordStrengthScore
+                            ).label
+                          }
                         </span>
                       </div>
 
@@ -496,7 +573,9 @@ export default function RegisterForm() {
                             key={step}
                             className={`h-full rounded-full transition-colors duration-300 ${
                               step <= passwordStrengthScore
-                                ? getStrengthLabel(passwordStrengthScore).color
+                                ? getStrengthLabel(
+                                    passwordStrengthScore
+                                  ).color
                                 : "bg-[#EAE6DF]"
                             }`}
                           />
@@ -574,7 +653,10 @@ export default function RegisterForm() {
 
                 {/* CONFIRM PASSWORD */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="mb-1.5 block text-sm font-semibold text-[#1C1B1A]"
+                  >
                     Confirm Password
                   </label>
 
@@ -584,11 +666,18 @@ export default function RegisterForm() {
                     </div>
 
                     <input
-                      type={showConfirmPassword ? "text" : "password"}
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={
+                        showConfirmPassword
+                          ? "text"
+                          : "password"
+                      }
+                      autoComplete="new-password"
                       required
                       value={confirmPassword}
-                      onChange={(e) =>
-                        setConfirmPassword(e.target.value)
+                      onChange={(event) =>
+                        setConfirmPassword(event.target.value)
                       }
                       placeholder="Confirm your password"
                       className="h-[54px] w-full rounded-xl border border-[#CFCBC3] bg-white pl-11 pr-11 text-base text-[#1C1B1A] outline-none transition placeholder:text-[#9A968F] hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF]"
@@ -597,7 +686,9 @@ export default function RegisterForm() {
                     <button
                       type="button"
                       onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
+                        setShowConfirmPassword(
+                          (current) => !current
+                        )
                       }
                       className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#9A968F] transition-colors hover:text-[#1C1B1A] focus:outline-none"
                       aria-label={
@@ -622,7 +713,10 @@ export default function RegisterForm() {
                   className="mt-4 flex h-[58px] w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-[#6C4CE6] px-5 text-lg font-semibold text-white transition hover:bg-[#5738C7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isLoading ? (
-                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    <span
+                      className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                      aria-label="Creating account"
+                    />
                   ) : (
                     <>
                       <span>Sign Up</span>
@@ -632,10 +726,14 @@ export default function RegisterForm() {
                 </button>
               </form>
 
-              {/* OR */}
+              {/* DIVIDER */}
               <div className="my-8 flex items-center gap-5">
                 <div className="h-px flex-1 bg-[#D8D4CC]" />
-                <span className="text-sm font-medium text-[#6F6B65]">OR</span>
+
+                <span className="text-sm font-medium text-[#6F6B65]">
+                  OR
+                </span>
+
                 <div className="h-px flex-1 bg-[#D8D4CC]" />
               </div>
 

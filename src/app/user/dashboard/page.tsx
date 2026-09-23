@@ -1,5 +1,5 @@
-import UserDashboard from "@/src/modules/dashboard/admin-dasboard/components/UserDashboard";
+import TenantDashboard from "@/src/modules/dashboard/tenant-dashboard/components/tenantDashboard";
 
 export default function UserDashboardPage() {
-    return <UserDashboard />;
+    return <TenantDashboard />;
 }

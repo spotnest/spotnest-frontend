@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Icon, type IconName } from "./DashboardShell";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
 import type { DashboardUser } from "../types/dashboard";
+import { IconName } from "../../types/iconName";
+import { Icon } from "../../components/Icon";
 
 function formatRelativeTime(value: string): string {
     const elapsed = Date.now() - new Date(value).getTime();
@@ -69,16 +70,16 @@ export default function AdminDashboard() {
         { label: "Pending requests", value: overview.pendingRequests, change: "No booking data", note: "available yet", icon: "inbox" as IconName, tone: "warm" },
     ];
     const actions = [
-        { label: "Add property", description: "Create a new listing", href: "/properties", icon: "plus" as IconName },
         { label: "Manage users", description: "View all accounts", href: "/users", icon: "users" as IconName },
         { label: "Review requests", description: `${overview.pendingRequests} requests`, href: "/bookings", icon: "inbox" as IconName },
         { label: "View reports", description: "Track platform health", href: "/dashboard#reports", icon: "chart" as IconName },
     ];
-    const pendingActions: Array<[string, string, IconName]> = [
-        ["Properties waiting for approval", `${overview.totalProperties - overview.activeListings} properties`, "home" as IconName],
-        ["Requests to review", `${overview.pendingRequests} requests`, "inbox" as IconName],
-        ["User verification", `${overview.pendingUserVerification} accounts`, "users" as IconName],
-        ["Reports requiring review", "No report data", "alert" as IconName],
+    const pendingActions: Array<[string, string, IconName, string]> = [
+        ...(overview.pendingOwnerCount > 0 ? [["Owner approvals", `${overview.pendingOwnerCount} owners waiting for approval`, "users" as IconName, "/admin/requests/owner-approvals"] as [string, string, IconName, string]] : []),
+        ["Properties waiting for approval", `${overview.totalProperties - overview.activeListings} properties`, "home" as IconName, "/admin/properties"],
+        ["Requests to review", `${overview.pendingRequests} requests`, "inbox" as IconName, "/bookings"],
+        ["User verification", `${overview.pendingUserVerification} accounts`, "users" as IconName, "/users"],
+        ["Reports requiring review", "No report data", "alert" as IconName, "/dashboard#reports"],
     ];
 
     return (
@@ -89,7 +90,6 @@ export default function AdminDashboard() {
                     <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#191c1d]">SpotNest platform overview.</h1>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-[#44474d] sm:text-base">Here&apos;s what&apos;s happening across SpotNest today.</p>
                 </div>
-                <Link href="/properties" className="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-full bg-[#00696b] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(0,105,107,0.15)] transition hover:bg-[#004f51]"><Icon name="plus" className="h-4 w-4" /> Add property</Link>
             </section>
 
             <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Platform statistics">
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
                     <SectionHeading eyebrow="Keep things moving" title="Pending actions" />
                     <div className="rounded-2xl border border-[#e1e3e4] bg-white p-5">
                         <div className="space-y-4">
-                            {pendingActions.map(([label, detail, icon]) => <Link href="#" key={label} className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-[#f3f4f5]"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#f3f4f5] text-[#00696b]"><Icon name={icon} className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[#191c1d]">{label}</span><span className="mt-0.5 block text-xs text-[#75777e]">{detail}</span></span><Icon name="arrow" className="h-4 w-4 shrink-0 text-[#75777e]" /></Link>)}
+                            {pendingActions.map(([label, detail, icon, href]) => <Link href={href} key={label} className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-[#f3f4f5]"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#f3f4f5] text-[#00696b]"><Icon name={icon} className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[#191c1d]">{label}</span><span className="mt-0.5 block text-xs text-[#75777e]">{detail}</span></span>{label === "Owner approvals" && <span className="text-xs font-bold text-[#00696b]">Review</span>}<Icon name="arrow" className="h-4 w-4 shrink-0 text-[#75777e]" /></Link>)}
                         </div>
                     </div>
                 </section>

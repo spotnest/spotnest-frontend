@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/modules/auth/hooks/useAuth";
-import DashboardShell from "@/src/modules/dashboard/admin-dasboard/components/DashboardShell";
+import DashboardShell from "@/src/modules/dashboard/components/DashboardShell";
 import Link from "next/link";
 import { normalizeRole, getDashboardRouteForRole } from "@/src/modules/auth/utils/roleUtils";
 
@@ -54,7 +54,7 @@ export default function OwnerDashboardPage() {
     }
 
     return (
-        <DashboardShell title="Owner Overview">
+        <DashboardShell >
             <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10 lg:py-12">
                 <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div>

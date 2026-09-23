@@ -1,17 +1,24 @@
 import api from "@/src/lib/axios";
 
 import type {
+  AdminUser,
   AuthMessageResponse,
   AuthResponse,
   AuthUser,
+  ChangePasswordPayload,
+  ChangePasswordResponse,
   CurrentUserResponse,
   ForgotPasswordPayload,
   LoginPayload,
   OtpRequiredResponse,
+  OwnerApprovalRequest,
+  OwnerEmailVerifiedResponse,
   ResendVerificationPayload,
   ResetPasswordPayload,
   SignupPayload,
   SignupPendingResponse,
+  UpdateProfilePayload,
+  UpdateProfileResponse,
   VerifyEmailPayload,
 } from "../types/auth";
 
@@ -34,10 +41,8 @@ export const signup = async (
 /**
  * Login.
  *
- * Authentication tokens are expected to be handled by the backend
+ * Authentication tokens are handled by the backend
  * through HTTP-only cookies.
- *
- * The frontend receives user information only.
  */
 export const login = async (
   payload: LoginPayload
@@ -52,9 +57,8 @@ export const login = async (
 /**
  * Get the currently authenticated user.
  *
- * This is the main endpoint used to restore the frontend session
- * after a page refresh.
- * Backend `/auth/me` returns `{ success: true, data: req.user }`.
+ * Backend:
+ * GET /auth/me
  */
 export const getCurrentUser = async (): Promise<CurrentUserResponse> => {
   const response = await api.get<{
@@ -63,8 +67,12 @@ export const getCurrentUser = async (): Promise<CurrentUserResponse> => {
   }>("/auth/me");
 
   const rawData = response.data.data;
+
   const user =
-    rawData && typeof rawData === "object" && "user" in rawData && rawData.user
+    rawData &&
+    typeof rawData === "object" &&
+    "user" in rawData &&
+    rawData.user
       ? rawData.user
       : (rawData as AuthUser);
 
@@ -73,13 +81,86 @@ export const getCurrentUser = async (): Promise<CurrentUserResponse> => {
 
 /**
  * Verify email using OTP.
+ *
+ * Normal users receive authentication data.
+ * Owners receive verification information but are NOT
+ * automatically authenticated until admin approval.
  */
 export const verifyEmail = async (
   payload: VerifyEmailPayload
-): Promise<AuthResponse | AuthMessageResponse> => {
+): Promise<AuthResponse | OwnerEmailVerifiedResponse> => {
   const response = await api.post<{
-    data: AuthResponse | AuthMessageResponse;
+    data: AuthResponse | OwnerEmailVerifiedResponse;
   }>("/auth/verify-email", payload);
+
+  return response.data.data;
+};
+
+/**
+ * Get pending owner verification requests.
+ *
+ * Admin only.
+ */
+export const getOwnerApprovalRequests = async (): Promise<
+  OwnerApprovalRequest[]
+> => {
+  const response = await api.get<{
+    success: boolean;
+    data: OwnerApprovalRequest[];
+  }>("/auth/admin/verifications");
+
+  return response.data.data;
+};
+
+/**
+ * Get all users.
+ *
+ * Admin only.
+ */
+export const getAdminUsers = async (): Promise<AdminUser[]> => {
+  const response = await api.get<{
+    success: boolean;
+    data: AdminUser[];
+  }>("/auth/admin/users");
+
+  return response.data.data;
+};
+
+/**
+ * Approve an owner's verification.
+ *
+ * Admin only.
+ */
+export const approveOwner = async (
+  userId: string
+): Promise<{ message: string }> => {
+  const response = await api.patch<{
+    success: boolean;
+    data: { message: string };
+  }>(`/auth/admin/verifications/${userId}/approve`);
+
+  return response.data.data;
+};
+
+/**
+ * Upload owner certification / ID document.
+ *
+ * Owner only.
+ *
+ * Backend:
+ * POST /auth/owner/verification
+ */
+export const uploadOwnerVerification = async (
+  file: File
+): Promise<{ message: string }> => {
+  const formData = new FormData();
+
+  formData.append("idDocument", file);
+
+  const response = await api.post<{
+    success: boolean;
+    data: { message: string };
+  }>("/auth/owner/verification", formData);
 
   return response.data.data;
 };
@@ -126,8 +207,7 @@ export const resetPassword = async (
 /**
  * Refresh the authenticated session.
  *
- * The refresh token is expected to be stored in an HTTP-only cookie
- * by the backend. The frontend does not read or store it.
+ * Refresh token is handled through an HTTP-only cookie.
  */
 export const refreshSession = async (): Promise<AuthResponse> => {
   const response = await api.post<{
@@ -140,7 +220,7 @@ export const refreshSession = async (): Promise<AuthResponse> => {
 /**
  * Logout the current user.
  *
- * The backend is responsible for clearing authentication cookies.
+ * Backend clears authentication cookies.
  */
 export const logout = async (): Promise<AuthMessageResponse> => {
   const response = await api.post<{
@@ -154,4 +234,45 @@ export const logout = async (): Promise<AuthMessageResponse> => {
     "Logged out successfully";
 
   return { message };
+};
+
+/**
+ * Update the current user's profile.
+ *
+ * Backend:
+ * PATCH /auth/me
+ */
+export const updateProfile = async (
+  data: UpdateProfilePayload
+): Promise<UpdateProfileResponse> => {
+  const response = await api.patch<{
+    success?: boolean;
+    data: UpdateProfileResponse;
+  }>("/auth/me", data);
+
+  return response.data.data;
+};
+
+/**
+ * Change the current user's password.
+ *
+ * Backend:
+ * PATCH /auth/me/password
+ *
+ * confirmPassword is used only for frontend validation
+ * and is intentionally not sent to the backend.
+ */
+export const changePassword = async ({
+  currentPassword,
+  newPassword,
+}: ChangePasswordPayload): Promise<ChangePasswordResponse> => {
+  const response = await api.patch<{
+    success?: boolean;
+    data: ChangePasswordResponse;
+  }>("/auth/me/password", {
+    currentPassword,
+    newPassword,
+  });
+
+  return response.data.data;
 };

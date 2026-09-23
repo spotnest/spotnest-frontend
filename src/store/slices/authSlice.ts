@@ -16,30 +16,21 @@ const authSlice = createSlice({
   initialState,
 
   reducers: {
-    /**
-     * Starts an authentication request such as login,
-     * logout, session initialization, etc.
-     */
     authRequestStarted(state) {
       state.status = "loading";
       state.error = null;
     },
 
-    /**
-     * Marks the authentication/session state as initialized.
-     *
-     * This prevents the application from treating
-     * "session has not been checked yet" as "logged out".
-     */
     authInitialized(state) {
       state.initialized = true;
-      state.status = "idle";
+
+      if (state.status === "loading") {
+        state.status = "idle";
+      }
+
       state.error = null;
     },
 
-    /**
-     * Called when login or forgot-password requires OTP verification.
-     */
     otpRequired(
       state,
       action: PayloadAction<{
@@ -53,13 +44,10 @@ const authSlice = createSlice({
       state.error = null;
     },
 
-    /**
-     * Stores the authenticated user in Redux.
-     *
-     * Tokens are NOT stored in Redux.
-     * Authentication is handled by HTTP-only cookies.
-     */
-    signInSucceeded(state, action: PayloadAction<AuthUser>) {
+    signInSucceeded(
+      state,
+      action: PayloadAction<AuthUser>
+    ) {
       state.status = "succeeded";
       state.user = action.payload;
       state.isAuthenticated = true;
@@ -69,19 +57,16 @@ const authSlice = createSlice({
       state.error = null;
     },
 
-    /**
-     * Updates the authenticated user's information.
-     */
-    userUpdated(state, action: PayloadAction<AuthUser>) {
+    userUpdated(
+      state,
+      action: PayloadAction<AuthUser>
+    ) {
       state.user = action.payload;
       state.isAuthenticated = true;
       state.initialized = true;
       state.error = null;
     },
 
-    /**
-     * Clears the authentication error.
-     */
     clearAuthError(state) {
       state.error = null;
 
@@ -90,20 +75,15 @@ const authSlice = createSlice({
       }
     },
 
-    /**
-     * Handles authentication/session failures.
-     */
-    authRequestFailed(state, action: PayloadAction<string>) {
+    authRequestFailed(
+      state,
+      action: PayloadAction<string>
+    ) {
       state.status = "failed";
       state.error = action.payload;
+      state.initialized = true;
     },
 
-    /**
-     * Marks the user as unauthenticated.
-     *
-     * The session has still been initialized because we have
-     * completed the authentication check.
-     */
     signedOut(state) {
       state.user = null;
       state.isAuthenticated = false;
@@ -114,11 +94,6 @@ const authSlice = createSlice({
       state.otpPurpose = null;
     },
 
-    /**
-     * Completely resets authentication state.
-     *
-     * Useful for situations such as a fresh authentication flow.
-     */
     resetAuthState(state) {
       state.user = null;
       state.isAuthenticated = false;

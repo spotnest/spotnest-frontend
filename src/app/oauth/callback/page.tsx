@@ -2,11 +2,11 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getDashboardRouteForRole } from "@/src/modules/auth/utils/roleUtils";
 
+import { getDashboardRouteForRole } from "@/src/modules/auth/utils/roleUtils";
 import { getCurrentUser } from "@/src/modules/auth/services/authServices";
-import { signInSucceeded } from "@/src/store/slices/authSlice";
 import { useAppDispatch } from "@/src/store/hook";
+import { signInSucceeded } from "@/src/store/slices/authSlice";
 
 function OAuthCallbackContent() {
   const router = useRouter();
@@ -16,44 +16,55 @@ function OAuthCallbackContent() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const errorParam = searchParams.get("error");
-    if (errorParam) {
-      queueMicrotask(() => {
-        setError(errorParam);
-      });
-      return;
+    let isMounted = true;
+
+    const oauthError = searchParams.get("error");
+
+    if (oauthError) {
+      setError(oauthError);
+
+      return () => {
+        isMounted = false;
+      };
     }
 
     const processOAuthSession = async () => {
       try {
-        const { user } = await getCurrentUser();
+        const response = await getCurrentUser();
 
-        if (user && (user.id || user.email)) {
-          dispatch(signInSucceeded(user));
-          const targetRoute = getDashboardRouteForRole(user.role);
-          router.replace(targetRoute);
+        if (!isMounted) {
           return;
         }
 
-        // Fallback for query param user object if provided
-        const userParam = searchParams.get("user");
-        if (userParam) {
-          const parsedUser = JSON.parse(userParam);
-          dispatch(signInSucceeded(parsedUser));
-          const targetRoute = getDashboardRouteForRole(parsedUser.role);
-          router.replace(targetRoute);
+        const user = response?.user;
+
+        if (!user) {
+          setError(
+            "Google authentication failed. No active session found."
+          );
           return;
         }
 
-        setError("Google authentication failed. No active session found.");
+        dispatch(signInSucceeded(user));
+
+        const targetRoute = getDashboardRouteForRole(user.role);
+
+        router.replace(targetRoute);
       } catch {
-        setError("Google authentication failed. Please try again.");
+        if (isMounted) {
+          setError(
+            "Google authentication failed. Please try again."
+          );
+        }
       }
     };
 
     void processOAuthSession();
-  }, [dispatch, router, searchParams]);
 
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, router, searchParams]);
 
   if (error) {
     return (
@@ -63,9 +74,7 @@ function OAuthCallbackContent() {
             Authentication failed
           </h1>
 
-          <p className="mt-3 text-[#6F6B65]">
-            {error}
-          </p>
+          <p className="mt-3 text-[#6F6B65]">{error}</p>
 
           <button
             type="button"
@@ -99,7 +108,10 @@ export default function OAuthCallbackPage() {
         <main className="flex min-h-screen items-center justify-center bg-[#F7F5F0]">
           <div className="text-center">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#6C4CE6]/30 border-t-[#6C4CE6]" />
-            <p className="mt-4 text-[#6F6B65]">Signing you in...</p>
+
+            <p className="mt-4 text-[#6F6B65]">
+              Signing you in...
+            </p>
           </div>
         </main>
       }
