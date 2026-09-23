@@ -9,6 +9,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import { signInSucceeded } from "@/src/store/slices/authSlice";
 import { login } from "../services/authServices";
+import { dashboardPathForRole } from "@/src/constants/routes";
 
 const EmailIcon = () => (
   <svg
@@ -74,13 +75,7 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (user?.role === "owner") {
-        router.replace("/owner/dashboard");
-      } else if (user?.role === "admin") {
-        router.replace("/dashboard");
-      } else {
-        router.replace("/user/dashboard");
-      }
+      router.replace(dashboardPathForRole(user?.role));
     }
   }, [isAuthenticated, user, router]);
 
@@ -133,13 +128,7 @@ export default function LoginForm() {
       /*
        * Redirect based on authenticated user's role.
        */
-      if (response.user.role === "owner") {
-        router.push("/owner/dashboard");
-      } else if (response.user.role === "admin") {
-        router.push("/dashboard");
-      } else {
-        router.push("/user/dashboard");
-      }
+      router.replace(dashboardPathForRole(response.user.role));
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;

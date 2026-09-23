@@ -25,6 +25,11 @@ export const approveOwner = async (userId: string): Promise<{ message: string }>
   return response.data.data;
 };
 
+export const rejectOwner = async ({ userId, reason }: { userId: string; reason: string }): Promise<{ message: string }> => {
+  const response = await api.patch<{ success: boolean; data: { message: string } }>(`/auth/admin/verifications/${userId}/reject`, { reason });
+  return response.data.data;
+};
+
 export const signup = async (
   payload: SignupPayload
 ): Promise<SignupPendingResponse> => {

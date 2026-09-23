@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/src/store/hook";
+import { dashboardPathForRole } from "@/src/constants/routes";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
     const router = useRouter();
@@ -10,13 +11,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (isAuthenticated) {
-            if (user?.role === "owner") {
-                router.replace("/owner/dashboard");
-            } else if (user?.role === "admin") {
-                router.replace("/dashboard");
-            } else {
-                router.replace("/user/dashboard");
-            }
+            router.replace(dashboardPathForRole(user?.role));
         }
     }, [isAuthenticated, user, router]);
 
@@ -32,4 +27,3 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     // Unauthenticated guests can view login, register, forgot-password, etc. immediately
     return <>{children}</>;
 }
-

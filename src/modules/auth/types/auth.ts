@@ -13,6 +13,7 @@ export interface AuthUser {
   phone?: string;
   isVerified?: boolean;
   isBlock?: boolean;
+  verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
   locationName?: string;
   locationResolvedName?: string;
 }
@@ -24,6 +25,7 @@ export interface AdminUser {
   role: "admin" | "owner" | "user";
   status: "active" | "inactive" | "suspended";
   isVerified: boolean;
+  verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
   createdAt: string;
 }
 

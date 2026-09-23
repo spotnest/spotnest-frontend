@@ -21,6 +21,7 @@ import {
 
 import { useAppSelector } from "@/src/store/hook";
 import { signup } from "../services/authServices";
+import { dashboardPathForRole } from "@/src/constants/routes";
 
 type RoleType = "renter" | "agent";
 
@@ -30,13 +31,7 @@ export default function RegisterForm() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (user?.role === "owner") {
-        router.replace("/owner/dashboard");
-      } else if (user?.role === "admin") {
-        router.replace("/dashboard");
-      } else {
-        router.replace("/user/dashboard");
-      }
+      router.replace(dashboardPathForRole(user?.role));
     }
   }, [isAuthenticated, user, router]);
 
