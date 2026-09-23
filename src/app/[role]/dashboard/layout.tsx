@@ -8,17 +8,17 @@ import { useAppSelector } from "@/src/store/hook";
 export default function RoleDashboardLayout({ children }: { children: ReactNode }) {
     const router = useRouter();
     const { role } = useParams<{ role: string }>();
-    const { isAuthenticated, initialized, user } = useAppSelector((state) => state.auth);
+    const { isAuthenticated, isInitialized, user } = useAppSelector((state) => state.auth);
 
-    // Keep the URL role in sync with the authenticated role. Any non-admin,
-    // non-owner role uses the shared `/user/dashboard` route.
+    // Keep the URL role in sync with the authenticated role. Tenants have a
+    // dedicated dashboard, while normal users use the shared user route.
     const expectedRole =
-        user?.role === "admin" || user?.role === "owner"
+        user?.role === "admin" || user?.role === "owner" || user?.role === "tenant"
             ? user.role
             : "user";
 
     useEffect(() => {
-        if (!initialized) return;
+        if (!isInitialized) return;
 
         if (!isAuthenticated || !user) {
             router.replace("/login");
@@ -37,10 +37,10 @@ export default function RoleDashboardLayout({ children }: { children: ReactNode 
         if (role !== expectedRole) {
             router.replace(`/${expectedRole}/dashboard`);
         }
-    }, [expectedRole, isAuthenticated, initialized, role, router, user]);
+    }, [expectedRole, isAuthenticated, isInitialized, role, router, user]);
 
     if (
-        !initialized ||
+        !isInitialized ||
         !isAuthenticated ||
         !user ||
         role !== expectedRole ||

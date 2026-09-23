@@ -7,8 +7,8 @@ export function useAuth() {
   const isAuthenticated = useAppSelector(
     (state) => state.auth.isAuthenticated
   );
-  const initialized = useAppSelector(
-    (state) => state.auth.initialized
+  const isInitialized = useAppSelector(
+    (state) => state.auth.isInitialized
   );
   const status = useAppSelector((state) => state.auth.status);
   const error = useAppSelector((state) => state.auth.error);
@@ -16,9 +16,9 @@ export function useAuth() {
   return {
     user,
     isAuthenticated,
-    initialized,
+    isInitialized,
     status,
     error,
-    isLoading: !initialized || status === "loading",
+    isLoading: !isInitialized || status === "loading",
   };
 }

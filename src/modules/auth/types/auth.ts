@@ -6,7 +6,7 @@ export interface AdminUser {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "owner" | "user";
+  role: UserRole;
   status: "active" | "inactive" | "suspended";
   isVerified: boolean;
   verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
@@ -21,10 +21,10 @@ export interface OwnerApprovalRequest {
   status: "active" | "inactive" | "suspended";
   isVerified: boolean;
   verificationStatus?:
-    | "unsubmitted"
-    | "pending"
-    | "approved"
-    | "rejected";
+  | "unsubmitted"
+  | "pending"
+  | "approved"
+  | "rejected";
   createdAt: string;
   submittedAt?: string;
 }
@@ -123,9 +123,9 @@ export interface OwnerEmailVerifiedResponse {
     email: string;
     role: UserRole;
     verificationStatus:
-      | "unsubmitted"
-      | "pending"
-      | "approved"
-      | "rejected";
+    | "unsubmitted"
+    | "pending"
+    | "approved"
+    | "rejected";
   };
 }
