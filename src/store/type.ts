@@ -1,5 +1,6 @@
 export type UserRole =
   | "user"
+  | "tenant"
   | "admin"
   | "owner";
 
@@ -27,7 +28,7 @@ export type AuthStatus =
 export interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  initialized: boolean;
+  isInitialized: boolean;
   status: AuthStatus;
   error: string | null;
   pendingEmail: string | null;

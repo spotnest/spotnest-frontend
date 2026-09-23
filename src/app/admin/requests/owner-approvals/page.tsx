@@ -19,18 +19,18 @@ const messageFromError = (error: unknown, fallback: string) =>
 export default function OwnerApprovalRequestsPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { user, initialized } = useAppSelector((state) => state.auth);
+    const { user, isInitialized } = useAppSelector((state) => state.auth);
     const isAdmin = user?.role === "admin";
-    const requestsQuery = useOwnerApprovalRequests(initialized && isAdmin);
+    const requestsQuery = useOwnerApprovalRequests(isInitialized && isAdmin);
     const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
     const [feedback, setFeedback] = useState("");
     const [error, setError] = useState("");
 
     useEffect(() => {
-        if (initialized && user && !isAdmin) {
+        if (isInitialized && user && !isAdmin) {
             router.replace(getDashboardRouteForRole(user.role));
         }
-    }, [isAdmin, initialized, router, user]);
+    }, [isAdmin, isInitialized, router, user]);
 
     const refreshApprovalData = async () => {
         await Promise.all([
@@ -78,7 +78,7 @@ export default function OwnerApprovalRequestsPage() {
         rejectMutation.mutate({ userId, reason });
     };
 
-    if (!initialized || !isAdmin) return null;
+    if (!isInitialized || !isAdmin) return null;
 
     return (
         <DashboardShell role="admin">

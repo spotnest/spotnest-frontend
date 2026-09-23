@@ -23,7 +23,7 @@ export default function DashboardShell({
     const {
         user,
         isAuthenticated,
-        initialized,
+        isInitialized,
         status,
     } = useAppSelector((state) => state.auth);
 
@@ -33,13 +33,13 @@ export default function DashboardShell({
 
     useEffect(() => {
         if (
-            initialized &&
+            isInitialized &&
             !isAuthenticated &&
             status !== "loading"
         ) {
             router.push("/login");
         }
-    }, [initialized, isAuthenticated, status, router]);
+    }, [isInitialized, isAuthenticated, status, router]);
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
@@ -56,7 +56,7 @@ export default function DashboardShell({
         }
     };
 
-    if (!initialized || status === "loading") {
+    if (!isInitialized || status === "loading") {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#f8f9fa]">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#00696b]/30 border-t-[#00696b]" />
@@ -77,8 +77,8 @@ export default function DashboardShell({
         userRole === "admin"
             ? "Administrator"
             : userRole === "owner"
-              ? "Property Owner"
-              : "Tenant";
+                ? "Property Owner"
+                : "Tenant";
 
     const initials =
         displayName
@@ -93,8 +93,8 @@ export default function DashboardShell({
         userRole === "admin"
             ? "Admin overview"
             : userRole === "owner"
-              ? "Owner overview"
-              : "Tenant overview";
+                ? "Owner overview"
+                : "Tenant overview";
 
     return (
         <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]">
@@ -115,11 +115,10 @@ export default function DashboardShell({
 
             {/* Mobile Sidebar */}
             <div
-                className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 lg:hidden ${
-                    mobileOpen
+                className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 lg:hidden ${mobileOpen
                         ? "translate-x-0"
                         : "-translate-x-full"
-                }`}
+                    }`}
             >
                 <div className="relative h-full">
                     <Sidebar

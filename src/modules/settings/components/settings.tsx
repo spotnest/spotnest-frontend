@@ -192,7 +192,7 @@ function Field({
 }
 
 export default function SettingsPage() {
-  const { user, initialized } = useAppSelector((state) => state.auth);
+  const { user, isInitialized } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
 
@@ -339,7 +339,7 @@ export default function SettingsPage() {
     },
   });
 
-  if (initialized && user?.role !== "admin") {
+  if (isInitialized && user?.role !== "admin") {
     return (
       <DashboardShell>
         <main className="mx-auto max-w-[900px] px-4 py-10 text-sm text-[#95611d]">
