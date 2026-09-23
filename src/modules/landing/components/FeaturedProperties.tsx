@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const propertyImages = [
   "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=85",
@@ -62,10 +63,12 @@ export default function FeaturedProperties() {
             >
               <div className="flex w-full flex-col">
                 <div className="relative aspect-[1.55/1] overflow-hidden bg-[#e7e8e9]">
-                  <img
+                  <Image
                     src={propertyImages[index]}
                     alt={`${property.title} in ${property.location}`}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                    className="object-cover transition duration-500 group-hover:scale-105"
                   />
                   {property.id === 1 && (
                     <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-[#191c1d] shadow-sm backdrop-blur">

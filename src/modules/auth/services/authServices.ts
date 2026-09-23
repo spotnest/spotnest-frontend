@@ -120,6 +120,18 @@ export const updateProfile = async (payload: { name?: string; phone?: string }):
   return response.data.data;
 };
 
+export interface UpdateLocationResponse {
+  message: string;
+  locationName: string;
+  resolvedTo: string;
+}
+
+// /auth/me/location returns the raw body — not wrapped in { success, data }.
+export const updateLocation = async (locationName: string): Promise<UpdateLocationResponse> => {
+  const response = await api.patch<UpdateLocationResponse>("/auth/me/location", { locationName });
+  return response.data;
+};
+
 export const changePassword = async (payload: { currentPassword: string; newPassword: string; confirmPassword: string }): Promise<{ message: string }> => {
   const response = await api.patch<{ success: boolean; data: { message: string } }>("/auth/me/password", payload);
   return response.data.data;
