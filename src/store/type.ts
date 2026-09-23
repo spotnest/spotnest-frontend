@@ -13,6 +13,7 @@ export interface AuthUser {
   isVerified?: boolean;
   isBlock?: boolean;
   status?: string;
+  verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
   locationName?: string;
   locationResolvedName?: string;
 }

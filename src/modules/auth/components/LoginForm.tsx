@@ -124,6 +124,37 @@ export default function LoginForm() {
                 return;
             }
 
+            if (
+                result.user.role === "owner" &&
+                result.user.verificationStatus !== "approved"
+            ) {
+                if (result.user.verificationStatus === "pending") {
+                    router.push(
+                        `/account-pending?email=${encodeURIComponent(
+                            result.user.email
+                        )}`
+                    );
+                    return;
+                }
+
+                if (result.user.verificationStatus === "unsubmitted") {
+                    router.push("/owner/verification");
+                    return;
+                }
+
+                if (result.user.verificationStatus === "rejected") {
+                    setErrorMessage(
+                        "Your owner account has been rejected. Please contact support."
+                    );
+                    return;
+                }
+
+                setErrorMessage(
+                    "Your owner account is pending approval."
+                );
+                return;
+            }
+
             const targetRoute = getDashboardRouteForRole(
                 result.user.role
             );

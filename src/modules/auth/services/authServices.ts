@@ -143,6 +143,26 @@ export const approveOwner = async (
 };
 
 /**
+ * Reject an owner's verification.
+ *
+ * Admin only.
+ */
+export const rejectOwner = async ({
+  userId,
+  reason,
+}: {
+  userId: string;
+  reason: string;
+}): Promise<{ message: string }> => {
+  const response = await api.patch<{
+    success: boolean;
+    data: { message: string };
+  }>(`/auth/admin/verifications/${userId}/reject`, { reason });
+
+  return response.data.data;
+};
+
+/**
  * Upload owner certification / ID document.
  *
  * Owner only.

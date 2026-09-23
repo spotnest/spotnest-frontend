@@ -21,8 +21,9 @@ import {
 
 import { useAppSelector } from "@/src/store/hook";
 import { signup } from "../services/authServices";
+import { getDashboardRouteForRole } from "../utils/roleUtils";
 
-type RoleType = "renter" | "agent";
+type RoleType = "user" | "owner";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -36,16 +37,10 @@ export default function RegisterForm() {
       return;
     }
 
-    if (user?.role === "owner") {
-      router.replace("/owner/dashboard");
-    } else if (user?.role === "admin") {
-      router.replace("/dashboard");
-    } else {
-      router.replace("/user/dashboard");
-    }
+    router.replace(getDashboardRouteForRole(user?.role));
   }, [isAuthenticated, user, router]);
 
-  const [role, setRole] = useState<RoleType>("renter");
+  const [role, setRole] = useState<RoleType>("user");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -159,20 +154,11 @@ export default function RegisterForm() {
     try {
       setIsLoading(true);
 
-      /*
-       * UI role mapping:
-       *
-       * renter -> user
-       * agent  -> owner
-       *
-       * The backend uses only:
-       * "user" | "owner"
-       */
       const result = await signup({
         name: trimmedName,
         email: trimmedEmail,
         password,
-        role: role === "agent" ? "owner" : "user",
+        role,
       });
 
       setSuccessMessage(
@@ -182,12 +168,6 @@ export default function RegisterForm() {
 
       setIsSuccess(true);
 
-      /*
-       * Signup creates the account and sends the OTP.
-       *
-       * No authenticated session should be created here.
-       * The user must verify their email first.
-       */
       router.push(
         `/otp?email=${encodeURIComponent(trimmedEmail)}`
       );
@@ -195,9 +175,6 @@ export default function RegisterForm() {
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
 
-        /*
-         * Zod validation errors
-         */
         if (data?.errors?.fieldErrors) {
           const fieldErrors = data.errors.fieldErrors;
 
@@ -211,17 +188,11 @@ export default function RegisterForm() {
           }
         }
 
-        /*
-         * Normal backend error
-         */
         if (typeof data?.message === "string") {
           setErrorMessage(data.message);
           return;
         }
 
-        /*
-         * Backend unavailable
-         */
         if (
           error.code === "ERR_NETWORK" ||
           error.message === "Network Error"
@@ -232,9 +203,6 @@ export default function RegisterForm() {
           return;
         }
 
-        /*
-         * HTTP status fallback
-         */
         if (error.response?.status) {
           setErrorMessage(
             `Request failed with status code ${error.response.status}.`
@@ -375,19 +343,19 @@ export default function RegisterForm() {
                 </label>
 
                 <div className="grid grid-cols-2 gap-2 rounded-2xl bg-[#EAE6DF] p-1">
-                  {/* RENTER */}
+                  {/* USER / RENTER */}
                   <button
                     type="button"
-                    onClick={() => setRole("renter")}
+                    onClick={() => setRole("user")}
                     className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium transition-all sm:text-sm ${
-                      role === "renter"
+                      role === "user"
                         ? "bg-white font-semibold text-[#1C1B1A] shadow-sm"
                         : "text-[#6F6B65] hover:text-[#1C1B1A]"
                     }`}
                   >
                     <HomeIcon
                       className={`h-4 w-4 ${
-                        role === "renter"
+                        role === "user"
                           ? "text-[#6C4CE6]"
                           : ""
                       }`}
@@ -399,22 +367,22 @@ export default function RegisterForm() {
                   {/* OWNER */}
                   <button
                     type="button"
-                    onClick={() => setRole("agent")}
+                    onClick={() => setRole("owner")}
                     className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium transition-all sm:text-sm ${
-                      role === "agent"
+                      role === "owner"
                         ? "bg-white font-semibold text-[#1C1B1A] shadow-sm"
                         : "text-[#6F6B65] hover:text-[#1C1B1A]"
                     }`}
                   >
                     <Building2
                       className={`h-4 w-4 ${
-                        role === "agent"
+                        role === "owner"
                           ? "text-[#6C4CE6]"
                           : ""
                       }`}
                     />
 
-                    <span>Property Agent</span>
+                    <span>Property Owner</span>
                   </button>
                 </div>
               </div>

@@ -9,6 +9,7 @@ export interface AdminUser {
   role: "admin" | "owner" | "user";
   status: "active" | "inactive" | "suspended";
   isVerified: boolean;
+  verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
   createdAt: string;
 }
 
@@ -110,7 +111,8 @@ export interface OtpRequiredResponse {
   message: string;
   requiresOtp: true;
   email: string;
-  purpose: "login" | "forgot-password";
+  purpose?: "login" | "forgot-password";
+  otp?: string;
 }
 
 export interface OwnerEmailVerifiedResponse {

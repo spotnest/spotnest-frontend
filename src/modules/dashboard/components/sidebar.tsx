@@ -2,171 +2,114 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
 import { Icon } from "./Icon";
-import type { IconName } from "../types/iconName";
+import {
+    adminNavigation,
+    ownerNavigation,
+    userNavigation,
+} from "../constants/navigations";
 import type { SidebarProps } from "../types/sidebarProps";
 
-import { useAuth } from "@/src/modules/auth/hooks/useAuth";
-import { useLogout } from "@/src/modules/auth/hooks/useLogout";
-import {
-    normalizeRole,
-    getDashboardRouteForRole,
-} from "@/src/modules/auth/utils/roleUtils";
-
-export default function Sidebar({ onNavigate }: SidebarProps) {
+export default function Sidebar({ role, onNavigate }: SidebarProps) {
     const pathname = usePathname();
-
-    const { user } = useAuth();
-    const { logout, isLoading: isLoggingOut } = useLogout();
-
-    const role = normalizeRole(user?.role);
-    const dashboardHref = getDashboardRouteForRole(user?.role);
-
-    const navigation: Array<{
-        label: string;
-        href: string;
-        icon: IconName;
-        adminOnly?: boolean;
-    }> = [
-        {
-            label: "Dashboard",
-            href: dashboardHref,
-            icon: "grid",
-        },
-        {
-            label: "Users",
-            href: "/users",
-            icon: "users",
-            adminOnly: true,
-        },
-        {
-            label: "Properties",
-            href: "/properties",
-            icon: "home",
-        },
-        {
-            label: "Requests",
-            href: "/bookings",
-            icon: "inbox",
-        },
-        {
-            label: "Reports",
-            href: `${dashboardHref}#reports`,
-            icon: "chart",
-            adminOnly: true,
-        },
-        {
-            label: "Settings",
-            href: "/settings",
-            icon: "settings",
-        },
-    ];
-
-    const navItems = navigation.filter(
-        (item) => !item.adminOnly || role === "admin"
-    );
-
-    const handleLogout = async () => {
-        onNavigate?.();
-        await logout();
-    };
-
-    const isDashboardRoute = (href: string) => {
-        const routePath = href.split("#")[0];
-
-        if (routePath === dashboardHref || routePath === "/dashboard") {
-            return (
-                pathname === "/dashboard" ||
-                pathname === "/admin/dashboard" ||
-                pathname === "/owner/dashboard" ||
-                pathname === "/user/dashboard"
-            );
-        }
-
-        return (
-            pathname === routePath ||
-            pathname.startsWith(`${routePath}/`)
-        );
-    };
+    const items =
+        role === "admin"
+            ? adminNavigation
+            : role === "owner"
+              ? ownerNavigation
+              : userNavigation;
+    const portalTitle =
+        role === "admin"
+            ? "Admin Workspace"
+            : role === "owner"
+              ? "Owner Portal"
+              : "Tenant Portal";
 
     return (
-        <aside className="flex h-full w-[250px] shrink-0 flex-col border-r border-[#e1e3e4] bg-white px-4 py-5">
-            <Link href="/" className="flex items-center gap-2 px-3">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#00696b] text-sm font-bold text-white">
+        <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-[#e1e3e4] bg-white px-5 py-6 shadow-xs">
+            <Link
+                href="/"
+                className="flex items-center gap-3 px-2"
+                onClick={onNavigate}
+            >
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#00696b] text-base font-bold text-white shadow-xs">
                     S
                 </span>
-
-                <span className="text-xl font-bold tracking-[-0.04em] text-[#191c1d]">
-                    SpotNest
-                </span>
+                <div>
+                    <span className="text-xl font-bold tracking-tight text-[#191c1d]">
+                        SpotNest
+                    </span>
+                    <span className="block text-[11px] font-medium text-[#75777e]">
+                        {portalTitle}
+                    </span>
+                </div>
             </Link>
 
-            <div className="mt-8 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#75777e]">
-                Workspace
+            <div className="mt-8 px-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#75777e]">
+                Navigation
             </div>
-
             <nav
-                className="mt-3 space-y-1"
-                aria-label="Main navigation"
+                className="mt-3 flex-1 space-y-1.5"
+                aria-label="Dashboard navigation"
             >
-                {navItems.map((item) => {
-                    const isActive = isDashboardRoute(item.href);
+                {items.map((item) => {
+                    const isBase = item.href.split("#")[0];
+                    const isActive =
+                        isBase === pathname ||
+                        item.children?.some(
+                            (child) => pathname === child.href
+                        );
 
                     return (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            onClick={onNavigate}
-                            className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${
-                                isActive
-                                    ? "bg-[#d9f4f3] text-[#00696b]"
-                                    : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"
-                            }`}
-                        >
-                            <Icon
-                                name={item.icon}
-                                className="h-[18px] w-[18px]"
-                            />
-
-                            <span>{item.label}</span>
-                        </Link>
+                        <div key={item.label}>
+                            <Link
+                                href={item.href}
+                                onClick={onNavigate}
+                                className={`flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition ${
+                                    isActive
+                                        ? "bg-[#d9f4f3] text-[#00696b]"
+                                        : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"
+                                }`}
+                            >
+                                <Icon
+                                    name={item.icon}
+                                    className="h-5 w-5"
+                                />
+                                <span>{item.label}</span>
+                            </Link>
+                            {item.children?.map((child) => (
+                                <Link
+                                    key={child.href}
+                                    href={child.href}
+                                    onClick={onNavigate}
+                                    className={`ml-8 flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                                        pathname === child.href
+                                            ? "bg-[#d9f4f3] text-[#00696b]"
+                                            : "text-[#75777e] hover:bg-[#f3f4f5] hover:text-[#191c1d]"
+                                    }`}
+                                >
+                                    <span>{child.label}</span>
+                                </Link>
+                            ))}
+                        </div>
                     );
                 })}
             </nav>
 
-            <div className="mt-auto space-y-3">
-                <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="flex w-full items-center gap-3 rounded-xl border border-red-200 bg-red-50/50 px-3 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            <div className="rounded-2xl border border-[#e1e3e4] bg-[#f8f9fa] p-4 text-xs">
+                <p className="font-semibold text-[#191c1d]">
+                    Need assistance?
+                </p>
+                <p className="mt-1 text-[#44474d]">
+                    Contact our support team anytime.
+                </p>
+                <Link
+                    href="/contact"
+                    onClick={onNavigate}
+                    className="mt-2.5 inline-flex items-center gap-1 font-bold text-[#00696b] hover:text-[#004f51]"
                 >
-                    <Icon
-                        name="logout"
-                        className="h-[18px] w-[18px]"
-                    />
-
-                    <span>
-                        {isLoggingOut
-                            ? "Signing out..."
-                            : "Sign Out"}
-                    </span>
-                </button>
-
-                <div className="rounded-2xl bg-[#eef6f5] p-4">
-                    <div className="grid h-9 w-9 place-items-center rounded-xl bg-white text-sm font-bold text-[#00696b]">
-                        SN
-                    </div>
-
-                    <p className="mt-2 text-sm font-semibold text-[#191c1d]">
-                        Need a hand?
-                    </p>
-
-                    <p className="mt-1 text-xs leading-5 text-[#44474d]">
-                        Our support team is ready to help.
-                    </p>
-                </div>
+                    Get help <span aria-hidden="true">&rarr;</span>
+                </Link>
             </div>
         </aside>
     );

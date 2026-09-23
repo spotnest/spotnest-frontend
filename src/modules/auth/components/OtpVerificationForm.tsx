@@ -9,7 +9,6 @@ import {
   verifyEmail,
   resendVerification,
 } from "../services/authServices";
-
 import { signInSucceeded } from "@/src/store/slices/authSlice";
 import { useAppDispatch } from "@/src/store/hook";
 import { getDashboardRouteForRole } from "../utils/roleUtils";
@@ -148,42 +147,49 @@ export default function OtpVerificationForm() {
         otp: otpValue,
       });
 
-if ("user" in result && result.user) {
-    if (
-        result.user.role === "owner" &&
-        "verificationStatus" in result.user
-    ) {
-        setSuccessMessage(
+      if ("user" in result && result.user) {
+        if (result.user.role === "owner") {
+          const vStatus = result.user.verificationStatus;
+          if (vStatus === "pending") {
+            setSuccessMessage(
+              "Your email has been verified. Your account is pending admin approval."
+            );
+            setTimeout(() => {
+              router.replace(
+                `/account-pending?email=${encodeURIComponent(email)}`
+              );
+            }, 800);
+            return;
+          }
+
+          setSuccessMessage(
             "Email verified successfully. Please complete owner verification."
+          );
+          setTimeout(() => {
+            router.push("/owner/verification");
+          }, 800);
+          return;
+        }
+
+        dispatch(signInSucceeded(result.user));
+
+        setSuccessMessage(
+          "Email verified successfully! Redirecting..."
         );
 
         setTimeout(() => {
-            router.push("/owner/verification");
+          const targetRoute = getDashboardRouteForRole(
+            result.user.role
+          );
+          router.push(targetRoute);
         }, 800);
 
         return;
-    }
+      }
 
-    dispatch(signInSucceeded(result.user));
-
-    setSuccessMessage(
-        "Email verified successfully! Redirecting..."
-    );
-
-    setTimeout(() => {
-        const targetRoute = getDashboardRouteForRole(
-            result.user.role
-        );
-
-        router.push(targetRoute);
-    }, 800);
-
-    return;
-}
-
-     setSuccessMessage(
-  "Email verified successfully! Please sign in."
-);
+      setSuccessMessage(
+        "Email verified successfully! Please sign in."
+      );
 
       setTimeout(() => {
         router.push("/login");

@@ -34,7 +34,7 @@ export function useLogin() {
         dispatch(
           otpRequired({
             email: result.email,
-            purpose: result.purpose,
+            purpose: result.purpose || "login",
           })
         );
 
@@ -47,6 +47,17 @@ export function useLogin() {
       }
 
       if (result.user) {
+        if (
+          result.user.role === "owner" &&
+          result.user.verificationStatus !== "approved"
+        ) {
+          return {
+            success: false,
+            requiresOtp: false,
+            user: result.user,
+          };
+        }
+
         dispatch(signInSucceeded(result.user));
       }
 
