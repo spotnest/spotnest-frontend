@@ -1,56 +1,117 @@
+"use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "./Icon";
-import { IconName } from "../types/iconName";
-import { SidebarProps } from "../types/sidebarProps";
+import {
+    adminNavigation,
+    ownerNavigation,
+    tenantNavigation,
+} from "../constants/navigations";
+import type { SidebarProps } from "../types/sidebarProps";
 
-const navigation = [
-    { label: "Dashboard", href: "/dashboard", icon: "grid" as IconName },
-    { label: "Users", href: "/users", icon: "users" as IconName },
-    { label: "Properties", href: "/properties", icon: "home" as IconName },
-    { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
-    { label: "Reports", href: "/dashboard#reports", icon: "chart" as IconName },
-    { label: "Settings", href: "/settings", icon: "settings" as IconName },
-];
-
-
-export default function Sidebar({ onNavigate }: SidebarProps) {
+export default function Sidebar({ role, onNavigate }: SidebarProps) {
     const pathname = usePathname();
+    const items =
+        role === "admin"
+            ? adminNavigation
+            : role === "owner"
+              ? ownerNavigation
+              : role === "tenant"
+                ? tenantNavigation
+              : [];
+    const portalTitle =
+        role === "admin"
+            ? "Admin Workspace"
+            : role === "owner"
+              ? "Owner Portal"
+              : "Tenant Portal";
 
     return (
-        <aside className="flex h-full w-[250px] shrink-0 flex-col border-r border-[#e1e3e4] bg-white px-4 py-5">
-            <Link href="/" className="flex items-center gap-2 px-3">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#00696b] text-sm font-bold text-white">S</span>
-                <span className="text-xl font-bold tracking-[-0.04em] text-[#191c1d]">SpotNest</span>
+        <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-[#e1e3e4] bg-white px-5 py-6 shadow-xs">
+            <Link
+                href="/"
+                className="flex items-center gap-3 px-2"
+                onClick={onNavigate}
+            >
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#00696b] text-base font-bold text-white shadow-xs">
+                    S
+                </span>
+                <div>
+                    <span className="text-xl font-bold tracking-tight text-[#191c1d]">
+                        SpotNest
+                    </span>
+                    <span className="block text-[11px] font-medium text-[#75777e]">
+                        {portalTitle}
+                    </span>
+                </div>
             </Link>
 
-            <div className="mt-12 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#75777e]">Workspace</div>
-            <nav className="mt-3 space-y-1" aria-label="Admin navigation">
-                {navigation.map((item) => {
-                    const routePath = item.href.split("#")[0];
-                    const isActive = routePath === "/dashboard"
-                        ? pathname === "/dashboard"
-                        : pathname === routePath || pathname.startsWith(`${routePath}/`);
+            <div className="mt-8 px-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#75777e]">
+                Navigation
+            </div>
+            <nav
+                className="mt-3 flex-1 space-y-1.5"
+                aria-label="Dashboard navigation"
+            >
+                {items.map((item) => {
+                    const isBase = item.href.split("#")[0];
+                    const isActive =
+                        isBase === pathname ||
+                        item.children?.some(
+                            (child) => pathname === child.href
+                        );
+
                     return (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            onClick={onNavigate}
-                            className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-[#d9f4f3] text-[#00696b]" : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"}`}
-                        >
-                            <Icon name={item.icon} className="h-[18px] w-[18px]" />
-                            {item.label}
-                            {item.label === "Requests" && <span className="ml-auto rounded-full bg-[#00696b] px-2 py-0.5 text-[10px] font-bold text-white">8</span>}
-                        </Link>
+                        <div key={item.label}>
+                            <Link
+                                href={item.href}
+                                onClick={onNavigate}
+                                className={`flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition ${
+                                    isActive
+                                        ? "bg-[#d9f4f3] text-[#00696b]"
+                                        : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"
+                                }`}
+                            >
+                                <Icon
+                                    name={item.icon}
+                                    className="h-5 w-5"
+                                />
+                                <span>{item.label}</span>
+                            </Link>
+                            {item.children?.map((child) => (
+                                <Link
+                                    key={child.href}
+                                    href={child.href}
+                                    onClick={onNavigate}
+                                    className={`ml-8 flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                                        pathname === child.href
+                                            ? "bg-[#d9f4f3] text-[#00696b]"
+                                            : "text-[#75777e] hover:bg-[#f3f4f5] hover:text-[#191c1d]"
+                                    }`}
+                                >
+                                    <span>{child.label}</span>
+                                </Link>
+                            ))}
+                        </div>
                     );
                 })}
             </nav>
 
-            <div className="mt-auto rounded-2xl bg-[#eef6f5] p-4">
-                <div className="grid h-9 w-9 place-items-center rounded-xl bg-white text-sm font-bold text-[#00696b]">SN</div>
-                <p className="mt-4 text-sm font-semibold text-[#191c1d]">Need a hand?</p>
-                <p className="mt-1 text-xs leading-5 text-[#44474d]">Our support team is ready to help.</p>
-                <button type="button" className="mt-3 text-xs font-bold text-[#00696b] transition hover:text-[#004f51]">Contact support <span aria-hidden="true">→</span></button>
+            <div className="rounded-2xl border border-[#e1e3e4] bg-[#f8f9fa] p-4 text-xs">
+                <p className="font-semibold text-[#191c1d]">
+                    Need assistance?
+                </p>
+                <p className="mt-1 text-[#44474d]">
+                    Contact our support team anytime.
+                </p>
+                <Link
+                    href="/contact"
+                    onClick={onNavigate}
+                    className="mt-2.5 inline-flex items-center gap-1 font-bold text-[#00696b] hover:text-[#004f51]"
+                >
+                    Get help <span aria-hidden="true">&rarr;</span>
+                </Link>
             </div>
         </aside>
     );

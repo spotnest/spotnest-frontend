@@ -1,34 +1,36 @@
+export type UserRole =
+  | "user"
+  | "tenant"
+  | "admin"
+  | "owner";
+
 export interface AuthUser {
-    id: string;
-    name: string;
-    email: string;
-    phone?: string;
-    role: "user" | "owner" | "admin" | "customer" | "tenant";
-    image?: string;
-    isVerified?: boolean;
-    isBlock?: boolean;
-    status?: string;
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+  image?: string;
+  isVerified?: boolean;
+  isBlock?: boolean;
+  status?: string;
+  verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
+  locationName?: string;
+  locationResolvedName?: string;
 }
 
+export type AuthStatus =
+  | "idle"
+  | "loading"
+  | "succeeded"
+  | "failed";
+
 export interface AuthState {
-    user: AuthUser | null;
-
-    isAuthenticated: boolean;
-
-    status:
-        | "idle"
-        | "loading"
-        | "succeeded"
-        | "failed";
-
-    error: string | null;
-
-    pendingEmail: string | null;
-
-    otpPurpose:
-        | "login"
-        | "forgot-password"
-        | null;
-
-    isInitialized: boolean;
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isInitialized: boolean;
+  status: AuthStatus;
+  error: string | null;
+  pendingEmail: string | null;
+  otpPurpose: "login" | "forgot-password" | null;
 }

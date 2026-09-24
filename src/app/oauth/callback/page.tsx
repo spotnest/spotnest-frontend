@@ -1,43 +1,48 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+
+import { getDashboardRouteForRole } from "@/src/modules/auth/utils/roleUtils";
+import { getCurrentUser } from "@/src/modules/auth/services/authServices";
 import { useAppDispatch } from "@/src/store/hook";
 import { signInSucceeded } from "@/src/store/slices/authSlice";
-import { getCurrentUser } from "@/src/modules/auth/services/authServices";
 
 function OAuthCallbackContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
+
+  const oauthError = searchParams.get("error");
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (oauthError) {
+      return;
+    }
+
     let isMounted = true;
 
-    const completeAuthentication = async () => {
+    const processOAuthSession = async () => {
       try {
-        /**
-         * The browser automatically sends the HttpOnly accessToken cookie
-         * that was set by the backend during the Google OAuth callback.
-         */
-        const user = await getCurrentUser();
+        const response = await getCurrentUser();
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
+
+        const user = response?.user;
 
         if (!user) {
-          setError("Google authentication failed. No user profile received.");
+          setError("Google authentication failed. No active session found.");
           return;
         }
 
         dispatch(signInSucceeded(user));
 
-        if (user.role === "owner") {
-          router.replace("/owner/dashboard");
-        } else if (user.role === "admin") {
-          router.replace("/dashboard");
-        } else {
-          router.replace("/user/dashboard");
-        }
+        const targetRoute = getDashboardRouteForRole(user.role);
+
+        router.replace(targetRoute);
       } catch {
         if (isMounted) {
           setError("Google authentication failed. Please try again.");
@@ -45,14 +50,19 @@ function OAuthCallbackContent() {
       }
     };
 
-    void completeAuthentication();
+    void processOAuthSession();
 
     return () => {
       isMounted = false;
     };
-  }, [dispatch, router]);
+  }, [dispatch, router, oauthError]);
 
-  if (error) {
+  const displayError =
+    oauthError || error
+      ? oauthError || error
+      : "";
+
+  if (displayError) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#F7F5F0] px-5">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
@@ -60,7 +70,7 @@ function OAuthCallbackContent() {
             Authentication failed
           </h1>
 
-          <p className="mt-3 text-[#6F6B65]">{error}</p>
+          <p className="mt-3 text-[#6F6B65]">{displayError}</p>
 
           <button
             type="button"
@@ -78,7 +88,10 @@ function OAuthCallbackContent() {
     <main className="flex min-h-screen items-center justify-center bg-[#F7F5F0]">
       <div className="text-center">
         <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#6C4CE6]/30 border-t-[#6C4CE6]" />
-        <p className="mt-4 text-[#6F6B65]">Signing you in...</p>
+
+        <p className="mt-4 text-[#6F6B65]">
+          Signing you in...
+        </p>
       </div>
     </main>
   );
@@ -91,7 +104,10 @@ export default function OAuthCallbackPage() {
         <main className="flex min-h-screen items-center justify-center bg-[#F7F5F0]">
           <div className="text-center">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#6C4CE6]/30 border-t-[#6C4CE6]" />
-            <p className="mt-4 text-[#6F6B65]">Signing you in...</p>
+
+            <p className="mt-4 text-[#6F6B65]">
+              Signing you in...
+            </p>
           </div>
         </main>
       }

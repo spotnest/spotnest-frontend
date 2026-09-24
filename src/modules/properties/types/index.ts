@@ -31,7 +31,14 @@ export interface Property {
     status: PropertyStatus;
     created_at: string;
     updated_at: string;
+    // present only on /properties/nearby results
+    distanceKm?: number;
 }
+
+// Lean shape returned by the public LIST endpoints (GET /properties and
+// /properties/nearby): the backend omits description/amenities from those
+// payloads — the card grid never renders them.
+export type PropertySummary = Omit<Property, "description" | "amenities">;
 
 export interface PropertyListParams {
     page?: number;
@@ -44,7 +51,22 @@ export interface PropertyListParams {
 }
 
 export interface PropertyListResponse {
-    items: Property[];
+    items: PropertySummary[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+    };
+}
+
+// /properties/nearby — no city filter: redundant inside a radius.
+export type NearbyPropertyParams = Omit<PropertyListParams, "city">;
+
+export interface NearbyPropertyResponse {
+    items: PropertySummary[];
+    searchedFrom?: string;
+    radiusKm: number;
     pagination: {
         page: number;
         limit: number;

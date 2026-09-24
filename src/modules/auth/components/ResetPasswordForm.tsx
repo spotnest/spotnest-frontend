@@ -140,11 +140,11 @@ export default function ResetPasswordForm() {
     setIsLoading(true);
 
     try {
-      const response = await resetPassword(
-        trimmedEmail,
-        trimmedOtp,
-        newPassword
-      );
+      const response =await resetPassword({
+  email: trimmedEmail,
+  otp: trimmedOtp,
+  newPassword,
+});
 
       setSuccessMessage(
         response.message || "Password updated. Redirecting to login..."
@@ -215,7 +215,9 @@ export default function ResetPasswordForm() {
     setIsResending(true);
 
     try {
-      const response = await forgotPassword(trimmedEmail);
+     const response = await forgotPassword({
+  email: trimmedEmail,
+});
 
       setSuccessMessage(
         response.message || "A new verification code has been sent to your email."

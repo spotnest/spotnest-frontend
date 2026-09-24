@@ -1,117 +1,121 @@
-import {
-    createSlice,
-    type PayloadAction,
-} from "@reduxjs/toolkit";
-
-import type {
-    AuthState,
-    AuthUser,
-} from "../type";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { AuthState, AuthUser } from "../type";
 
 const initialState: AuthState = {
-    user: null,
-    isAuthenticated: false,
-    status: "loading",
-    error: null,
-    pendingEmail: null,
-    otpPurpose: null,
-    isInitialized: false,
+  user: null,
+  isAuthenticated: false,
+  isInitialized: false,
+  status: "idle",
+  error: null,
+  pendingEmail: null,
+  otpPurpose: null,
 };
 
 const authSlice = createSlice({
-    name: "auth",
+  name: "auth",
+  initialState,
 
-    initialState,
-
-    reducers: {
-        authRequestStarted(state) {
-            state.status = "loading";
-            state.error = null;
-        },
-
-        otpRequired(
-            state,
-            action: PayloadAction<{
-                email: string;
-                purpose:
-                    | "login"
-                    | "forgot-password";
-            }>
-        ) {
-            state.status = "idle";
-
-            state.pendingEmail =
-                action.payload.email;
-
-            state.otpPurpose =
-                action.payload.purpose;
-
-            state.error = null;
-        },
-
-        signInSucceeded(
-            state,
-            action: PayloadAction<AuthUser>
-        ) {
-            state.status = "succeeded";
-
-            state.user = action.payload;
-
-            state.isAuthenticated = true;
-
-            state.isInitialized = true;
-
-            state.pendingEmail = null;
-
-            state.otpPurpose = null;
-
-            state.error = null;
-        },
-
-        authRequestFailed(
-            state,
-            action: PayloadAction<string>
-        ) {
-            state.status = "failed";
-
-            state.error = action.payload;
-
-            state.isInitialized = true;
-        },
-
-        signedOut(state) {
-            state.user = null;
-
-            state.isAuthenticated = false;
-
-            state.status = "idle";
-
-            state.isInitialized = true;
-
-            state.error = null;
-
-            state.pendingEmail = null;
-
-            state.otpPurpose = null;
-        },
-
-        authInitialized(state) {
-            state.isInitialized = true;
-
-            if (state.status === "loading") {
-                state.status = "idle";
-            }
-        },
+  reducers: {
+    authRequestStarted(state) {
+      state.status = "loading";
+      state.error = null;
     },
+
+    authInitialized(state) {
+      state.isInitialized = true;
+
+      if (state.status === "loading") {
+        state.status = "idle";
+      }
+
+      state.error = null;
+    },
+
+    otpRequired(
+      state,
+      action: PayloadAction<{
+        email: string;
+        purpose: "login" | "forgot-password";
+      }>
+    ) {
+      state.status = "idle";
+      state.pendingEmail = action.payload.email;
+      state.otpPurpose = action.payload.purpose;
+      state.error = null;
+    },
+
+    signInSucceeded(
+      state,
+      action: PayloadAction<AuthUser>
+    ) {
+      state.status = "succeeded";
+      state.user = action.payload;
+      state.isAuthenticated = true;
+      state.isInitialized = true;
+      state.pendingEmail = null;
+      state.otpPurpose = null;
+      state.error = null;
+    },
+
+    userUpdated(
+      state,
+      action: PayloadAction<AuthUser>
+    ) {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+      state.isInitialized = true;
+      state.error = null;
+    },
+
+    clearAuthError(state) {
+      state.error = null;
+
+      if (state.status === "failed") {
+        state.status = "idle";
+      }
+    },
+
+    authRequestFailed(
+      state,
+      action: PayloadAction<string>
+    ) {
+      state.status = "failed";
+      state.error = action.payload;
+      state.isInitialized = true;
+    },
+
+    signedOut(state) {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.isInitialized = true;
+      state.status = "idle";
+      state.error = null;
+      state.pendingEmail = null;
+      state.otpPurpose = null;
+    },
+
+    resetAuthState(state) {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.isInitialized = false;
+      state.status = "idle";
+      state.error = null;
+      state.pendingEmail = null;
+      state.otpPurpose = null;
+    },
+  },
 });
 
 export const {
-    authRequestStarted,
-    otpRequired,
-    signInSucceeded,
-    authRequestFailed,
-    signedOut,
-    authInitialized,
+  authRequestStarted,
+  authInitialized,
+  otpRequired,
+  signInSucceeded,
+  userUpdated,
+  clearAuthError,
+  authRequestFailed,
+  signedOut,
+  resetAuthState,
 } = authSlice.actions;
 
 export default authSlice.reducer;

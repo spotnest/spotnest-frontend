@@ -72,14 +72,14 @@ export default function AdminDashboard() {
     const actions = [
         { label: "Manage users", description: "View all accounts", href: "/users", icon: "users" as IconName },
         { label: "Review requests", description: `${overview.pendingRequests} requests`, href: "/bookings", icon: "inbox" as IconName },
-        { label: "View reports", description: "Track platform health", href: "/dashboard#reports", icon: "chart" as IconName },
+        { label: "View reports", description: "Track platform health", href: "/admin/dashboard#reports", icon: "chart" as IconName },
     ];
     const pendingActions: Array<[string, string, IconName, string]> = [
-        ...(overview.pendingOwnerCount > 0 ? [["Owner approvals", `${overview.pendingOwnerCount} owners waiting for approval`, "users" as IconName, "/admin/requests/owner-approvals"] as [string, string, IconName, string]] : []),
+        ...(overview.pendingOwnerCount > 0 ? [["Owner approvals", `${overview.pendingOwnerCount} owners waiting for approval`, "users" as IconName, "/requests/owner-approvals"] as [string, string, IconName, string]] : []),
         ["Properties waiting for approval", `${overview.totalProperties - overview.activeListings} properties`, "home" as IconName, "/admin/properties"],
         ["Requests to review", `${overview.pendingRequests} requests`, "inbox" as IconName, "/bookings"],
         ["User verification", `${overview.pendingUserVerification} accounts`, "users" as IconName, "/users"],
-        ["Reports requiring review", "No report data", "alert" as IconName, "/dashboard#reports"],
+        ["Reports requiring review", "No report data", "alert" as IconName, "/admin/dashboard#reports"],
     ];
 
     return (
