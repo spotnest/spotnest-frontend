@@ -70,9 +70,9 @@ export const getCurrentUser = async (): Promise<CurrentUserResponse> => {
 
   const user =
     rawData &&
-    typeof rawData === "object" &&
-    "user" in rawData &&
-    rawData.user
+      typeof rawData === "object" &&
+      "user" in rawData &&
+      rawData.user
       ? rawData.user
       : (rawData as AuthUser);
 
@@ -96,11 +96,7 @@ export const verifyEmail = async (
   return response.data.data;
 };
 
-/**
- * Get pending owner verification requests.
- *
- * Admin only.
- */
+// Get pending owner verification requests.
 export const getOwnerApprovalRequests = async (): Promise<
   OwnerApprovalRequest[]
 > => {
@@ -112,11 +108,8 @@ export const getOwnerApprovalRequests = async (): Promise<
   return response.data.data;
 };
 
-/**
- * Get all users.
- *
- * Admin only.
- */
+//  Get all users.
+
 export const getAdminUsers = async (): Promise<AdminUser[]> => {
   const response = await api.get<{
     success: boolean;
@@ -126,11 +119,9 @@ export const getAdminUsers = async (): Promise<AdminUser[]> => {
   return response.data.data;
 };
 
-/**
- * Approve an owner's verification.
- *
- * Admin only.
- */
+
+// Approve an owner's verification.
+
 export const approveOwner = async (
   userId: string
 ): Promise<{ message: string }> => {
