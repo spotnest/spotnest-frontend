@@ -1,11 +1,17 @@
 export * from "./types";
 export {
+    addPropertyImages,
     archiveProperty,
+    createProperty,
     getAdminProperties,
     getAdminPropertyById,
+    getMyProperties,
+    getMyPropertyById,
     getNearbyProperties,
     getProperties,
     getPropertyById,
+    removePropertyImage,
+    updateProperty,
     updatePropertyStatus,
 } from "./services/propertyService";
 export { default as NearMeSection } from "./components/NearMeSection";

@@ -7,6 +7,13 @@ export interface PropertyImage {
     publicId: string;
 }
 
+// GeoJSON Point produced by the backend geocoding step. Coordinates are
+// [longitude, latitude] — the order /properties/nearby searches against.
+export interface PropertyLocation {
+    type: "Point";
+    coordinates: [number, number];
+}
+
 export interface PropertyAddress {
     street: string;
     city: string;
@@ -31,6 +38,9 @@ export interface Property {
     status: PropertyStatus;
     created_at: string;
     updated_at: string;
+    // set by the backend geocoder — present on owner/admin-scoped payloads
+    location?: PropertyLocation;
+    locationResolvedName?: string;
     // present only on /properties/nearby results
     distanceKm?: number;
 }
@@ -101,3 +111,20 @@ export interface AdminPropertyListResponse {
     items: AdminProperty[];
     pagination: PropertyListResponse["pagination"];
 }
+
+// Body used by an owner to create/update one of their listings. Mirrors the
+// backend zod schema: address/amenities are JSON-stringified when multiplexed
+// into multipart FormData (the backend controller parses them back).
+export interface OwnerPropertyInput {
+    title: string;
+    description: string;
+    propertyType: PropertyType;
+    price: number;
+    bedrooms: number;
+    bathrooms: number;
+    areaSqFt?: number;
+    amenities: string[];
+    address: PropertyAddress;
+}
+
+export interface OwnerPropertyFormValues extends OwnerPropertyInput {}
