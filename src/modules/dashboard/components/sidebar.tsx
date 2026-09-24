@@ -6,7 +6,7 @@ import { Icon } from "./Icon";
 import {
     adminNavigation,
     ownerNavigation,
-    userNavigation,
+    tenantNavigation,
 } from "../constants/navigations";
 import type { SidebarProps } from "../types/sidebarProps";
 
@@ -17,7 +17,9 @@ export default function Sidebar({ role, onNavigate }: SidebarProps) {
             ? adminNavigation
             : role === "owner"
               ? ownerNavigation
-              : userNavigation;
+              : role === "tenant"
+                ? tenantNavigation
+              : [];
     const portalTitle =
         role === "admin"
             ? "Admin Workspace"
