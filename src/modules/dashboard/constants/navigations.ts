@@ -11,18 +11,18 @@ export const adminNavigation: NavigationItem[] = [
     { label: "Dashboard", href: "/admin/dashboard", icon: "grid" as IconName },
     { label: "Users", href: "/users", icon: "users" as IconName },
     { label: "Properties", href: "/admin/properties", icon: "home" as IconName },
-    { label: "Requests", href: "/admin/requests/owner-approvals", icon: "inbox" as IconName },
+    { label: "Requests", href: "/requests/owner-approvals", icon: "inbox" as IconName },
     { label: "Reports", href: "/admin/dashboard#reports", icon: "chart" as IconName },
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
 
-export const userNavigation: NavigationItem[] = [
-    { label: "Dashboard", href: "/user/dashboard", icon: "grid" as IconName },
+export const tenantNavigation: NavigationItem[] = [
+    { label: "Dashboard", href: "/tenant/dashboard", icon: "grid" as IconName },
     { label: "My Rental / Properties", href: "/properties", icon: "home" as IconName },
     { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
-    { label: "Payments", href: "/user/dashboard#payments", icon: "clock" as IconName },
-    { label: "Maintenance", href: "/user/dashboard#maintenance", icon: "alert" as IconName },
-    { label: "Notifications", href: "/user/dashboard#notifications", icon: "bell" as IconName },
+    { label: "Payments", href: "/tenant/dashboard#payments", icon: "clock" as IconName },
+    { label: "Maintenance", href: "/tenant/dashboard#maintenance", icon: "alert" as IconName },
+    { label: "Notifications", href: "/tenant/dashboard/notifications", icon: "bell" as IconName },
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
 

@@ -8,6 +8,7 @@ import { logout } from "@/src/modules/auth/services/authServices";
 import { Icon } from "./Icon";
 import Sidebar from "./sidebar";
 import { DashboardShellProps } from "../types/dashboardShell";
+import { NotificationBell } from "@/src/modules/notifications";
 
 export default function DashboardShell({
     children,
@@ -29,7 +30,9 @@ export default function DashboardShell({
 
     const userRole =
         explicitRole ??
-        (user?.role === "admin" || user?.role === "owner" ? user.role : "user");
+        (user?.role === "admin" || user?.role === "owner" || user?.role === "tenant"
+            ? user.role
+            : "user");
 
     useEffect(() => {
         if (
@@ -178,19 +181,7 @@ export default function DashboardShell({
                             </span>
                         </div>
 
-                        {/* Notifications */}
-                        <button
-                            type="button"
-                            aria-label="Notifications"
-                            className="relative grid h-10 w-10 place-items-center rounded-full border border-[#e1e3e4] bg-white text-[#44474d] transition hover:bg-[#f3f4f5]"
-                        >
-                            <Icon
-                                name="bell"
-                                className="h-[18px] w-[18px]"
-                            />
-
-                            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#00696b]" />
-                        </button>
+                        {userRole !== "user" && <NotificationBell />}
 
                         <div className="h-7 w-px bg-[#e1e3e4]" />
 
