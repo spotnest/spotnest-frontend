@@ -5,7 +5,6 @@ export interface AdminSettings {
   ownerRegistrationEnabled: boolean;
   propertyApprovalRequired: boolean;
   propertyListingEnabled: boolean;
-  defaultListingStatus: "active" | "inactive";
   newOwnerRegistrationAlerts: boolean;
   ownerApprovalEmails: boolean;
   platformName: string;
