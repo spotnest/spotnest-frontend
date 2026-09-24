@@ -4,7 +4,7 @@ import type { AuthState, AuthUser } from "../type";
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  initialized: false,
+  isInitialized: false,
   status: "idle",
   error: null,
   pendingEmail: null,
@@ -22,7 +22,7 @@ const authSlice = createSlice({
     },
 
     authInitialized(state) {
-      state.initialized = true;
+      state.isInitialized = true;
 
       if (state.status === "loading") {
         state.status = "idle";
@@ -51,7 +51,7 @@ const authSlice = createSlice({
       state.status = "succeeded";
       state.user = action.payload;
       state.isAuthenticated = true;
-      state.initialized = true;
+      state.isInitialized = true;
       state.pendingEmail = null;
       state.otpPurpose = null;
       state.error = null;
@@ -63,7 +63,7 @@ const authSlice = createSlice({
     ) {
       state.user = action.payload;
       state.isAuthenticated = true;
-      state.initialized = true;
+      state.isInitialized = true;
       state.error = null;
     },
 
@@ -81,13 +81,13 @@ const authSlice = createSlice({
     ) {
       state.status = "failed";
       state.error = action.payload;
-      state.initialized = true;
+      state.isInitialized = true;
     },
 
     signedOut(state) {
       state.user = null;
       state.isAuthenticated = false;
-      state.initialized = true;
+      state.isInitialized = true;
       state.status = "idle";
       state.error = null;
       state.pendingEmail = null;
@@ -97,7 +97,7 @@ const authSlice = createSlice({
     resetAuthState(state) {
       state.user = null;
       state.isAuthenticated = false;
-      state.initialized = false;
+      state.isInitialized = false;
       state.status = "idle";
       state.error = null;
       state.pendingEmail = null;

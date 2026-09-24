@@ -15,6 +15,10 @@ export function normalizeRole(role?: string): UserRole {
     return "owner";
   }
 
+  if (normalized === "tenant") {
+    return "tenant";
+  }
+
   return "user";
 }
 
@@ -34,6 +38,9 @@ export function getDashboardRouteForRole(role?: string): string {
     case "owner":
       return "/owner/dashboard";
 
+    case "tenant":
+      return "/tenant/dashboard";
+
     case "user":
     default:
       return "/properties";
@@ -52,6 +59,9 @@ export function formatRoleName(role?: string): string {
 
     case "owner":
       return "Property Owner";
+
+    case "tenant":
+      return "Tenant";
 
     case "user":
     default:

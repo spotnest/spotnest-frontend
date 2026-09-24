@@ -10,7 +10,7 @@ import { dashboardPathForRole } from "@/src/constants/routes";
 export default function Navbar() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-const { isAuthenticated, user, initialized } = useAppSelector(
+const { isAuthenticated, user, isInitialized } = useAppSelector(
   (state) => state.auth
 );
 
@@ -68,7 +68,7 @@ const { isAuthenticated, user, initialized } = useAppSelector(
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3">
-         {initialized && isAuthenticated ?  (
+         {isInitialized && isAuthenticated ?  (
             <>
               <Link
                 href={dashboardHref}

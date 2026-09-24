@@ -17,7 +17,7 @@ const PAGE_SIZE = 50;
 export default function AdminPropertiesPage() {
     const router = useRouter();
 
-    const { user, initialized } = useAppSelector(
+    const { user, isInitialized } = useAppSelector(
         (state) => state.auth,
     );
 
@@ -34,7 +34,7 @@ export default function AdminPropertiesPage() {
      * Non-admin users are redirected to their own dashboard route.
      */
     useEffect(() => {
-        if (!initialized) {
+        if (!isInitialized) {
             return;
         }
 
@@ -46,7 +46,7 @@ export default function AdminPropertiesPage() {
         if (!isAdmin) {
             router.replace(dashboardPathForRole(user.role));
         }
-    }, [initialized, isAdmin, router, user]);
+    }, [isInitialized, isAdmin, router, user]);
 
     const propertiesQuery = useQuery({
         queryKey: ["admin-properties", page, status, search],
@@ -61,13 +61,13 @@ export default function AdminPropertiesPage() {
                     : {}),
             }),
 
-        enabled: initialized && isAdmin,
+        enabled: isInitialized && isAdmin,
     });
 
     /*
      * Do not render anything until authentication has been restored.
      */
-    if (!initialized) {
+    if (!isInitialized) {
         return null;
     }
 

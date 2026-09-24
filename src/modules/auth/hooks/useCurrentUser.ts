@@ -16,14 +16,14 @@ export function useCurrentUser() {
     const isAuthenticated = useAppSelector(
         (state) => state.auth.isAuthenticated
     );
-    const initialized = useAppSelector(
-        (state) => state.auth.initialized
+    const isInitialized = useAppSelector(
+        (state) => state.auth.isInitialized
     );
 
     const initializationStarted = useRef(false);
 
     useEffect(() => {
-        if (initializationStarted.current || initialized) {
+        if (initializationStarted.current || isInitialized) {
             return;
         }
 
@@ -45,11 +45,11 @@ export function useCurrentUser() {
         };
 
         void initializeSession();
-    }, [dispatch, initialized]);
+    }, [dispatch, isInitialized]);
 
     return {
         user,
         isAuthenticated,
-        initialized,
+        isInitialized,
     };
 }
