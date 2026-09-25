@@ -6,7 +6,7 @@ import { useAppSelector } from "@/src/store/hook";
 
 import AdminDashboard from "../admin-dasboard/components/AdminDashboard";
 import OwnerDashboard from "../owner-dashboard/components/ownerDashboard";
-import TenantDashboard from "../tenant-dashboard/components/tenantDashboard";
+import TenantDashboard from "../tenant-dashboard/tenantDashboard";
 
 export default function DashboardRouter() {
     const router = useRouter();

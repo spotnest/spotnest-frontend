@@ -30,7 +30,6 @@ const defaults: AdminSettings = {
   ownerRegistrationEnabled: true,
   propertyApprovalRequired: false,
   propertyListingEnabled: true,
-  defaultListingStatus: "inactive",
   newOwnerRegistrationAlerts: true,
   ownerApprovalEmails: true,
   platformName: "SpotNest",
@@ -624,36 +623,6 @@ export default function SettingsPage() {
                   }
                 />
               </div>
-
-              <label className="mt-5 block max-w-sm">
-                <span className="text-xs font-bold uppercase tracking-[0.12em] text-[#75777e]">
-                  Default listing status
-                </span>
-
-                <select
-                  disabled={!editing.properties}
-                  value={draft.defaultListingStatus}
-                  onChange={(event) =>
-                    setSetting(
-                      "defaultListingStatus",
-                      event.target.value as AdminSettings["defaultListingStatus"]
-                    )
-                  }
-                  className={`mt-2 h-11 w-full rounded-lg border border-[#c5c6cd] px-3 text-sm outline-none focus:border-[#00696b] ${
-                    editing.properties
-                      ? "bg-white"
-                      : "bg-[#f3f4f5]"
-                  }`}
-                >
-                  <option value="inactive">Unlisted</option>
-                  <option
-                    value="active"
-                    disabled={draft.propertyApprovalRequired}
-                  >
-                    Listed
-                  </option>
-                </select>
-              </label>
             </Section>
 
             <Section

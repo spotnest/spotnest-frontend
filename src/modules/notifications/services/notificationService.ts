@@ -1,12 +1,7 @@
 import api from "@/src/lib/axios";
 import type { Notification, NotificationsResponse } from "../types/notification";
 
-/**
- * Expected backend contract (not yet implemented in this repository):
- * GET   /notifications                  -> { data: Notification[] | { notifications: Notification[] } }
- * PATCH /notifications/:id/read         -> { data: Notification }
- * PATCH /notifications/read-all         -> { data: { message?: string } }
- */
+
 const notificationsPath = "/notifications";
 
 export async function getNotifications(): Promise<Notification[]> {
