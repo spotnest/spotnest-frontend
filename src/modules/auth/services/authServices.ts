@@ -29,7 +29,7 @@ import type {
  * The user normally needs to verify their email first.
  */
 export const signup = async (
-  payload: SignupPayload
+  payload: SignupPayload | FormData
 ): Promise<SignupPendingResponse> => {
   const response = await api.post<{
     data: SignupPendingResponse;
