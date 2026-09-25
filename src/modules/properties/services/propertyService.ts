@@ -5,6 +5,7 @@ import type {
     AdminPropertyListResponse,
     NearbyPropertyParams,
     NearbyPropertyResponse,
+    OwnerPropertyInput,
     Property,
     PropertyListParams,
     PropertyListResponse,
@@ -62,5 +63,49 @@ export const updatePropertyStatus = async (id: string, status: "active" | "inact
 
 export const archiveProperty = async (id: string) => {
     const { data } = await api.delete<{ message: string }>(`/properties/${id}`);
+    return data;
+};
+
+// /properties/mine/all — returns a bare array (no pagination wrapper).
+export const getMyProperties = async (): Promise<Property[]> => {
+    const { data } = await api.get<Property[]>("/properties/mine/all");
+    return data;
+};
+
+export const getMyPropertyById = async (id: string): Promise<Property> => {
+    const { data } = await api.get<Property>(`/properties/mine/${id}`);
+    return data;
+};
+
+// Multipart create: image fields live in the same form as the listing fields,
+// so this path builds ONE FormData. The axios request interceptor clears the
+// JSON Content-Type for FormData bodies so the upload stays multipart.
+export const createProperty = async (formData: FormData): Promise<Property> => {
+    const { data } = await api.post<Property>("/properties", formData);
+    return data;
+};
+
+// PATCH is JSON-only on the backend (no multer, no images). Text-change
+// submissions go through here; photos change via the dedicated endpoints.
+export const updateProperty = async (
+    id: string,
+    payload: Partial<OwnerPropertyInput>
+): Promise<Property> => {
+    const { data } = await api.patch<Property>(`/properties/${id}`, payload);
+    return data;
+};
+
+export const addPropertyImages = async (id: string, files: File[]): Promise<Property> => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("images", file));
+    const { data } = await api.post<Property>(`/properties/${id}/images`, formData);
+    return data;
+};
+
+export const removePropertyImage = async (id: string, publicId: string) => {
+    const { data } = await api.post<{ message: string }>(
+        `/properties/${id}/images/remove`,
+        { publicId }
+    );
     return data;
 };

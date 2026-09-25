@@ -66,6 +66,12 @@ api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         config.withCredentials = true;
 
+        // FormData must stay multipart: the default JSON Content-Type would make
+        // the transformRequest stringify the upload body into JSON (no files).
+        if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+            config.headers.delete("Content-Type");
+        }
+
         return config;
     },
     (error) => Promise.reject(error)
