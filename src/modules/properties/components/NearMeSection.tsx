@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import axios from "axios";
-import { useAppSelector } from "@/src/store/hook";
+import UpdateLocationForm from "@/src/modules/auth/components/UpdateLocationForm";
+import { signInSucceeded } from "@/src/store/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import NearMeToggle from "./NearMeToggle";
 import PropertiesGrid from "./PropertiesGrid";
 import { useNearbyProperties } from "../hooks/useProperties";
@@ -17,10 +19,14 @@ const emptyPagination = { page: 1, limit: 9, total: 0, pages: 1 };
 // server-rendered; this island only ships when ?near=1.
 export default function NearMeSection() {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
 
   const [params, setParams] = useState<NearbyPropertyParams>({ page: 1, limit: 9 });
+  const [showChangeLocation, setShowChangeLocation] = useState(false);
 
-  const nearbyEnabled = isAuthenticated && !!user?.locationName;
+  const isSearcher =
+    isAuthenticated && (user?.role === "tenant" || user?.role === "user");
+  const nearbyEnabled = isSearcher && !!user?.locationName;
 
   const nearbyQuery = useNearbyProperties(params, {
     enabled: nearbyEnabled,
@@ -29,8 +35,25 @@ export default function NearMeSection() {
 
   const data = nearbyQuery.data;
 
+  const handleLocationSaved = (locationName: string, resolvedTo: string) => {
+    if (!user) return;
+
+    dispatch(
+      signInSucceeded({
+        ...user,
+        locationName,
+        locationResolvedName: resolvedTo,
+      })
+    );
+
+    // Refresh nearby results against the new search centre. The query key
+    // also changes with locationName, so this kicks off immediately.
+    setShowChangeLocation(false);
+    nearbyQuery.refetch();
+  };
+
   const showLoginCta = !isAuthenticated;
-  const showLocationCta = isAuthenticated && !user?.locationName;
+  const showLocationCta = isSearcher && !user?.locationName;
   const missingLocation =
     nearbyEnabled &&
     axios.isAxiosError(nearbyQuery.error) &&
@@ -76,21 +99,57 @@ export default function NearMeSection() {
         <NearMeToggle active />
       </div>
 
-      {isAuthenticated && user?.locationName && (
-        <p className="mt-3 text-center text-xs font-medium text-[#75777e]">
-          {user.locationResolvedName ?? user.locationName} ·{" "}
-          <Link href="/user/dashboard" className="font-bold text-[#00696b] hover:text-[#004f51]">
-            Change location
-          </Link>
-        </p>
+      {isSearcher && user?.locationName && (
+        <div className="mt-3 flex flex-col items-center gap-3">
+          <p className="text-center text-xs font-medium text-[#75777e]">
+            {user.locationResolvedName ?? user.locationName} ·{" "}
+            <button
+              type="button"
+              onClick={() => setShowChangeLocation((open) => !open)}
+              className="font-bold text-[#00696b] hover:text-[#004f51]"
+            >
+              {showChangeLocation ? "Close" : "Change location"}
+            </button>
+          </p>
+
+          {showChangeLocation && (
+            <div className="w-full max-w-md rounded-2xl border border-[#e1e3e4] bg-white p-5 text-left shadow-[0_10px_28px_rgba(25,28,29,0.1)]">
+              <UpdateLocationForm
+                compact
+                currentLocationName={user.locationName}
+                onSaved={handleLocationSaved}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {!(isAuthenticated && !isSearcher) && (
+        <div className="mt-10">
+          <NearbyFilters onApply={handleApplyFilters} />
+        </div>
       )}
 
       <div className="mt-10">
-        <NearbyFilters onApply={handleApplyFilters} />
-      </div>
-
-      <div className="mt-10">
-        {showLoginCta ? (
+        {isAuthenticated && !isSearcher ? (
+          <div className="rounded-2xl border border-[#e1e3e4] bg-white p-10 text-center shadow-xs">
+            <h2 className="text-xl font-bold tracking-tight text-[#191c1d]">
+              Near-me is for tenants and users
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#75777e]">
+              Near-me is a seeker experience — it finds rentals within 10 km of
+              a tenant&apos;s or user&apos;s saved location. As an owner you
+              don&apos;t search; the location you attach to each listing is what
+              makes it appear in their results.
+            </p>
+            <Link
+              href={user?.role === "admin" ? "/admin/properties" : "/owner/properties"}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#00696b] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#004f51]"
+            >
+              {user?.role === "admin" ? "Manage listings" : "Manage my properties"}
+            </Link>
+          </div>
+        ) : showLoginCta ? (
           <div className="rounded-2xl border border-[#e1e3e4] bg-white p-10 text-center shadow-xs">
             <h2 className="text-xl font-bold tracking-tight text-[#191c1d]">
               Log in to search nearby
@@ -111,15 +170,15 @@ export default function NearMeSection() {
               Set your location first
             </h2>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#75777e]">
-              Set your location before searching nearby properties — add it from your
-              Dashboard to see rentals within 10 km.
+              Set your location below to see rentals within 10 km of where you are.
             </p>
-            <Link
-              href="/user/dashboard"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#00696b] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#004f51]"
-            >
-              Set my location
-            </Link>
+            <div className="mx-auto mt-6 max-w-md text-left">
+              <UpdateLocationForm
+                compact
+                currentLocationName={user?.locationName}
+                onSaved={handleLocationSaved}
+              />
+            </div>
           </div>
         ) : nearbyQuery.isPending ? (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-7">
