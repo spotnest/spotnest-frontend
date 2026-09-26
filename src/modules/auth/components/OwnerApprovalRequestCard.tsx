@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { OwnerApprovalRequest } from "../types/auth";
 
 type Props = {
@@ -21,6 +21,17 @@ const formatDate = (value?: string) => {
 export default function OwnerApprovalRequestCard({ request, isProcessing, onApprove, onReject }: Props) {
     const [isRejecting, setIsRejecting] = useState(false);
     const [reason, setReason] = useState("");
+    const [isDocumentOpen, setIsDocumentOpen] = useState(false);
+
+    useEffect(() => {
+        if (!isDocumentOpen) return;
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") setIsDocumentOpen(false);
+        };
+        window.addEventListener("keydown", closeOnEscape);
+        return () => window.removeEventListener("keydown", closeOnEscape);
+    }, [isDocumentOpen]);
+
     const initials = request.name
         .split(" ")
         .map((name) => name[0])
@@ -58,6 +69,46 @@ export default function OwnerApprovalRequestCard({ request, isProcessing, onAppr
                     <div><dt className="inline font-semibold text-[#44474d]">Account created: </dt><dd className="inline">{formatDate(request.createdAt)}</dd></div>
                 </dl>
             </div>
+
+            <section className="mt-5 border-t border-[#eef0f1] pt-5" aria-label="Verification document">
+                <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-[#75777e]">Verification document</h3>
+                {request.documentUrl ? (
+                    <button
+                        type="button"
+                        onClick={() => setIsDocumentOpen(true)}
+                        aria-label="Open verification document preview"
+                        className="mt-3 flex items-center gap-3 rounded-xl border border-[#e1e3e4] p-2 text-left transition hover:border-[#00696b] hover:bg-[#f7fbfb] focus:outline-none focus:ring-2 focus:ring-[#d9f4f3]"
+                    >
+                        {request.documentFormat === "pdf" ? (
+                            <span className="grid h-20 w-24 shrink-0 place-items-center rounded-lg bg-[#fff0ee] text-sm font-bold text-[#b42318]">PDF</span>
+                        ) : (
+                            <img src={request.documentUrl} alt="Uploaded verification document" className="h-20 w-24 shrink-0 rounded-lg object-cover" />
+                        )}
+                        <span className="text-sm font-semibold text-[#00696b]">Click to preview</span>
+                    </button>
+                ) : (
+                    <p className="mt-3 rounded-xl bg-[#f3f4f5] px-4 py-3 text-sm text-[#75777e]">No document submitted</p>
+                )}
+            </section>
+
+            {isDocumentOpen && request.documentUrl && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Verification document preview"
+                    onClick={(event) => { if (event.target === event.currentTarget) setIsDocumentOpen(false); }}
+                >
+                    <div className="relative max-h-[90vh] w-full max-w-5xl rounded-2xl bg-white p-3 shadow-2xl sm:p-5">
+                        <button type="button" onClick={() => setIsDocumentOpen(false)} className="absolute right-3 top-3 z-10 rounded-lg bg-white px-3 py-2 text-sm font-bold text-[#191c1d] shadow hover:bg-[#f3f4f5]" aria-label="Close preview">Close</button>
+                        {request.documentFormat === "pdf" ? (
+                            <iframe src={request.documentUrl} title={`${request.name}'s verification document`} className="h-[80vh] w-full rounded-xl" />
+                        ) : (
+                            <img src={request.documentUrl} alt={`${request.name}'s verification document`} className="mx-auto max-h-[80vh] max-w-full rounded-xl object-contain" />
+                        )}
+                    </div>
+                </div>
+            )}
 
             {isRejecting && (
                 <div className="mt-5 border-t border-[#eef0f1] pt-5">
