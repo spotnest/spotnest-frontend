@@ -27,12 +27,7 @@ export default function AdminPropertiesPage() {
     const [status, setStatus] = useState<PropertyStatus | "">("");
     const [search, setSearch] = useState("");
 
-    /*
-     * Protect the admin page.
-     *
-     * Wait until Redux has restored the authentication state.
-     * Non-admin users are redirected to their own dashboard route.
-     */
+
     useEffect(() => {
         if (!isInitialized) {
             return;
@@ -71,17 +66,13 @@ export default function AdminPropertiesPage() {
         return null;
     }
 
-    /*
-     * Prevent unauthorized users from seeing admin content
-     * while the redirect is happening.
-     */
     if (!user || !isAdmin) {
         return null;
     }
 
     const errorMessage =
         axios.isAxiosError(propertiesQuery.error) &&
-        typeof propertiesQuery.error.response?.data?.message === "string"
+            typeof propertiesQuery.error.response?.data?.message === "string"
             ? propertiesQuery.error.response.data.message
             : "Unable to load properties. Please refresh and try again.";
 

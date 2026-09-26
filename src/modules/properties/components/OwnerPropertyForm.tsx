@@ -95,11 +95,13 @@ export default function OwnerPropertyForm({
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (submitting) return;
         setError(null);
 
         const numericPrice = Number(price);
         const numericBedrooms = Number(bedrooms);
         const numericBathrooms = Number(bathrooms);
+        const numericAreaSqFt = areaSqFt.trim() ? Number(areaSqFt) : undefined;
 
         if (showImages && files.length === 0) {
             setError("Add at least one photo so tenants know what the property looks like.");
@@ -126,6 +128,10 @@ export default function OwnerPropertyForm({
             setError("Bathrooms must be a whole number.");
             return;
         }
+        if (numericAreaSqFt !== undefined && (!Number.isFinite(numericAreaSqFt) || numericAreaSqFt <= 0)) {
+            setError("Area must be greater than 0, or left blank.");
+            return;
+        }
         if (!address.street.trim() || !address.city.trim() || !address.state.trim() || !address.zipCode.trim() || !address.country.trim()) {
             setError("Street, city, state, ZIP/postal code and country are required.");
             return;
@@ -138,8 +144,8 @@ export default function OwnerPropertyForm({
             price: numericPrice,
             bedrooms: numericBedrooms,
             bathrooms: numericBathrooms,
-            ...(areaSqFt.trim()
-                ? { areaSqFt: Number(areaSqFt) }
+            ...(numericAreaSqFt !== undefined
+                ? { areaSqFt: numericAreaSqFt }
                 : {}),
             amenities,
             address: Object.fromEntries(
@@ -163,7 +169,7 @@ export default function OwnerPropertyForm({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form noValidate onSubmit={handleSubmit} className="space-y-6">
             {error && (
                 <div
                     role="alert"

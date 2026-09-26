@@ -27,6 +27,8 @@ export interface OwnerApprovalRequest {
   | "rejected";
   createdAt: string;
   submittedAt?: string;
+  documentUrl?: string;
+  documentFormat?: "jpg" | "png" | "pdf";
 }
 
 export interface LoginPayload {
