@@ -22,7 +22,7 @@ export default function Navbar() {
             console.error("Logout request failed:", error);
         } finally {
             dispatch(signedOut());
-            router.push("/login");
+            router.replace("/");
         }
     };
 

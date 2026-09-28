@@ -64,9 +64,9 @@ export function useLogout() {
       setIsLoading(false);
 
       /*
-       * Redirect to login page and replace navigation history.
+       * Redirect to the home page and replace navigation history.
        */
-      router.replace("/login");
+      router.replace("/");
     }
   };
 
@@ -74,4 +74,4 @@ export function useLogout() {
     logout: executeLogout,
     isLoading,
   };
-}
+}
