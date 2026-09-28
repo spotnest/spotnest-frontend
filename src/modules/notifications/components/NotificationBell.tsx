@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAppSelector } from "@/src/store/hook";
 import { Icon } from "@/src/modules/dashboard/components/Icon";
 import { useMarkAllNotificationsAsRead, useMarkNotificationAsRead, useNotifications } from "../hooks/useNotifications";
 import type { Notification } from "../types/notification";
@@ -14,6 +15,8 @@ export function NotificationBell() {
     const notificationsQuery = useNotifications();
     const markRead = useMarkNotificationAsRead();
     const markAllRead = useMarkAllNotificationsAsRead();
+    const user = useAppSelector((state) => state.auth.user);
+    const userId = user?.id;
     const notifications = notificationsQuery.data ?? [];
     const unreadCount = notifications.filter((notification) => !notification.isRead).length;
 
@@ -33,7 +36,9 @@ export function NotificationBell() {
     }, []);
 
     const handleNotificationClick = (notification: Notification) => {
-        if (!notification.isRead) markRead.mutate(notification.id);
+        if (!notification.isRead && userId) {
+            if (user?.role) markRead.mutate({ notificationId: notification.id, userId, role: user.role });
+        }
         setOpen(false);
         if (notification.targetUrl) router.push(notification.targetUrl);
     };
@@ -45,7 +50,7 @@ export function NotificationBell() {
         </button>
 
         {open && <section aria-label="Notifications" className="absolute right-0 top-12 z-50 w-[calc(100vw-2rem)] max-w-[380px] overflow-hidden rounded-2xl border border-[#e1e3e4] bg-white shadow-lg">
-            <header className="flex items-center justify-between border-b border-[#e1e3e4] px-4 py-3"><div><h2 className="text-sm font-bold text-[#191c1d]">Notifications</h2><p className="text-[11px] text-[#75777e]">{unreadCount ? `${unreadCount} unread` : "All caught up"}</p></div>{unreadCount > 0 && <button type="button" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()} className="text-xs font-bold text-[#00696b] hover:text-[#004f51] disabled:opacity-60">Mark all read</button>}</header>
+            <header className="flex items-center justify-between border-b border-[#e1e3e4] px-4 py-3"><div><h2 className="text-sm font-bold text-[#191c1d]">Notifications</h2><p className="text-[11px] text-[#75777e]">{unreadCount ? `${unreadCount} unread` : "All caught up"}</p></div>{unreadCount > 0 && <button type="button" disabled={markAllRead.isPending} onClick={() => { if (userId && user?.role) markAllRead.mutate({ userId, role: user.role }); }} className="text-xs font-bold text-[#00696b] hover:text-[#004f51] disabled:opacity-60">Mark all read</button>}</header>
             <div className="max-h-[min(28rem,calc(100vh-10rem))] overflow-y-auto">{notificationsQuery.isLoading ? <div className="px-5 py-10 text-center text-sm text-[#75777e]">Loading notifications...</div> : notificationsQuery.isError ? <div className="px-5 py-10 text-center"><p className="text-sm font-semibold text-[#ba1a1a]">Unable to load notifications.</p><button type="button" onClick={() => notificationsQuery.refetch()} className="mt-2 text-xs font-bold text-[#00696b]">Try again</button></div> : <NotificationList notifications={notifications.slice(0, 8)} onNotificationClick={handleNotificationClick} compact />}</div>
         </section>}
     </div>;

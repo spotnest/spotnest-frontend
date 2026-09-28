@@ -1,11 +1,12 @@
 "use client";
 
-import { useTenantRental } from "../hooks/hooks";
+import { useTenantPayments } from "../hooks/hooks";
 import { date, EmptyRental, money, PageState, RentalHero, Status } from "./components";
 
 export default function TenantRentalPage() {
-    const query = useTenantRental();
-    const rental = query.data;
+    const query = useTenantPayments();
+    const rental = query.data?.rental;
+    const paymentSummary = query.data?.summary;
 
     if (!rental) {
         return (
@@ -50,6 +51,19 @@ export default function TenantRentalPage() {
                         </dl>
                     </section>
                 </div>
+                <section className="rounded-2xl border border-[#e1e3e4] bg-white p-6">
+                    <h2 className="text-lg font-bold text-[#191c1d]">Payment status</h2>
+                    {paymentSummary ? (
+                        <dl className="mt-5 grid gap-5 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                            <div><dt className="text-[#75777e]">Security deposit</dt><dd className="mt-2"><Status value={paymentSummary.depositStatus} /></dd></div>
+                            <div><dt className="text-[#75777e]">Outstanding balance</dt><dd className="mt-1 font-bold">{money(paymentSummary.outstanding)}</dd></div>
+                            <div><dt className="text-[#75777e]">Recent payment</dt><dd className="mt-1 font-bold">{paymentSummary.recentPayment ? money(paymentSummary.recentPayment.amount) : "—"}</dd><dd className="mt-1 text-[#75777e]">{paymentSummary.recentPayment ? date(paymentSummary.recentPayment.paidAt) : "No completed payment"}</dd></div>
+                            <div><dt className="text-[#75777e]">Next payment</dt><dd className="mt-1 font-bold">{paymentSummary.nextPayment ? money(paymentSummary.nextPayment.amount) : "None due"}</dd><dd className="mt-1 text-[#75777e]">{paymentSummary.nextPayment ? `Due ${date(paymentSummary.nextPayment.dueDate)}` : "No pending payment"}</dd></div>
+                        </dl>
+                    ) : (
+                        <p className="mt-3 text-sm text-[#75777e]">Payment status is not available yet.</p>
+                    )}
+                </section>
                 <section className="rounded-2xl border border-[#e1e3e4] bg-white p-6">
                     <h2 className="text-lg font-bold text-[#191c1d]">Property details</h2>
                     <dl className="mt-5 grid gap-5 text-sm sm:grid-cols-3">

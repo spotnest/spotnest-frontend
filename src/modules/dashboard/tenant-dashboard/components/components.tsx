@@ -3,7 +3,6 @@
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 
 import type {
     MaintenanceRequest,
@@ -200,23 +199,6 @@ export function EmptyRental({
                 will appear here.
             </p>
 
-            <Link
-                href="/properties"
-                className="
-                    mt-5
-                    inline-flex
-                    rounded-xl
-                    bg-[#00696b]
-                    px-4
-                    py-2.5
-                    text-sm
-                    font-bold
-                    text-white
-                    hover:bg-[#004f51]
-                "
-            >
-                Browse properties
-            </Link>
         </div>
     );
 }
