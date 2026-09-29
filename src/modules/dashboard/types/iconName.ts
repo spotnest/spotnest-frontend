@@ -3,6 +3,7 @@ export type IconName =
     | "users"
     | "home"
     | "inbox"
+    | "chat"
     | "chart"
     | "settings"
     | "search"

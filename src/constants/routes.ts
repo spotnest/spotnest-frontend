@@ -6,8 +6,11 @@ export const dashboardPathForRole = (role?: string): string => {
     return "/properties";
 };
 
-export const dashboardNotificationsPathForRole = (role: "admin" | "owner" | "tenant"): string =>
+export const dashboardNotificationsPathForRole = (role: "admin" | "owner" | "tenant" | "user"): string =>
     `/${role}/dashboard/notifications`;
+
+export const dashboardChatPathForRole = (role: "owner" | "tenant" | "user"): string =>
+    `/${role}/dashboard/chat`;
 
 export const tenantDashboardRoutes = {
     home: "/tenant/dashboard",
@@ -15,4 +18,5 @@ export const tenantDashboardRoutes = {
     payments: "/tenant/dashboard/payments",
     maintenance: "/tenant/dashboard/maintenance",
     notifications: dashboardNotificationsPathForRole("tenant"),
+    chat: dashboardChatPathForRole("tenant"),
 } as const;

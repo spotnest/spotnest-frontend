@@ -8,6 +8,7 @@ import PropertyGallery from "@/src/modules/properties/components/PropertyGallery
 import { getPropertyById } from "@/src/modules/properties";
 import { formatPrice, propertyTypeLabels } from "@/src/modules/properties/utils/format";
 import type { Property } from "@/src/modules/properties";
+import { StartChatButton } from "@/src/modules/chat";
 
 export const revalidate = 300;
 
@@ -141,6 +142,8 @@ export default async function PropertyDetailPage({
                                 >
                                     Request to Rent
                                 </button>
+
+                                <StartChatButton propertyId={property._id} />
 
                                 <button
                                     type="button"
