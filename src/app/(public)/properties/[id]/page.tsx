@@ -8,7 +8,7 @@ import PropertyGallery from "@/src/modules/properties/components/PropertyGallery
 import { getPropertyById } from "@/src/modules/properties";
 import { formatPrice, propertyTypeLabels } from "@/src/modules/properties/utils/format";
 import type { Property } from "@/src/modules/properties";
-
+import VisitRequestButton from "@/src/modules/visits/components/VisitRequestButton";
 export const revalidate = 300;
 
 // React.cache dedupes the fetch between generateMetadata and the page render.
@@ -135,12 +135,7 @@ export default async function PropertyDetailPage({
                                     ))}
                                 </div>
 
-                                <button
-                                    type="button"
-                                    className="mt-6 w-full rounded-lg bg-[#00696b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#004f51]"
-                                >
-                                    Request to Rent
-                                </button>
+                                    <VisitRequestButton propertyId={property._id} />
 
                                 <button
                                     type="button"
