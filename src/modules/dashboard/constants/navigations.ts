@@ -1,4 +1,4 @@
-import { dashboardNotificationsPathForRole, tenantDashboardRoutes } from "@/src/constants/routes";
+import { dashboardChatPathForRole, dashboardNotificationsPathForRole, tenantDashboardRoutes } from "@/src/constants/routes";
 import { IconName } from "../types/iconName";
 
 export interface NavigationItem {
@@ -24,8 +24,8 @@ export const tenantNavigation: NavigationItem[] = [
     { label: "Payments", href: tenantDashboardRoutes.payments, icon: "clock" as IconName },
     { label: "Maintenance", href: tenantDashboardRoutes.maintenance, icon: "alert" as IconName },
     { label: "Notifications", href: tenantDashboardRoutes.notifications, icon: "bell" as IconName },
+    { label: "Chat", href: tenantDashboardRoutes.chat, icon: "chat" as IconName },
 ];
-
 export const ownerNavigation: NavigationItem[] = [
     { label: "Dashboard", href: "/owner/dashboard", icon: "grid" as IconName },
     { label: "Properties", href: "/owner/properties", icon: "home" as IconName },
@@ -34,6 +34,11 @@ export const ownerNavigation: NavigationItem[] = [
         label: "Notifications",
         href: dashboardNotificationsPathForRole("owner"),
         icon: "bell" as IconName,
+    },
+    {
+        label: "Chat",
+        href: dashboardChatPathForRole("owner"),
+        icon: "chat" as IconName,
     },
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
