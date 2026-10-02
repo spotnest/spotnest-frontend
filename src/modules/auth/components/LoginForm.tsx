@@ -8,6 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 
 import { useLogin } from "../hooks/useLogin";
 import { getDashboardRouteForRole } from "../utils/roleUtils";
+import { API_BASE_URL } from "@/src/lib/apiConfig";
 
 const EmailIcon = () => (
     <svg
@@ -77,9 +78,7 @@ export default function LoginForm() {
         ? redirectPath
         : null;
 
-    const googleLoginUrl = `${process.env.NEXT_PUBLIC_API_URL ||
-        "http://localhost:5000/api/v1"
-        }/auth/google`;
+    const googleLoginUrl = `${API_BASE_URL}/auth/google`;
 
     const handleSubmit = async (
         event: FormEvent<HTMLFormElement>

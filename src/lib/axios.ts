@@ -3,10 +3,7 @@ import axios, {
     type AxiosInstance,
     type InternalAxiosRequestConfig,
 } from "axios";
-
-const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:5000/api/v1";
+import { API_BASE_URL } from "./apiConfig";
 
 const api: AxiosInstance = axios.create({
     baseURL: API_BASE_URL,

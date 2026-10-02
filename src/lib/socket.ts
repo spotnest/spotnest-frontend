@@ -1,10 +1,11 @@
 import { io, type Socket } from "socket.io-client";
+import { SOCKET_URL } from "./apiConfig";
 
 let socket: Socket | null = null;
 
 export function getSocket(): Socket {
     if (!socket) {
-        socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
+        socket = io(SOCKET_URL, {
             withCredentials: true,
             autoConnect: false,
             transports: ["websocket", "polling"],

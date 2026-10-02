@@ -6,9 +6,7 @@ import type {
   PropertyStatus,
   PropertyType,
 } from "../types/property";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+import { API_BASE_URL } from "@/src/lib/apiConfig";
 
 /**
  * Normalizes raw backend property documents (including legacy DB records)
@@ -116,7 +114,7 @@ export async function getProperties(
 ): Promise<PropertyListResponse> {
   const query = buildQueryString(params);
 
-  const response = await fetch(`${API_URL}/properties${query}`, {
+  const response = await fetch(`${API_BASE_URL}/properties${query}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -153,7 +151,7 @@ export async function getProperties(
 export async function getProperty(
   id: string
 ): Promise<Property> {
-  const response = await fetch(`${API_URL}/properties/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
