@@ -1,17 +1,19 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
+import { isAxiosError } from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAppSelector } from "@/src/store/hook";
-import { getSocket, disconnectSocket } from "@/src/lib/socket";
-import { createConversation, getConversations, getMessages, markMessagesAsRead } from "../services/chatService";
-import type { ChatConversation, ChatMessage, ChatRole } from "../types/chat";
+import { getSocket } from "@/src/lib/socket";
+import { notificationsQueryKey, unreadNotificationCountQueryKey } from "@/src/modules/notifications/hooks/useNotifications";
+import { createConversation, getConversations, getMessages, markMessagesAsRead, sendMessage as postMessage } from "../services/chatService";
+import type { ChatAccountRole, ChatConversation, ChatMessage } from "../types/chat";
 
 export const chatKeys = {
     conversations: (userId?: string | null, role?: string | null) => ["chat", "conversations", userId ?? null, role ?? null] as const,
     messages: (userId?: string | null, role?: string | null, conversationId?: string | null) => ["chat", "messages", userId ?? null, role ?? null, conversationId ?? null] as const,
 };
 
-const isChatRole = (role: string | undefined): role is ChatRole => role === "tenant" || role === "owner";
+const isChatRole = (role: string | undefined): role is ChatAccountRole => role === "tenant" || role === "owner" || role === "user";
 
 /* ---------- REST: initial load only ---------- */
 
@@ -48,11 +50,39 @@ export function useMarkMessagesAsRead(conversationId: string) {
         mutationFn: () => markMessagesAsRead(conversationId),
         onSuccess: () => {
             void client.invalidateQueries({ queryKey: chatKeys.conversations(user?.id, user?.role) });
+            void client.invalidateQueries({ queryKey: notificationsQueryKey(user?.id, user?.role) });
+            void client.invalidateQueries({ queryKey: unreadNotificationCountQueryKey(user?.id, user?.role) });
         },
     });
 }
 
-/* ---------- Socket: send + receive ---------- */
+export function useSendMessage(conversationId: string) {
+    const user = useAppSelector((state) => state.auth.user);
+    const client = useQueryClient();
+    return useMutation({
+        mutationFn: (message: string) => postMessage(conversationId, message),
+        onSuccess: () => {
+            void client.invalidateQueries({
+                queryKey: chatKeys.messages(user?.id, user?.role, conversationId),
+            });
+            void client.invalidateQueries({
+                queryKey: chatKeys.conversations(user?.id, user?.role),
+            });
+        },
+        onError: (error: unknown) => {
+            if (isAxiosError(error)) {
+                console.error("Failed to send chat message", {
+                    status: error.response?.status,
+                    data: error.response?.data,
+                });
+                return;
+            }
+            console.error("Failed to send chat message", error);
+        },
+    });
+}
+
+/* ---------- Socket: receive only ---------- */
 
 type IncomingMessage = ChatMessage & { conversationId: string };
 
@@ -61,13 +91,6 @@ export function useChatSocket(enabled: boolean, activeConversationId?: string) {
     const user = useAppSelector((state) => state.auth.user);
     const userId = user?.id;
     const role = user?.role;
-
-    // connect / disconnect
-    useEffect(() => {
-        if (!enabled || !userId) return;
-        getSocket().connect();
-        return () => disconnectSocket();
-    }, [enabled, userId]);
 
     // incoming messages
     useEffect(() => {
@@ -112,9 +135,9 @@ export function useChatSocket(enabled: boolean, activeConversationId?: string) {
             if (isActive && !isMine) void markMessagesAsRead(msg.conversationId);
         };
 
-        socket.on("message:new", onNew);
+        socket.on("new_message", onNew);
         return () => {
-            socket.off("message:new", onNew);
+            socket.off("new_message", onNew);
         };
     }, [enabled, userId, role, activeConversationId, queryClient]);
 
@@ -123,32 +146,11 @@ export function useChatSocket(enabled: boolean, activeConversationId?: string) {
         if (!enabled || !userId || !activeConversationId) return;
         const socket = getSocket();
         const join = () => socket.emit("conversation:join", activeConversationId);
-        join();
+        if (socket.connected) join();
         socket.on("connect", join);
         return () => {
             socket.off("connect", join);
-            socket.emit("conversation:leave", activeConversationId);
+            if (socket.connected) socket.emit("conversation:leave", activeConversationId);
         };
     }, [enabled, userId, activeConversationId]);
-
-    // send
-    const [isPending, setPending] = useState(false);
-    const [isError, setError] = useState(false);
-
-    const sendMessage = useCallback(
-        (message: string) => {
-            if (!activeConversationId) return;
-            setPending(true);
-            setError(false);
-            getSocket()
-                .timeout(8000)
-                .emit("message:send", { conversationId: activeConversationId, message }, (err: unknown, res?: { ok: boolean }) => {
-                    setPending(false);
-                    if (err || !res?.ok) setError(true);
-                });
-        },
-        [activeConversationId]
-    );
-
-    return { sendMessage, isPending, isError };
 }

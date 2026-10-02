@@ -50,15 +50,15 @@ export function normalizeProperty(raw: Record<string, unknown>): Property {
 
   const imagesArr = Array.isArray(raw.images)
     ? raw.images.map((img: unknown) => {
-        if (typeof img === "string") {
-          return { url: img, publicId: "" };
-        }
-        const imgObj = img as Record<string, unknown> | undefined;
-        return {
-          url: String(imgObj?.url || ""),
-          publicId: String(imgObj?.publicId || ""),
-        };
-      })
+      if (typeof img === "string") {
+        return { url: img, publicId: "" };
+      }
+      const imgObj = img as Record<string, unknown> | undefined;
+      return {
+        url: String(imgObj?.url || ""),
+        publicId: String(imgObj?.publicId || ""),
+      };
+    })
     : [];
 
   const rawOwner = raw.owner as Record<string, unknown> | string | undefined;
@@ -67,10 +67,18 @@ export function normalizeProperty(raw: Record<string, unknown>): Property {
     : (rawOwner && typeof rawOwner === "object" && rawOwner._id
       ? String(rawOwner._id)
       : String(raw.ownerId || ""));
+  const ownerInfo = rawOwner && typeof rawOwner === "object" && rawOwner._id
+    ? {
+      id: String(rawOwner._id),
+      name: String(rawOwner.name || "Property owner"),
+      ...(rawOwner.image ? { image: String(rawOwner.image) } : {}),
+    }
+    : undefined;
 
   return {
     _id: String(raw._id || raw.id || ""),
     owner: ownerStr,
+    ...(ownerInfo ? { ownerInfo } : {}),
     title: String(raw.title || raw.name || "Untitled Property"),
     description: String(raw.description || ""),
     propertyType: (raw.propertyType || "apartment") as PropertyType,
@@ -168,4 +176,4 @@ export async function getProperty(
   const rawProperty = data.property || data.data || data;
 
   return normalizeProperty(rawProperty);
-}
+}

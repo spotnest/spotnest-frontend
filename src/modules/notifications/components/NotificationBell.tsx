@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAppSelector } from "@/src/store/hook";
+import { getSocket } from "@/src/lib/socket";
+import { chatKeys } from "@/src/modules/chat/hooks/useChat";
 import { Icon } from "@/src/modules/dashboard/components/Icon";
-import { useMarkAllNotificationsAsRead, useMarkNotificationAsRead, useNotifications } from "../hooks/useNotifications";
+import { notificationsQueryKey, unreadNotificationCountQueryKey, useMarkAllNotificationsAsRead, useMarkNotificationAsRead, useNotifications, useUnreadNotificationCount } from "../hooks/useNotifications";
 import type { Notification } from "../types/notification";
 import { NotificationList } from "./NotificationList";
 
@@ -12,13 +15,38 @@ export function NotificationBell() {
     const [open, setOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const queryClient = useQueryClient();
     const notificationsQuery = useNotifications();
+    const unreadCountQuery = useUnreadNotificationCount();
     const markRead = useMarkNotificationAsRead();
     const markAllRead = useMarkAllNotificationsAsRead();
     const user = useAppSelector((state) => state.auth.user);
     const userId = user?.id;
     const notifications = notificationsQuery.data ?? [];
-    const unreadCount = notifications.filter((notification) => !notification.isRead).length;
+    const unreadCount = unreadCountQuery.data ?? notifications.filter((notification) => !notification.isRead).length;
+
+    useEffect(() => {
+        if (!userId || !user?.role) return;
+        const socket = getSocket();
+        const onNotification = (notification: Notification) => {
+            queryClient.setQueryData<Notification[]>(notificationsQueryKey(userId, user.role), (current) => {
+                if (!current) return [notification];
+                const existingIndex = current.findIndex((item) => item.id === notification.id);
+                if (existingIndex >= 0) {
+                    return current.map((item) => item.id === notification.id ? notification : item);
+                }
+                return [notification, ...current].slice(0, 20);
+            });
+            void queryClient.invalidateQueries({ queryKey: unreadNotificationCountQueryKey(userId, user.role) });
+            if (notification.data?.conversationId) {
+                void queryClient.invalidateQueries({ queryKey: chatKeys.conversations(userId, user.role) });
+            }
+        };
+        socket.on("notification:new", onNotification);
+        return () => {
+            socket.off("notification:new", onNotification);
+        };
+    }, [queryClient, user?.role, userId]);
 
     useEffect(() => {
         const closeOnOutsideClick = (event: MouseEvent) => {

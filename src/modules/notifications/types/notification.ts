@@ -8,6 +8,8 @@ export interface Notification {
     isRead: boolean;
     createdAt: string;
     targetUrl?: string;
+    data?: { conversationId?: string; propertyId?: string; senderId?: string };
+    count?: number;
 }
 
 export interface NotificationsResponse {

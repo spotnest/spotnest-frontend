@@ -9,23 +9,29 @@ import {
     tenantNavigation,
 } from "../constants/navigations";
 import type { SidebarProps } from "../types/sidebarProps";
+import { useConversations } from "@/src/modules/chat/hooks/useChat";
 
 export default function Sidebar({ role, onNavigate }: SidebarProps) {
     const pathname = usePathname();
+    const conversationsQuery = useConversations(role === "owner" || role === "tenant");
+    const unreadChatCount = conversationsQuery.data?.reduce(
+        (total, conversation) => total + conversation.unreadCount,
+        0,
+    ) ?? 0;
     const items =
         role === "admin"
             ? adminNavigation
             : role === "owner"
-              ? ownerNavigation
-              : role === "tenant"
-                ? tenantNavigation
-              : [];
+                ? ownerNavigation
+                : role === "tenant"
+                    ? tenantNavigation
+                    : [];
     const portalTitle =
         role === "admin"
             ? "Admin Workspace"
             : role === "owner"
-              ? "Owner Portal"
-              : "Tenant Portal";
+                ? "Owner Portal"
+                : "Tenant Portal";
 
     return (
         <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-[#e1e3e4] bg-white px-5 py-6 shadow-xs">
@@ -67,28 +73,31 @@ export default function Sidebar({ role, onNavigate }: SidebarProps) {
                             <Link
                                 href={item.href}
                                 onClick={onNavigate}
-                                className={`flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition ${
-                                    isActive
+                                className={`flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition ${isActive
                                         ? "bg-[#d9f4f3] text-[#00696b]"
                                         : "text-[#44474d] hover:bg-[#f3f4f5] hover:text-[#191c1d]"
-                                }`}
+                                    }`}
                             >
                                 <Icon
                                     name={item.icon}
                                     className="h-5 w-5"
                                 />
-                                <span>{item.label}</span>
+                                <span className="min-w-0 flex-1">{item.label}</span>
+                                {item.label === "Chat" && unreadChatCount > 0 && (
+                                    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#00696b] px-1 text-[10px] font-bold text-white">
+                                        {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                                    </span>
+                                )}
                             </Link>
                             {item.children?.map((child) => (
                                 <Link
                                     key={child.href}
                                     href={child.href}
                                     onClick={onNavigate}
-                                    className={`ml-8 flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                                        pathname === child.href
+                                    className={`ml-8 flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition ${pathname === child.href
                                             ? "bg-[#d9f4f3] text-[#00696b]"
                                             : "text-[#75777e] hover:bg-[#f3f4f5] hover:text-[#191c1d]"
-                                    }`}
+                                        }`}
                                 >
                                     <span>{child.label}</span>
                                 </Link>

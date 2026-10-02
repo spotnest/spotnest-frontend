@@ -1,4 +1,5 @@
 export type ChatRole = "tenant" | "owner";
+export type ChatAccountRole = ChatRole | "user";
 
 export interface ChatConversation {
     id: string;

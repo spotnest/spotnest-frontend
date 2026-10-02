@@ -21,6 +21,10 @@ export default function OtpVerificationForm() {
   const dispatch = useAppDispatch();
 
   const email = searchParams.get("email") || "";
+  const redirectPath = searchParams.get("redirect");
+  const safeRedirectPath = redirectPath?.startsWith("/") && !redirectPath.startsWith("//")
+    ? redirectPath
+    : null;
 
   const [otp, setOtp] = useState<string[]>(
     Array(OTP_LENGTH).fill("")
@@ -181,7 +185,7 @@ export default function OtpVerificationForm() {
           const targetRoute = getDashboardRouteForRole(
             result.user.role
           );
-          router.push(targetRoute);
+          router.push(safeRedirectPath ?? targetRoute);
         }, 800);
 
         return;
@@ -265,7 +269,7 @@ export default function OtpVerificationForm() {
 
       setSuccessMessage(
         result.message ||
-          "A new verification code has been sent to your email."
+        "A new verification code has been sent to your email."
       );
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
@@ -423,9 +427,8 @@ export default function OtpVerificationForm() {
                       handleKeyDown(index, event)
                     }
                     onPaste={handlePaste}
-                    aria-label={`Verification digit ${
-                      index + 1
-                    }`}
+                    aria-label={`Verification digit ${index + 1
+                      }`}
                     className="h-[62px] w-full max-w-[68px] rounded-xl border border-[#CFCBC3] bg-white text-center font-mono text-2xl font-bold text-[#1C1B1A] outline-none transition hover:border-[#AAA59C] focus:border-[#6C4CE6] focus:ring-4 focus:ring-[#EEE9FF] sm:h-[68px] sm:max-w-[72px] sm:text-3xl"
                   />
                 ))}
