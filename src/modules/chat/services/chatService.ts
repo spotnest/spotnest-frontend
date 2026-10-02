@@ -13,7 +13,11 @@ export const createConversation = async (propertyId: string): Promise<ChatConver
     (await api.post<ApiResponse<ChatConversation>>("/chat/conversations", { propertyId })).data.data;
 
 export const sendMessage = async (conversationId: string, message: string): Promise<ChatMessage> =>
-    (await api.post<ApiResponse<ChatMessage>>(`/chat/conversations/${conversationId}/messages`, { message })).data.data;
+    (await api.post<ApiResponse<ChatMessage>>(
+        `/chat/conversations/${conversationId}/messages`,
+        { message },
+        { withCredentials: true },
+    )).data.data;
 
 export const markMessagesAsRead = async (conversationId: string): Promise<void> => {
     await api.patch(`/chat/conversations/${conversationId}/read`);

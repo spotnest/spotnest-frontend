@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAppSelector } from "@/src/store/hook";
 import {
     getNotifications,
+    getUnreadNotificationCount,
     markAllNotificationsAsRead,
     markNotificationAsRead,
 } from "../services/notificationService";
@@ -10,6 +11,9 @@ import type { UserRole } from "@/src/store/type";
 
 export const notificationsQueryKey = (userId?: string | null, role?: UserRole | null) =>
     ["notifications", userId ?? null, role ?? null] as const;
+
+export const unreadNotificationCountQueryKey = (userId?: string | null, role?: UserRole | null) =>
+    ["notifications", "unread-count", userId ?? null, role ?? null] as const;
 
 type MarkNotificationReadVariables = {
     notificationId: string;
@@ -30,6 +34,15 @@ export function useNotifications(enabled = true) {
     });
 }
 
+export function useUnreadNotificationCount() {
+    const user = useAppSelector((state) => state.auth.user);
+    return useQuery({
+        queryKey: unreadNotificationCountQueryKey(user?.id, user?.role),
+        queryFn: getUnreadNotificationCount,
+        enabled: Boolean(user?.id),
+    });
+}
+
 export function useMarkNotificationAsRead() {
     const queryClient = useQueryClient();
 
@@ -44,6 +57,7 @@ export function useMarkNotificationAsRead() {
                         : notification,
                 ),
             );
+            void queryClient.invalidateQueries({ queryKey: unreadNotificationCountQueryKey(userId, role) });
         },
     });
 }
@@ -62,6 +76,7 @@ export function useMarkAllNotificationsAsRead() {
             queryClient.setQueryData<Notification[]>(notificationsQueryKey(userId, role), (current) =>
                 current?.map((notification) => ({ ...notification, isRead: true })),
             );
+            void queryClient.invalidateQueries({ queryKey: unreadNotificationCountQueryKey(userId, role) });
         },
     });
 }

@@ -35,7 +35,7 @@ import { useAppSelector } from "@/src/store/hook";
 import { dashboardChatPathForRole } from "@/src/constants/routes";
 import { useCreateConversation } from "../hooks/useChat";
 
-export function StartChatButton({ propertyId }: { propertyId: string }) {
+export function StartChatButton({ propertyId, ownerId }: { propertyId: string; ownerId: string }) {
     const router = useRouter();
     const pathname = usePathname();
     const { user, isInitialized } = useAppSelector((state) => state.auth);
@@ -50,15 +50,20 @@ export function StartChatButton({ propertyId }: { propertyId: string }) {
                     disabled
                     className="w-full rounded-lg border border-[#00696b] px-4 py-3 text-sm font-semibold text-[#00696b] opacity-60"
                 >
-                    Message owner
+                    Chat with owner
                 </button>
             </div>
         );
     }
 
     // Owners and admins can't start a tenant chat
+    const isOwnProperty = Boolean(user && user.id === ownerId);
     const canChat = !user || user.role === "tenant" || user.role === "user";
-    if (!canChat) return null;
+    if (!canChat && !isOwnProperty) return null;
+
+    if (isOwnProperty) {
+        return <p className="mt-3 text-center text-sm font-medium text-[#75777e]">This is your property</p>;
+    }
 
 
     const start = () => {
@@ -70,7 +75,7 @@ export function StartChatButton({ propertyId }: { propertyId: string }) {
         mutation.mutate(propertyId, {
             onSuccess: (conversation) =>
                 router.push(
-                    `${dashboardChatPathForRole("tenant")}?conversationId=${conversation.id}`
+                    `${user.role === "user" ? "/messages" : dashboardChatPathForRole("tenant")}?conversationId=${conversation.id}`
                 ),
         });
     };
@@ -83,7 +88,7 @@ export function StartChatButton({ propertyId }: { propertyId: string }) {
                 disabled={mutation.isPending}
                 className="w-full rounded-lg border border-[#00696b] px-4 py-3 text-sm font-semibold text-[#00696b] transition hover:bg-[#d9f4f3] disabled:opacity-60"
             >
-                {mutation.isPending ? "Opening chat…" : "Message owner"}
+                {mutation.isPending ? "Opening chat…" : "Chat with owner"}
             </button>
 
             {mutation.isError && (

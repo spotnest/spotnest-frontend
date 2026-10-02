@@ -143,7 +143,7 @@ export default async function PropertyDetailPage({
                                     Request to Rent
                                 </button>
 
-                                <StartChatButton propertyId={property._id} />
+                                <StartChatButton propertyId={property._id} ownerId={property.ownerInfo?.id ?? property.owner} />
 
                                 <button
                                     type="button"

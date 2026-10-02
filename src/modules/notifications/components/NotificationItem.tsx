@@ -23,7 +23,7 @@ export function NotificationItem({ notification, onClick, compact = false }: Not
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#191c1d]">{notification.title}</span>
                     {!notification.isRead && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#00696b]" aria-label="Unread" />}
                 </span>
-                <span className={`mt-0.5 block text-xs leading-5 text-[#44474d] ${compact ? "line-clamp-2" : ""}`}>{notification.message}</span>
+                <span className={`mt-0.5 block text-xs leading-5 text-[#44474d] ${compact ? "line-clamp-2" : ""}`}>{notification.message}{notification.count && notification.count > 1 ? ` (${notification.count} messages)` : ""}</span>
                 <span className="mt-1 block text-[11px] font-medium text-[#75777e]">{formatNotificationTime(notification.createdAt)}</span>
             </span>
         </button>

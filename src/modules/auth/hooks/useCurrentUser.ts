@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { isAxiosError } from "axios";
 
 import { getCurrentUser } from "../services/authServices";
 import {
     authInitialized,
+    signedOut,
     signInSucceeded,
 } from "@/src/store/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
@@ -38,9 +40,12 @@ export function useCurrentUser() {
                 } else {
                     dispatch(authInitialized());
                 }
-            } catch {
-                // No valid session is a normal unauthenticated state.
-                dispatch(authInitialized());
+            } catch (error) {
+                if (isAxiosError(error) && error.response?.status === 401) {
+                    dispatch(signedOut());
+                } else {
+                    dispatch(authInitialized());
+                }
             }
         };
 

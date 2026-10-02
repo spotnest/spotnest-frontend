@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -65,17 +65,21 @@ const GoogleIcon = () => (
 
 export default function LoginForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { login, isLoading } = useLogin();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const redirectPath = searchParams.get("redirect");
+    const safeRedirectPath = redirectPath?.startsWith("/") && !redirectPath.startsWith("//")
+        ? redirectPath
+        : null;
 
-    const googleLoginUrl = `${
-        process.env.NEXT_PUBLIC_API_URL ||
+    const googleLoginUrl = `${process.env.NEXT_PUBLIC_API_URL ||
         "http://localhost:5000/api/v1"
-    }/auth/google`;
+        }/auth/google`;
 
     const handleSubmit = async (
         event: FormEvent<HTMLFormElement>
@@ -111,6 +115,7 @@ export default function LoginForm() {
                     email: result.email,
                     purpose: result.purpose,
                 });
+                if (safeRedirectPath) params.set("redirect", safeRedirectPath);
 
                 router.push(`/otp?${params.toString()}`);
 
@@ -159,7 +164,7 @@ export default function LoginForm() {
                 result.user.role
             );
 
-            router.push(targetRoute);
+            router.push(safeRedirectPath ?? targetRoute);
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
                 const data = error.response?.data;
@@ -417,11 +422,10 @@ export default function LoginForm() {
                     <a
                         href={googleLoginUrl}
                         aria-disabled={isLoading}
-                        className={`flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold transition hover:bg-[#EEE9FF] ${
-                            isLoading
+                        className={`flex h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#CFCBC3] bg-white px-5 text-lg font-semibold transition hover:bg-[#EEE9FF] ${isLoading
                                 ? "pointer-events-none cursor-not-allowed opacity-70"
                                 : ""
-                        }`}
+                            }`}
                     >
                         <GoogleIcon />
                         Continue with Google

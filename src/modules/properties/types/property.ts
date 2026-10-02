@@ -26,6 +26,7 @@ export interface PropertyAddress {
 export interface Property {
   _id: string;
   owner: string;
+  ownerInfo?: { id: string; name: string; image?: string };
   title: string;
   description: string;
   propertyType: PropertyType;
