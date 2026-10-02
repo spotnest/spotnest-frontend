@@ -26,12 +26,19 @@ export const tenantNavigation: NavigationItem[] = [
     { label: "Notifications", href: tenantDashboardRoutes.notifications, icon: "bell" as IconName },
     { label: "Chat", href: tenantDashboardRoutes.chat, icon: "chat" as IconName },
 ];
-
 export const ownerNavigation: NavigationItem[] = [
     { label: "Dashboard", href: "/owner/dashboard", icon: "grid" as IconName },
     { label: "Properties", href: "/owner/properties", icon: "home" as IconName },
-    { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
-    { label: "Notifications", href: dashboardNotificationsPathForRole("owner"), icon: "bell" as IconName },
-    { label: "Chat", href: dashboardChatPathForRole("owner"), icon: "chat" as IconName },
+    { label: "Requests", href: "/owner/requests", icon: "inbox" as IconName },
+    {
+        label: "Notifications",
+        href: dashboardNotificationsPathForRole("owner"),
+        icon: "bell" as IconName,
+    },
+    {
+        label: "Chat",
+        href: dashboardChatPathForRole("owner"),
+        icon: "chat" as IconName,
+    },
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
