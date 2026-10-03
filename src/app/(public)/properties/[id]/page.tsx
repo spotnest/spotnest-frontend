@@ -14,6 +14,7 @@ import {
 import type { Property } from "@/src/modules/properties";
 import VisitRequestButton from "@/src/modules/visits/components/VisitRequestButton";
 import { StartChatButton } from "@/src/modules/chat";
+import BookingPaymentCard from "@/src/modules/bookings/components/BookingPaymentCard";
 
 export const revalidate = 300;
 
@@ -38,9 +39,8 @@ export async function generateMetadata({
 
     const description =
         property.description?.slice(0, 160) ??
-        `Rent this ${
-            propertyTypeLabels[property.propertyType] ??
-            property.propertyType
+        `Rent this ${propertyTypeLabels[property.propertyType] ??
+        property.propertyType
         } in ${property.address.city}, ${property.address.state}.`;
 
     return {
@@ -87,13 +87,13 @@ export default async function PropertyDetailPage({
         },
         ...(property.areaSqFt !== undefined
             ? [
-                  {
-                      label: "Area",
-                      value: `${property.areaSqFt.toLocaleString(
-                          "en-IN"
-                      )} sq ft`,
-                  },
-              ]
+                {
+                    label: "Area",
+                    value: `${property.areaSqFt.toLocaleString(
+                        "en-IN"
+                    )} sq ft`,
+                },
+            ]
             : []),
         {
             label: "Location",
@@ -190,14 +190,20 @@ export default async function PropertyDetailPage({
                                 to learn more.
                             </p>
 
+                            <BookingPaymentCard
+                                propertyId={property._id}
+                                propertyTitle={property.title}
+                                propertyPrice={property.price}
+                                advanceAmount={property.advanceAmount ?? property.price}
+                            />
                             <VisitRequestButton
                                 propertyId={property._id}
                             />
 
                             <StartChatButton
-                            propertyId={property._id}
-                           ownerId={property.ownerInfo?.id ?? property.owner}
-                             />
+                                propertyId={property._id}
+                                ownerId={property.ownerInfo?.id ?? property.owner}
+                            />
 
                             <button
                                 type="button"

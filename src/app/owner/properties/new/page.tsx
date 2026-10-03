@@ -64,6 +64,7 @@ export default function NewOwnerPropertyPage() {
         formData.append("description", values.description);
         formData.append("propertyType", values.propertyType);
         formData.append("price", String(values.price));
+        formData.append("advanceAmount", String(values.advanceAmount));
         formData.append("bedrooms", String(values.bedrooms));
         formData.append("bathrooms", String(values.bathrooms));
 
