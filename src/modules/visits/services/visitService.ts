@@ -1,5 +1,5 @@
 import api from "@/src/lib/axios";
-
+import type { PropertyAddress } from "@/src/modules/properties/types";
 export type VisitStatus =
     | "pending"
     | "accepted"
@@ -47,6 +47,54 @@ export interface Visit {
     updated_at: string;
 }
 
+// -----------------------------------------------------
+// ADMIN VISIT TYPES
+// -----------------------------------------------------
+
+export interface AdminVisitProperty {
+    _id: string;
+    title: string;
+    address: PropertyAddress;
+    images?: string[];
+}
+
+export interface AdminVisitUser {
+    _id: string;
+    name: string;
+    email: string;
+    image?: string;
+}
+
+export interface AdminVisit
+    extends Omit<
+        Visit,
+        "property" | "requester" | "owner"
+    > {
+    property: AdminVisitProperty;
+    requester: AdminVisitUser;
+    owner: AdminVisitUser;
+}
+
+export interface GetAdminVisitsParams {
+    page?: number;
+    limit?: number;
+    status?: VisitStatus;
+}
+
+export interface AdminVisitsResponse {
+    visits: AdminVisit[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+    };
+}
+
+// -----------------------------------------------------
+// CREATE VISIT
+// -----------------------------------------------------
+
 export const createVisit = async (
     payload: CreateVisitPayload
 ): Promise<Visit> => {
@@ -58,6 +106,10 @@ export const createVisit = async (
     return data;
 };
 
+// -----------------------------------------------------
+// GET MY VISITS
+// -----------------------------------------------------
+
 export const getMyVisits = async (): Promise<Visit[]> => {
     const { data } = await api.get<Visit[]>(
         "/visits/my"
@@ -66,6 +118,10 @@ export const getMyVisits = async (): Promise<Visit[]> => {
     return data;
 };
 
+// -----------------------------------------------------
+// GET OWNER VISITS
+// -----------------------------------------------------
+
 export const getOwnerVisits = async (): Promise<Visit[]> => {
     const { data } = await api.get<Visit[]>(
         "/visits/owner"
@@ -73,6 +129,28 @@ export const getOwnerVisits = async (): Promise<Visit[]> => {
 
     return data;
 };
+
+// -----------------------------------------------------
+// GET ADMIN VISITS
+// -----------------------------------------------------
+
+export const getAdminVisits = async (
+    params: GetAdminVisitsParams = {}
+): Promise<AdminVisitsResponse> => {
+    const { data } =
+        await api.get<AdminVisitsResponse>(
+            "/visits/admin",
+            {
+                params,
+            }
+        );
+
+    return data;
+};
+
+// -----------------------------------------------------
+// GET SINGLE VISIT
+// -----------------------------------------------------
 
 export const getVisitById = async (
     visitId: string
@@ -83,6 +161,10 @@ export const getVisitById = async (
 
     return data;
 };
+
+// -----------------------------------------------------
+// ACCEPT VISIT
+// -----------------------------------------------------
 
 export const acceptVisit = async (
     visitId: string,
@@ -96,6 +178,10 @@ export const acceptVisit = async (
     return data;
 };
 
+// -----------------------------------------------------
+// REJECT VISIT
+// -----------------------------------------------------
+
 export const rejectVisit = async (
     visitId: string,
     payload: RejectVisitPayload
@@ -107,6 +193,10 @@ export const rejectVisit = async (
 
     return data;
 };
+
+// -----------------------------------------------------
+// RESCHEDULE VISIT
+// -----------------------------------------------------
 
 export const rescheduleVisit = async (
     visitId: string,
@@ -120,6 +210,10 @@ export const rescheduleVisit = async (
     return data;
 };
 
+// -----------------------------------------------------
+// CANCEL VISIT
+// -----------------------------------------------------
+
 export const cancelVisit = async (
     visitId: string
 ): Promise<Visit> => {
@@ -129,6 +223,10 @@ export const cancelVisit = async (
 
     return data;
 };
+
+// -----------------------------------------------------
+// COMPLETE VISIT
+// -----------------------------------------------------
 
 export const completeVisit = async (
     visitId: string
