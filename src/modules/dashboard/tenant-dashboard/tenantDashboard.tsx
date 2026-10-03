@@ -99,7 +99,7 @@ function TenantRentalDashboard({
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <Card title="Current rent" value={`${money(rental.monthlyRent)} / month`} />
-                    <Card title="Security deposit" value={money(rental.securityDeposit)} detail={summary ? (summary.depositStatus === "paid" ? "Paid" : "Unpaid") : "Payment status unavailable"} />
+                    <Card title="Advance payment" value={money(rental.securityDeposit)} detail={summary ? (summary.depositStatus === "paid" ? "Paid" : "Unpaid") : "Payment status unavailable"} />
                     <Card title="Recent payment" value={summary?.recentPayment ? money(summary.recentPayment.amount) : "—"} detail={summary?.recentPayment ? `Paid on ${date(summary.recentPayment.paidAt)}` : "No completed payments"} />
                     <Card title="Payment due" value={summary?.nextPayment ? money(summary.nextPayment.amount) : "No pending payment"} detail={summary?.nextPayment ? `Due ${date(summary.nextPayment.dueDate)}` : undefined}>
                         {summary?.nextPayment && <div className="mt-3"><Status value={summary.nextPayment.status} /></div>}

@@ -37,7 +37,7 @@ export default function TenantRentalPage() {
                             <div><dt className="text-[#75777e]">Lease start</dt><dd className="mt-1 font-bold">{date(rental.leaseStart)}</dd></div>
                             <div><dt className="text-[#75777e]">Lease end</dt><dd className="mt-1 font-bold">{date(rental.leaseEnd)}</dd></div>
                             <div><dt className="text-[#75777e]">Monthly rent</dt><dd className="mt-1 font-bold">{money(rental.monthlyRent)}</dd></div>
-                            <div><dt className="text-[#75777e]">Security deposit</dt><dd className="mt-1 font-bold">{money(rental.securityDeposit)}</dd></div>
+                            <div><dt className="text-[#75777e]">Advance payment</dt><dd className="mt-1 font-bold">{money(rental.securityDeposit)}</dd></div>
                             <div><dt className="text-[#75777e]">Payment frequency</dt><dd className="mt-1 font-bold capitalize">{rental.paymentFrequency}</dd></div>
                             <div><dt className="text-[#75777e]">Agreement status</dt><dd className="mt-1"><Status value={rental.status} /></dd></div>
                         </dl>
@@ -55,7 +55,7 @@ export default function TenantRentalPage() {
                     <h2 className="text-lg font-bold text-[#191c1d]">Payment status</h2>
                     {paymentSummary ? (
                         <dl className="mt-5 grid gap-5 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                            <div><dt className="text-[#75777e]">Security deposit</dt><dd className="mt-2"><Status value={paymentSummary.depositStatus} /></dd></div>
+                            <div><dt className="text-[#75777e]">Advance payment</dt><dd className="mt-2"><Status value={paymentSummary.depositStatus} /></dd></div>
                             <div><dt className="text-[#75777e]">Outstanding balance</dt><dd className="mt-1 font-bold">{money(paymentSummary.outstanding)}</dd></div>
                             <div><dt className="text-[#75777e]">Recent payment</dt><dd className="mt-1 font-bold">{paymentSummary.recentPayment ? money(paymentSummary.recentPayment.amount) : "—"}</dd><dd className="mt-1 text-[#75777e]">{paymentSummary.recentPayment ? date(paymentSummary.recentPayment.paidAt) : "No completed payment"}</dd></div>
                             <div><dt className="text-[#75777e]">Next payment</dt><dd className="mt-1 font-bold">{paymentSummary.nextPayment ? money(paymentSummary.nextPayment.amount) : "None due"}</dd><dd className="mt-1 text-[#75777e]">{paymentSummary.nextPayment ? `Due ${date(paymentSummary.nextPayment.dueDate)}` : "No pending payment"}</dd></div>

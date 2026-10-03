@@ -30,6 +30,7 @@ export interface Property {
     description: string;
     propertyType: PropertyType;
     price: number;
+    advanceAmount?: number;
     bedrooms: number;
     bathrooms: number;
     areaSqFt?: number;
@@ -121,6 +122,7 @@ export interface OwnerPropertyInput {
     description: string;
     propertyType: PropertyType;
     price: number;
+    advanceAmount: number;
     bedrooms: number;
     bathrooms: number;
     areaSqFt?: number;
@@ -128,4 +130,4 @@ export interface OwnerPropertyInput {
     address: PropertyAddress;
 }
 
-export interface OwnerPropertyFormValues extends OwnerPropertyInput { }
+export type OwnerPropertyFormValues = OwnerPropertyInput;

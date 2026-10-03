@@ -9,6 +9,7 @@ import { getPropertyById } from "@/src/modules/properties";
 import { formatPrice, propertyTypeLabels } from "@/src/modules/properties/utils/format";
 import type { Property } from "@/src/modules/properties";
 import { StartChatButton } from "@/src/modules/chat";
+import BookingPaymentCard from "@/src/modules/bookings/components/BookingPaymentCard";
 
 export const revalidate = 300;
 
@@ -136,12 +137,12 @@ export default async function PropertyDetailPage({
                                     ))}
                                 </div>
 
-                                <button
-                                    type="button"
-                                    className="mt-6 w-full rounded-lg bg-[#00696b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#004f51]"
-                                >
-                                    Request to Rent
-                                </button>
+                                <BookingPaymentCard
+                                    propertyId={property._id}
+                                    propertyTitle={property.title}
+                                    propertyPrice={property.price}
+                                    advanceAmount={property.advanceAmount ?? property.price}
+                                />
 
                                 <StartChatButton propertyId={property._id} ownerId={property.ownerInfo?.id ?? property.owner} />
 

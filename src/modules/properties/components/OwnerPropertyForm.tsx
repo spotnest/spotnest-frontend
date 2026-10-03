@@ -56,6 +56,9 @@ export default function OwnerPropertyForm({
         initial?.propertyType ?? "apartment"
     );
     const [price, setPrice] = useState(initial?.price != null ? String(initial.price) : "");
+    const [advanceAmount, setAdvanceAmount] = useState(
+        initial?.advanceAmount != null ? String(initial.advanceAmount) : initial?.price != null ? String(initial.price) : ""
+    );
     const [bedrooms, setBedrooms] = useState(initial?.bedrooms != null ? String(initial.bedrooms) : "1");
     const [bathrooms, setBathrooms] = useState(initial?.bathrooms != null ? String(initial.bathrooms) : "1");
     const [areaSqFt, setAreaSqFt] = useState(initial?.areaSqFt != null ? String(initial.areaSqFt) : "");
@@ -99,6 +102,7 @@ export default function OwnerPropertyForm({
         setError(null);
 
         const numericPrice = Number(price);
+        const numericAdvanceAmount = advanceAmount.trim() ? Number(advanceAmount) : numericPrice;
         const numericBedrooms = Number(bedrooms);
         const numericBathrooms = Number(bathrooms);
         const numericAreaSqFt = areaSqFt.trim() ? Number(areaSqFt) : undefined;
@@ -118,6 +122,10 @@ export default function OwnerPropertyForm({
         }
         if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
             setError("Monthly price must be greater than 0.");
+            return;
+        }
+        if (!Number.isFinite(numericAdvanceAmount) || numericAdvanceAmount <= 0) {
+            setError("Advance amount must be greater than 0.");
             return;
         }
         if (!Number.isInteger(numericBedrooms) || numericBedrooms < 0) {
@@ -142,6 +150,7 @@ export default function OwnerPropertyForm({
             description: description.trim(),
             propertyType,
             price: numericPrice,
+            advanceAmount: numericAdvanceAmount,
             bedrooms: numericBedrooms,
             bathrooms: numericBathrooms,
             ...(numericAreaSqFt !== undefined
@@ -220,6 +229,19 @@ export default function OwnerPropertyForm({
                     </label>
 
                     <label>
+                        <span className={labelClass}>Advance payment (₹)</span>
+                        <input
+                            type="number"
+                            min="1"
+                            value={advanceAmount}
+                            onChange={(e) => setAdvanceAmount(e.target.value)}
+                            placeholder={price || "15000"}
+                            className={inputClass}
+                        />
+                        <span className="mt-1 block text-xs text-[#75777e]">Leave blank to use one month&apos;s rent.</span>
+                    </label>
+
+                    <label>
                         <span className={labelClass}>Bedrooms</span>
                         <input
                             type="number"
@@ -277,11 +299,10 @@ export default function OwnerPropertyForm({
                                 key={amenity}
                                 type="button"
                                 onClick={() => toggleAmenity(amenity)}
-                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                                    selected
-                                        ? "border-[#00696b] bg-[#00696b] text-white"
-                                        : "border-[#c5c6cd] bg-white text-[#44474d] hover:border-[#00696b] hover:text-[#00696b]"
-                                }`}
+                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${selected
+                                    ? "border-[#00696b] bg-[#00696b] text-white"
+                                    : "border-[#c5c6cd] bg-white text-[#44474d] hover:border-[#00696b] hover:text-[#00696b]"
+                                    }`}
                             >
                                 {amenity}
                             </button>
