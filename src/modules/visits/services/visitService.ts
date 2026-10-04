@@ -1,8 +1,9 @@
 import api from "@/src/lib/axios";
 import type { PropertyAddress } from "@/src/modules/properties/types";
+
 export type VisitStatus =
     | "pending"
-    | "accepted"
+    | "approved"
     | "rejected"
     | "rescheduled"
     | "cancelled"
@@ -15,7 +16,7 @@ export interface CreateVisitPayload {
     message?: string;
 }
 
-export interface AcceptVisitPayload {
+export interface ApproveVisitPayload {
     scheduledDate: string;
     scheduledTime: string;
 }
@@ -71,8 +72,8 @@ export interface AdminVisit
         "property" | "requester" | "owner"
     > {
     property: AdminVisitProperty;
-    requester: AdminVisitUser;
-    owner: AdminVisitUser;
+    requester: AdminVisitUser | null;
+    owner: AdminVisitUser | null;
 }
 
 export interface GetAdminVisitsParams {
@@ -163,15 +164,15 @@ export const getVisitById = async (
 };
 
 // -----------------------------------------------------
-// ACCEPT VISIT
+// APPROVE VISIT
 // -----------------------------------------------------
 
-export const acceptVisit = async (
+export const approveVisit = async (
     visitId: string,
-    payload: AcceptVisitPayload
+    payload: ApproveVisitPayload
 ): Promise<Visit> => {
     const { data } = await api.patch<Visit>(
-        `/visits/${visitId}/accept`,
+        `/visits/${visitId}/approve`,
         payload
     );
 

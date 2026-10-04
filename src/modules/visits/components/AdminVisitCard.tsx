@@ -6,20 +6,22 @@ interface AdminVisitCardProps {
     visit: AdminVisit;
 }
 
-const statusStyles: Record<
-    AdminVisit["status"],
-    string
-> = {
+const statusStyles: Record<AdminVisit["status"], string> = {
     pending:
         "border-amber-200 bg-amber-50 text-amber-700",
-    accepted:
+
+    approved:
         "border-emerald-200 bg-emerald-50 text-emerald-700",
+
     rejected:
         "border-red-200 bg-red-50 text-red-700",
+
     rescheduled:
         "border-blue-200 bg-blue-50 text-blue-700",
+
     cancelled:
         "border-gray-200 bg-gray-50 text-gray-700",
+
     completed:
         "border-teal-200 bg-teal-50 text-teal-700",
 };
@@ -45,7 +47,10 @@ const formatTime = (time?: string) => {
 
     const [hours, minutes] = time.split(":");
 
-    if (hours === undefined || minutes === undefined) {
+    if (
+        hours === undefined ||
+        minutes === undefined
+    ) {
         return time;
     }
 
@@ -83,24 +88,38 @@ const formatUpdatedAt = (date: string) => {
 export default function AdminVisitCard({
     visit,
 }: AdminVisitCardProps) {
-    const address = visit.property?.address || "Address not available";
+    const address = visit.property?.address;
+
+    const requester = visit.requester;
+    const owner = visit.owner;
+
     return (
         <article className="rounded-2xl border border-[#e1e3e4] bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                     <h3 className="text-base font-bold text-[#191c1d]">
-                        {visit.property?.title}
+                        {visit.property?.title ??
+                            "Property unavailable"}
                     </h3>
 
-                    <p className="mt-1 text-sm text-[#75777e]">
-                        {address.street}, {address.city},{" "}
-                        {address.state} {address.zipCode}
-                    </p>
+                    {address ? (
+                        <p className="mt-1 text-sm text-[#75777e]">
+                            {address.street},{" "}
+                            {address.city},{" "}
+                            {address.state}{" "}
+                            {address.zipCode}
+                        </p>
+                    ) : (
+                        <p className="mt-1 text-sm text-[#75777e]">
+                            Property information unavailable
+                        </p>
+                    )}
                 </div>
 
                 <span
-                    className={`inline-flex w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-bold capitalize ${statusStyles[visit.status]
-                        }`}
+                    className={`inline-flex w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-bold capitalize ${
+                        statusStyles[visit.status]
+                    }`}
                 >
                     {visit.status}
                 </span>
@@ -113,11 +132,13 @@ export default function AdminVisitCard({
                     </p>
 
                     <p className="mt-1 text-sm font-semibold text-[#191c1d]">
-                        {visit.requester?.name}
+                        {requester?.name ??
+                            "User unavailable"}
                     </p>
 
                     <p className="text-sm text-[#75777e]">
-                        {visit.requester?.email}
+                        {requester?.email ??
+                            "Email unavailable"}
                     </p>
                 </div>
 
@@ -127,11 +148,13 @@ export default function AdminVisitCard({
                     </p>
 
                     <p className="mt-1 text-sm font-semibold text-[#191c1d]">
-                        {visit.owner?.name}
+                        {owner?.name ??
+                            "Owner unavailable"}
                     </p>
 
                     <p className="text-sm text-[#75777e]">
-                        {visit.owner?.email}
+                        {owner?.email ??
+                            "Email unavailable"}
                     </p>
                 </div>
             </div>
@@ -143,11 +166,15 @@ export default function AdminVisitCard({
                     </p>
 
                     <p className="mt-1 text-sm font-semibold text-[#191c1d]">
-                        {formatDate(visit.requestedDate)}
+                        {formatDate(
+                            visit.requestedDate
+                        )}
                     </p>
 
                     <p className="text-sm text-[#75777e]">
-                        {formatTime(visit.requestedTime)}
+                        {formatTime(
+                            visit.requestedTime
+                        )}
                     </p>
                 </div>
 
@@ -157,11 +184,15 @@ export default function AdminVisitCard({
                     </p>
 
                     <p className="mt-1 text-sm font-semibold text-[#191c1d]">
-                        {formatDate(visit.scheduledDate)}
+                        {formatDate(
+                            visit.scheduledDate
+                        )}
                     </p>
 
                     <p className="text-sm text-[#75777e]">
-                        {formatTime(visit.scheduledTime)}
+                        {formatTime(
+                            visit.scheduledTime
+                        )}
                     </p>
                 </div>
             </div>
@@ -206,7 +237,9 @@ export default function AdminVisitCard({
                 <p className="text-xs text-[#75777e]">
                     Last updated:{" "}
                     <span className="font-medium text-[#44474d]">
-                        {formatUpdatedAt(visit.updated_at)}
+                        {formatUpdatedAt(
+                            visit.updated_at
+                        )}
                     </span>
                 </p>
             </div>
