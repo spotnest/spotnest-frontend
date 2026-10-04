@@ -17,12 +17,13 @@ const isChatRole = (role: string | undefined): role is ChatAccountRole => role =
 
 /* ---------- REST: initial load only ---------- */
 
-export function useConversations(enabled = true) {
+export function useConversations(enabled = true, pollForUnread = false) {
     const user = useAppSelector((state) => state.auth.user);
     return useQuery({
         queryKey: chatKeys.conversations(user?.id, user?.role),
         queryFn: getConversations,
         enabled: enabled && Boolean(user?.id) && isChatRole(user?.role),
+        refetchInterval: pollForUnread ? 30_000 : false,
     });
 }
 
