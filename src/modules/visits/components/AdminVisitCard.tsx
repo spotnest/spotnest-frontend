@@ -83,14 +83,13 @@ const formatUpdatedAt = (date: string) => {
 export default function AdminVisitCard({
     visit,
 }: AdminVisitCardProps) {
-    const address = visit.property.address;
-
+    const address = visit.property?.address || "Address not available";
     return (
         <article className="rounded-2xl border border-[#e1e3e4] bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                     <h3 className="text-base font-bold text-[#191c1d]">
-                        {visit.property.title}
+                        {visit.property?.title}
                     </h3>
 
                     <p className="mt-1 text-sm text-[#75777e]">
@@ -100,9 +99,8 @@ export default function AdminVisitCard({
                 </div>
 
                 <span
-                    className={`inline-flex w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-bold capitalize ${
-                        statusStyles[visit.status]
-                    }`}
+                    className={`inline-flex w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-bold capitalize ${statusStyles[visit.status]
+                        }`}
                 >
                     {visit.status}
                 </span>
@@ -115,11 +113,11 @@ export default function AdminVisitCard({
                     </p>
 
                     <p className="mt-1 text-sm font-semibold text-[#191c1d]">
-                        {visit.requester.name}
+                        {visit.requester?.name}
                     </p>
 
                     <p className="text-sm text-[#75777e]">
-                        {visit.requester.email}
+                        {visit.requester?.email}
                     </p>
                 </div>
 
@@ -129,11 +127,11 @@ export default function AdminVisitCard({
                     </p>
 
                     <p className="mt-1 text-sm font-semibold text-[#191c1d]">
-                        {visit.owner.name}
+                        {visit.owner?.name}
                     </p>
 
                     <p className="text-sm text-[#75777e]">
-                        {visit.owner.email}
+                        {visit.owner?.email}
                     </p>
                 </div>
             </div>
