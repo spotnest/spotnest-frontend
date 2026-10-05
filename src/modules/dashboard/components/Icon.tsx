@@ -23,6 +23,7 @@ export function Icon({ name, className = "h-5 w-5" }: { name: IconName; classNam
             {name === "clock" && <><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3 2" /></>}
             {name === "alert" && <><path d="m12 4 9 16H3L12 4Z" /><path d="M12 9v4M12 17h.01" /></>}
             {name === "logout" && <><path d="M10 17l5-5-5-5M15 12H3M21 19V5a2 2 0 0 0-2-2h-5" /></>}
+            {name === "sparkles" && <><path d="M12 3.5 13.7 9l5.5 1.7-5.5 1.7L12 18l-1.7-5.6L4.8 10.7 10.3 9 12 3.5Z" /><path d="M18.5 3v3M20 4.5h-3" /></>}
         </svg>
     );
 }

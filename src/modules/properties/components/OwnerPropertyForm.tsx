@@ -1,18 +1,18 @@
 "use client";
 
 import axios from "axios";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import {
     PROPERTY_TYPES,
 } from "../utils/filters";
+import { useSubscription } from "@/src/modules/subscriptions/hooks/useSubscription";
 import {
     type OwnerPropertyFormValues,
     type Property,
     type PropertyAddress,
     type PropertyType,
 } from "../types";
-
-const MAX_IMAGES = 8;
 
 // Common amenities offered as one-tap toggle chips (custom entries still work).
 const AMENITY_SUGGESTIONS = [
@@ -71,6 +71,11 @@ export default function OwnerPropertyForm({
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Photo allowance comes from the server, never from a constant here, so a
+    // plan change takes effect without a frontend release.
+    const subscriptionQuery = useSubscription();
+    const maxImages = subscriptionQuery.data?.maxImages;
+
     const toggleAmenity = (amenity: string) => {
         setAmenities((current) =>
             current.includes(amenity)
@@ -88,7 +93,8 @@ export default function OwnerPropertyForm({
 
     const handleFiles = (list: FileList | null) => {
         if (!list) return;
-        const next = Array.from(list).slice(0, MAX_IMAGES);
+        // Cap client-side for UX only — the server enforces the real limit.
+        const next = Array.from(list).slice(0, maxImages ?? undefined);
         setFiles(next);
     };
 
@@ -402,9 +408,32 @@ export default function OwnerPropertyForm({
                 <section className="rounded-2xl border border-[#e1e3e4] bg-white p-6">
                     <h2 className="text-lg font-bold text-[#191c1d]">Photos</h2>
                     <p className="mt-1 text-xs leading-5 text-[#75777e]">
-                        Up to {MAX_IMAGES} photos, JPG / PNG / WebP. The first one
-                        becomes the listing cover.
+                        {maxImages === undefined ? (
+                            <>
+                                JPG / PNG / WebP. The first one becomes the
+                                listing cover.
+                            </>
+                        ) : (
+                            <>
+                                {files.length} / {maxImages} photos allowed on
+                                your plan. JPG / PNG / WebP. The first one becomes
+                                the listing cover.
+                            </>
+                        )}
                     </p>
+
+                    {maxImages !== undefined && files.length >= maxImages && (
+                        <p className="mt-2 text-xs font-semibold text-[#95611d]">
+                            Photo limit reached for this listing.{" "}
+                            <Link
+                                href="/owner/subscription"
+                                className="underline hover:text-[#00696b]"
+                            >
+                                Upgrade your plan
+                            </Link>{" "}
+                            for more photos.
+                        </p>
+                    )}
 
                     <label className="mt-4 flex h-28 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-[#c5c6cd] bg-[#f8f9fa] text-[#00696b] transition hover:border-[#00696b] hover:bg-[#dff7f5]">
                         <svg aria-hidden="true" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">

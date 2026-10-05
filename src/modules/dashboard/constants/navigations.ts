@@ -31,6 +31,11 @@ export const ownerNavigation: NavigationItem[] = [
     { label: "Properties", href: "/owner/properties", icon: "home" as IconName },
     { label: "Requests", href: "/owner/requests", icon: "inbox" as IconName },
     {
+        label: "Subscription",
+        href: "/owner/subscription",
+        icon: "sparkles" as IconName,
+    },
+    {
         label: "Notifications",
         href: dashboardNotificationsPathForRole("owner"),
         icon: "bell" as IconName,

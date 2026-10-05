@@ -10,6 +10,8 @@ import DashboardShell from "@/src/modules/dashboard/components/DashboardShell";
 import OwnerPropertyCard from "@/src/modules/properties/components/OwnerPropertyCard";
 import { getMyProperties } from "@/src/modules/properties/services/propertyService";
 import type { PropertyStatus } from "@/src/modules/properties/types";
+import { useSubscription } from "@/src/modules/subscriptions/hooks/useSubscription";
+import { ListingUsage } from "@/src/modules/subscriptions/components/SubscriptionUi";
 import { dashboardPathForRole } from "@/src/constants/routes";
 import { useAppSelector } from "@/src/store/hook";
 
@@ -47,6 +49,16 @@ export default function OwnerPropertiesPage() {
         queryFn: getMyProperties,
         enabled: isInitialized && isOwner,
     });
+
+    // Mirrors the server's limit so the button state matches what the API will
+    // actually accept. The server stays the authority — this only decides what
+    // to render.
+    const subscriptionQuery = useSubscription({
+        enabled: isInitialized && isOwner,
+    });
+
+    const entitlement = subscriptionQuery.data;
+    const canCreate = entitlement?.canCreate ?? true;
 
     const filtered = useMemo(() => {
         const items = propertiesQuery.data ?? [];
@@ -124,15 +136,34 @@ export default function OwnerPropertiesPage() {
                         </p>
                     </div>
 
-                    <Link
-                        href="/owner/properties/new"
-                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#00696b] px-5 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#004f51]"
-                    >
-                        <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add a property
-                    </Link>
+                    <div className="flex flex-col items-start gap-3 sm:items-end">
+                        {entitlement && (
+                            <ListingUsage
+                                used={entitlement.used}
+                                limit={entitlement.listingLimit}
+                                className="w-full sm:w-64"
+                            />
+                        )}
+
+                        {canCreate ? (
+                            <Link
+                                href="/owner/properties/new"
+                                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#00696b] px-5 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#004f51]"
+                            >
+                                <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add a property
+                            </Link>
+                        ) : (
+                            <Link
+                                href="/owner/subscription"
+                                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#00696b] px-5 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#004f51]"
+                            >
+                                Upgrade to add more
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 <div className="mt-7 flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -205,10 +236,16 @@ export default function OwnerPropertiesPage() {
 
                             {!propertiesQuery.data?.length && (
                                 <Link
-                                    href="/owner/properties/new"
+                                    href={
+                                        canCreate
+                                            ? "/owner/properties/new"
+                                            : "/owner/subscription"
+                                    }
                                     className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#00696b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#004f51]"
                                 >
-                                    Add a property
+                                    {canCreate
+                                        ? "Add a property"
+                                        : "Upgrade to add more"}
                                 </Link>
                             )}
                         </div>

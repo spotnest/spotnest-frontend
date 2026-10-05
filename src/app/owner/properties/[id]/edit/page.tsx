@@ -20,10 +20,9 @@ import type {
     OwnerPropertyFormValues,
     Property,
 } from "@/src/modules/properties/types";
+import { useSubscription } from "@/src/modules/subscriptions/hooks/useSubscription";
 import { dashboardPathForRole } from "@/src/constants/routes";
 import { useAppSelector } from "@/src/store/hook";
-
-const MAX_IMAGES = 8;
 
 const statusTone: Record<Property["status"], string> = {
     active: "bg-[#d9f4f3] text-[#00696b]",
@@ -67,6 +66,12 @@ export default function EditOwnerPropertyPage() {
         queryFn: () => getMyPropertyById(params.id as string),
         enabled: isInitialized && Boolean(params.id),
     });
+
+    // Photo allowance for this owner. Undefined until the entitlement loads,
+    // and undefined is treated as "not known yet" rather than a fallback
+    // number, so no plan limit is ever hardcoded here.
+    const subscriptionQuery = useSubscription({ enabled: isInitialized && isOwner });
+    const maxImages = subscriptionQuery.data?.maxImages;
 
     const property = propertyQuery.data;
 
@@ -138,7 +143,12 @@ export default function EditOwnerPropertyPage() {
 
     const handleFiles = (list: FileList | null) => {
         if (!list) return;
-        const remaining = property ? MAX_IMAGES - property.images.length : MAX_IMAGES;
+        // Trim to whatever room the plan leaves. Existing photos are never
+        // dropped — only the incoming batch is capped, and the server checks
+        // the total again.
+        const existing = property?.images.length ?? 0;
+        const remaining =
+            maxImages === undefined ? list.length : maxImages - existing;
         const files = Array.from(list).slice(0, Math.max(remaining, 0));
         if (files.length > 0) {
             addImagesMutation.mutate(files);
@@ -294,11 +304,15 @@ export default function EditOwnerPropertyPage() {
                                             Photos
                                         </h2>
                                         <span className="text-xs font-semibold text-[#75777e]">
-                                            {property.images.length}/{MAX_IMAGES}
+                                            {property.images.length}
+                                            {maxImages === undefined
+                                                ? ""
+                                                : `/${maxImages}`}
                                         </span>
                                     </div>
 
-                                    {property.images.length < MAX_IMAGES && (
+                                    {(maxImages === undefined ||
+                                        property.images.length < maxImages) && (
                                         <label className="mt-4 flex h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-[#c5c6cd] bg-[#f8f9fa] text-[#00696b] transition hover:border-[#00696b] hover:bg-[#dff7f5]">
                                             <span className="text-sm font-semibold">
                                                 Add photos
