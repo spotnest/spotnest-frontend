@@ -12,6 +12,16 @@ import type {
     OwnerPropertyFormValues,
     Property,
 } from "@/src/modules/properties/types";
+import { useSubscription } from "@/src/modules/subscriptions/hooks/useSubscription";
+import {
+    getApiErrorCode,
+    getApiErrorMessage,
+} from "@/src/modules/subscriptions/services/subscriptionService";
+import { LISTING_LIMIT_REACHED } from "@/src/modules/subscriptions/types/subscription";
+import {
+    ListingUsage,
+    UpgradeLimitModal,
+} from "@/src/modules/subscriptions/components/SubscriptionUi";
 import { dashboardPathForRole } from "@/src/constants/routes";
 import { useAppSelector } from "@/src/store/hook";
 
@@ -26,6 +36,15 @@ export default function NewOwnerPropertyPage() {
 
     const queryClient = useQueryClient();
     const [created, setCreated] = useState<Property | null>(null);
+    const [limitModalOpen, setLimitModalOpen] = useState(false);
+    const [limitMessage, setLimitMessage] = useState(
+        "You have used every listing included in your current plan."
+    );
+
+    const subscriptionQuery = useSubscription({
+        enabled: isInitialized && isOwner,
+    });
+    const entitlement = subscriptionQuery.data;
 
     useEffect(() => {
         if (!isInitialized) {
@@ -46,6 +65,8 @@ export default function NewOwnerPropertyPage() {
         mutationFn: createProperty,
         onSuccess: (property) => {
             queryClient.invalidateQueries({ queryKey: ["owner-properties"] });
+            // A new listing changes the usage meter.
+            queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
             setCreated(property);
         },
     });
@@ -77,7 +98,24 @@ export default function NewOwnerPropertyPage() {
 
         files.forEach((file) => formData.append("images", file));
 
-        await createMutation.mutateAsync(formData);
+        try {
+            await createMutation.mutateAsync(formData);
+        } catch (error) {
+            /**
+             * The server decides the limit. When it rejects with
+             * LISTING_LIMIT_REACHED, offer the upgrade path instead of a dead
+             * error. The form keeps its values so nothing is retyped.
+             */
+            if (getApiErrorCode(error) === LISTING_LIMIT_REACHED) {
+                setLimitMessage(
+                    getApiErrorMessage(error) ??
+                        "You have used every listing included in your current plan."
+                );
+                setLimitModalOpen(true);
+            }
+
+            throw error;
+        }
     };
 
     if (!isInitialized) {
@@ -113,6 +151,16 @@ export default function NewOwnerPropertyPage() {
                         in &ldquo;Near me&rdquo; searches.
                     </p>
                 </header>
+
+                {entitlement && (
+                    <div className="mt-7">
+                        <ListingUsage
+                            used={entitlement.used}
+                            limit={entitlement.listingLimit}
+                            className="max-w-sm"
+                        />
+                    </div>
+                )}
 
                 {created ? (
                     <div className="mt-8 rounded-2xl border border-[#cfddd6] bg-[#eef8f2] p-8">
@@ -161,6 +209,12 @@ export default function NewOwnerPropertyPage() {
                         />
                     </div>
                 )}
+
+                <UpgradeLimitModal
+                    open={limitModalOpen}
+                    message={limitMessage}
+                    onClose={() => setLimitModalOpen(false)}
+                />
             </main>
         </DashboardShell>
     );

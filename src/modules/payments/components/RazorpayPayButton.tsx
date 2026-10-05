@@ -4,25 +4,8 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCreatePaymentOrder, useVerifyPayment } from "../hooks/usePayments";
+import { openRazorpayCheckout } from "../utils/razorpay";
 import type { PaymentVerificationPayload } from "../types";
-
-interface RazorpayCheckoutOptions {
-    key: string;
-    amount: number;
-    currency: string;
-    name: string;
-    description: string;
-    order_id: string;
-    handler: (response: Pick<PaymentVerificationPayload, "razorpay_order_id" | "razorpay_payment_id" | "razorpay_signature">) => void;
-    theme: { color: string };
-    modal: { ondismiss: () => void };
-}
-
-declare global {
-    interface Window {
-        Razorpay?: new (options: RazorpayCheckoutOptions) => { open: () => void };
-    }
-}
 
 interface RazorpayPayButtonProps {
     bookingId: string;
@@ -30,28 +13,6 @@ interface RazorpayPayButtonProps {
     label: string;
     billingMonth?: string;
 }
-
-const loadRazorpayScript = async () => {
-    if (window.Razorpay) return true;
-
-    const existing = document.querySelector<HTMLScriptElement>("script[data-razorpay='true']");
-    if (existing) {
-        return new Promise<boolean>((resolve) => {
-            existing.addEventListener("load", () => resolve(true), { once: true });
-            existing.addEventListener("error", () => resolve(false), { once: true });
-        });
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.dataset.razorpay = "true";
-    return new Promise<boolean>((resolve) => {
-        script.onload = () => resolve(true);
-        script.onerror = () => resolve(false);
-        document.body.appendChild(script);
-    });
-};
 
 export default function RazorpayPayButton({ bookingId, type, label, billingMonth }: RazorpayPayButtonProps) {
     const router = useRouter();
@@ -81,10 +42,8 @@ export default function RazorpayPayButton({ bookingId, type, label, billingMonth
                 type,
                 ...(billingMonth ? { billingMonth } : {}),
             });
-            const loaded = await loadRazorpayScript();
-            if (!loaded || !window.Razorpay) throw new Error("Razorpay checkout is unavailable right now.");
 
-            const checkout = new window.Razorpay({
+            await openRazorpayCheckout({
                 key: order.keyId,
                 amount: order.amount,
                 currency: order.currency,
@@ -114,7 +73,6 @@ export default function RazorpayPayButton({ bookingId, type, label, billingMonth
                     ondismiss: () => setIsProcessing(false),
                 },
             });
-            checkout.open();
         } catch (paymentError) {
             setError(paymentError instanceof Error ? paymentError.message : "Unable to start payment.");
             setIsProcessing(false);
