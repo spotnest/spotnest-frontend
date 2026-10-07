@@ -30,6 +30,7 @@ export const ownerNavigation: NavigationItem[] = [
     { label: "Dashboard", href: "/owner/dashboard", icon: "grid" as IconName },
     { label: "Properties", href: "/owner/properties", icon: "home" as IconName },
     { label: "Requests", href: "/owner/requests", icon: "inbox" as IconName },
+    { label: "Rentals", href: "/owner/rentals", icon: "users" as IconName },
     {
         label: "Subscription",
         href: "/owner/subscription",

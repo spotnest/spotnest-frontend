@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMyBookings } from "@/src/modules/bookings";
 import { useOwnerBookingRequests, useReviewBooking } from "@/src/modules/bookings/hooks/useBookings";
 import { formatPrice } from "@/src/modules/properties";
@@ -144,6 +145,22 @@ export default function BookingsPage() {
                                             <p className="mt-1 text-sm text-[#75777e]">{formatPrice(booking.advanceAmount)}</p>
                                         </div>
                                         <RazorpayPayButton bookingId={booking._id} type="ADVANCE" label="Pay Advance" />
+                                    </div>
+                                )}
+                                {(booking.paymentStatus === "PAID" || ["CONFIRMED", "ACTIVE"].includes(booking.status)) && (
+                                    <div className="mt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-[#00696b]/30 bg-[#f0fbfb] p-4">
+                                        <div>
+                                            <p className="font-semibold text-[#00696b]">Tenancy Confirmed & Active</p>
+                                            <p className="mt-0.5 text-xs text-[#75777e]">
+                                                Advance deposit paid. View your rental agreement, shared occupants, and pay monthly rent in the Tenant Portal.
+                                            </p>
+                                        </div>
+                                        <Link
+                                            href="/tenant/dashboard/rental"
+                                            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#00696b] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#004f51]"
+                                        >
+                                            Go to Tenant Portal →
+                                        </Link>
                                     </div>
                                 )}
                             </article>

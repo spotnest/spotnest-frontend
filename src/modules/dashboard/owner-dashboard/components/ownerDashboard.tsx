@@ -45,12 +45,20 @@ export default function OwnerDashboard() {
                     </p>
                 </div>
 
-                <Link
-                    href="/owner/properties/new"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#00696b] px-5 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#004f51]"
-                >
-                    <span>Add a property</span>
-                </Link>
+                <div className="flex flex-wrap gap-3">
+                    <Link
+                        href="/owner/rentals"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#00696b] bg-[#d9f4f3]/40 px-5 py-3 text-sm font-semibold text-[#00696b] shadow-xs transition hover:bg-[#d9f4f3]"
+                    >
+                        <span>Rental Management</span>
+                    </Link>
+                    <Link
+                        href="/owner/properties/new"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#00696b] px-5 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#004f51]"
+                    >
+                        <span>Add a property</span>
+                    </Link>
+                </div>
             </section>
 
             <section className="mt-10 grid gap-4 sm:grid-cols-3">

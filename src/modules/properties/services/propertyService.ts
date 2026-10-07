@@ -101,8 +101,11 @@ export const addPropertyImages = async (id: string, files: File[]): Promise<Prop
     return data;
 };
 
-export const removePropertyImage = async (id: string, publicId: string) => {
-    const { data } = await api.post<{ message: string }>(
+export const removePropertyImage = async (
+    id: string,
+    publicId: string
+): Promise<{ message: string; property?: Property }> => {
+    const { data } = await api.post<{ message: string; property?: Property }>(
         `/properties/${id}/images/remove`,
         { publicId }
     );

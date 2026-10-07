@@ -128,6 +128,7 @@ export interface OwnerPropertyInput {
     areaSqFt?: number;
     amenities: string[];
     address: PropertyAddress;
+    images?: PropertyImage[];
 }
 
 export type OwnerPropertyFormValues = OwnerPropertyInput;

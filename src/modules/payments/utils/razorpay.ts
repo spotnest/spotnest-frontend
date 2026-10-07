@@ -87,6 +87,24 @@ export const loadRazorpayScript = async (): Promise<boolean> => {
 export const openRazorpayCheckout = async (
     options: RazorpayCheckoutOptions
 ): Promise<void> => {
+    if (
+        options.order_id.startsWith("order_mock_") ||
+        options.key === "rzp_test_spotnest" ||
+        options.key.includes("placeholder")
+    ) {
+        console.warn(
+            "[RAZORPAY_DEV_CHECKOUT] Mock order or test placeholder key detected. Simulating successful checkout without calling Razorpay servers."
+        );
+        setTimeout(() => {
+            options.handler({
+                razorpay_order_id: options.order_id,
+                razorpay_payment_id: `pay_mock_${Date.now()}`,
+                razorpay_signature: `sig_mock_${Date.now()}`,
+            });
+        }, 500);
+        return;
+    }
+
     const loaded = await loadRazorpayScript();
 
     if (!loaded || !window.Razorpay) {

@@ -14,9 +14,16 @@ export default function Navbar() {
         (state) => state.auth
     );
     const { logout, isLoading: isLoggingOut } = useLogout();
+    const [mounted, setMounted] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
     const profileMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const canUseChat = Boolean(
+        mounted &&
         isInitialized &&
         isAuthenticated &&
         user &&
@@ -27,9 +34,9 @@ export default function Navbar() {
         (total, conversation) => total + conversation.unreadCount,
         0
     ) ?? 0;
-    const messagesHref = user?.role === "user"
+    const messagesHref = mounted && user?.role === "user"
         ? "/messages"
-        : user?.role === "tenant" || user?.role === "owner"
+        : mounted && (user?.role === "tenant" || user?.role === "owner")
             ? dashboardChatPathForRole(user.role)
             : null;
 
@@ -90,8 +97,8 @@ export default function Navbar() {
                     </Link>
                 </div>
 
-                <div className="flex items-center gap-1.5 sm:gap-3">
-                    {isInitialized && isAuthenticated && user ? (
+                <div className="flex items-center gap-1.5 sm:gap-3" suppressHydrationWarning>
+                    {mounted && isInitialized && isAuthenticated && user ? (
                         <>
                             <NotificationBell />
 
