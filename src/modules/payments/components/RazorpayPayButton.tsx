@@ -25,8 +25,11 @@ export default function RazorpayPayButton({ bookingId, type, label, billingMonth
     const verifyAndContinue = async (payload: PaymentVerificationPayload) => {
         await verify.mutateAsync(payload);
         setPendingVerification(null);
-        if (type === "ADVANCE") router.push(`/bookings?bookingId=${bookingId}`);
-        else router.refresh();
+        if (type === "ADVANCE") {
+            router.push("/tenant/dashboard/rental");
+        } else {
+            router.refresh();
+        }
     };
 
     const startPayment = async () => {

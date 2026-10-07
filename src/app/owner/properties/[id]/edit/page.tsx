@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
+import axios from "axios";
 
 import DashboardShell from "@/src/modules/dashboard/components/DashboardShell";
 import OwnerPropertyForm from "@/src/modules/properties/components/OwnerPropertyForm";
@@ -30,6 +31,9 @@ const statusTone: Record<Property["status"], string> = {
     archived: "bg-[#eef0f1] text-[#44474d]",
 };
 
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
 export default function EditOwnerPropertyPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
@@ -43,8 +47,10 @@ export default function EditOwnerPropertyPage() {
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [notice, setNotice] = useState<string | null>(null);
+    const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
     const [confirmArchive, setConfirmArchive] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [viewingIndex, setViewingIndex] = useState<number | null>(null);
 
     useEffect(() => {
         if (!isInitialized) {
@@ -67,9 +73,6 @@ export default function EditOwnerPropertyPage() {
         enabled: isInitialized && Boolean(params.id),
     });
 
-    // Photo allowance for this owner. Undefined until the entitlement loads,
-    // and undefined is treated as "not known yet" rather than a fallback
-    // number, so no plan limit is ever hardcoded here.
     const subscriptionQuery = useSubscription({ enabled: isInitialized && isOwner });
     const maxImages = subscriptionQuery.data?.maxImages;
 
@@ -88,11 +91,19 @@ export default function EditOwnerPropertyPage() {
             updateProperty(params.id as string, values),
         onSuccess: (updated) => {
             writeBack(updated);
-            setNotice(
-                updated.locationResolvedName
+            setNotice({
+                type: "success",
+                text: updated.locationResolvedName
                     ? `Saved. Location verified: ${updated.locationResolvedName}`
-                    : "Saved."
-            );
+                    : "Saved.",
+            });
+        },
+        onError: (err: unknown) => {
+            const message =
+                axios.isAxiosError(err) && typeof err.response?.data?.message === "string"
+                    ? err.response.data.message
+                    : "Failed to save property changes.";
+            setNotice({ type: "error", text: message });
         },
     });
 
@@ -101,7 +112,14 @@ export default function EditOwnerPropertyPage() {
             updatePropertyStatus(params.id as string, status),
         onSuccess: () => {
             refreshList();
-            setNotice("Listing status updated.");
+            setNotice({ type: "success", text: "Listing status updated." });
+        },
+        onError: (err: unknown) => {
+            const message =
+                axios.isAxiosError(err) && typeof err.response?.data?.message === "string"
+                    ? err.response.data.message
+                    : "Failed to update status.";
+            setNotice({ type: "error", text: message });
         },
     });
 
@@ -111,29 +129,85 @@ export default function EditOwnerPropertyPage() {
             queryClient.removeQueries({ queryKey: ["owner-property", params.id] });
             router.replace("/owner/properties");
         },
+        onError: (err: unknown) => {
+            const message =
+                axios.isAxiosError(err) && typeof err.response?.data?.message === "string"
+                    ? err.response.data.message
+                    : "Failed to remove listing.";
+            setNotice({ type: "error", text: message });
+        },
     });
 
     const addImagesMutation = useMutation({
         mutationFn: (files: File[]) => addPropertyImages(params.id as string, files),
         onSuccess: (updated) => {
             writeBack(updated);
-            setNotice("Photos added.");
+            setNotice({ type: "success", text: "Photos added successfully." });
+        },
+        onError: (err: unknown) => {
+            const message =
+                axios.isAxiosError(err) && typeof err.response?.data?.message === "string"
+                    ? err.response.data.message
+                    : "Failed to upload photos. Please try again.";
+            setNotice({ type: "error", text: message });
+        },
+    });
+
+    const setCoverMutation = useMutation({
+        mutationFn: (targetIndex: number) => {
+            if (!property || targetIndex <= 0 || targetIndex >= property.images.length) {
+                return Promise.resolve(property!);
+            }
+            const targetImage = property.images[targetIndex];
+            const remaining = property.images.filter((_, idx) => idx !== targetIndex);
+            const newImages = [targetImage, ...remaining];
+            return updateProperty(params.id as string, { images: newImages });
+        },
+        onSuccess: (updated) => {
+            if (updated) {
+                writeBack(updated);
+                setNotice({ type: "success", text: "Cover photo updated successfully." });
+            }
+        },
+        onError: (err: unknown) => {
+            const message =
+                axios.isAxiosError(err) && typeof err.response?.data?.message === "string"
+                    ? err.response.data.message
+                    : "Failed to update cover photo.";
+            setNotice({ type: "error", text: message });
         },
     });
 
     const removeImageMutation = useMutation({
-        mutationFn: (publicId: string) =>
-            removePropertyImage(params.id as string, publicId),
-        onSuccess: (result, publicId) => {
-            if (property) {
+        mutationFn: (publicId: string) => {
+            setDeletingId(publicId);
+            return removePropertyImage(params.id as string, publicId);
+        },
+        onSuccess: (result) => {
+            if (result.property) {
+                writeBack(result.property);
+            } else if (property && deletingId) {
                 writeBack({
                     ...property,
                     images: property.images.filter(
-                        (image) => image.publicId !== publicId
+                        (img) =>
+                            img.publicId !== deletingId &&
+                            (img as unknown as { _id?: string })._id !== deletingId &&
+                            img.url !== deletingId
                     ),
                 } as Property);
             }
-            setNotice(result.message);
+            setNotice({ type: "success", text: result.message || "Photo removed successfully." });
+        },
+        onError: (err: unknown) => {
+            const message =
+                axios.isAxiosError(err) && typeof err.response?.data?.message === "string"
+                    ? err.response.data.message
+                    : "Failed to delete photo. Please try again.";
+            setNotice({ type: "error", text: message });
+        },
+        onSettled: () => {
+            setDeletingId(null);
         },
     });
 
@@ -142,17 +216,53 @@ export default function EditOwnerPropertyPage() {
     };
 
     const handleFiles = (list: FileList | null) => {
-        if (!list) return;
-        // Trim to whatever room the plan leaves. Existing photos are never
-        // dropped — only the incoming batch is capped, and the server checks
-        // the total again.
-        const existing = property?.images.length ?? 0;
-        const remaining =
-            maxImages === undefined ? list.length : maxImages - existing;
-        const files = Array.from(list).slice(0, Math.max(remaining, 0));
-        if (files.length > 0) {
-            addImagesMutation.mutate(files);
+        if (!list || list.length === 0) return;
+
+        const rawFiles = Array.from(list);
+
+        const invalidType = rawFiles.find((f) => !ALLOWED_MIME_TYPES.includes(f.type));
+        if (invalidType) {
+            setNotice({
+                type: "error",
+                text: `Invalid file format (${invalidType.name}). Only JPG, PNG, and WebP images are allowed.`,
+            });
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return;
         }
+
+        const oversized = rawFiles.find((f) => f.size > MAX_FILE_SIZE_BYTES);
+        if (oversized) {
+            setNotice({
+                type: "error",
+                text: `File "${oversized.name}" exceeds the 5MB size limit.`,
+            });
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return;
+        }
+
+        const existingCount = property?.images.length ?? 0;
+        if (maxImages !== undefined) {
+            const available = maxImages - existingCount;
+            if (available <= 0) {
+                setNotice({
+                    type: "error",
+                    text: `You have reached the photo limit (${maxImages}) for your current plan.`,
+                });
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                return;
+            }
+
+            if (rawFiles.length > available) {
+                setNotice({
+                    type: "error",
+                    text: `You can only add ${available} more photo${available === 1 ? "" : "s"} (plan max: ${maxImages}).`,
+                });
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                return;
+            }
+        }
+
+        addImagesMutation.mutate(rawFiles);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -210,8 +320,14 @@ export default function EditOwnerPropertyPage() {
                         </header>
 
                         {notice && (
-                            <div className="mt-6 rounded-2xl border border-[#cfddd6] bg-[#eef8f2] px-5 py-4 text-sm text-[#2c6a48]">
-                                {notice}
+                            <div
+                                className={`mt-6 rounded-2xl border px-5 py-4 text-sm ${
+                                    notice.type === "success"
+                                        ? "border-[#cfddd6] bg-[#eef8f2] text-[#2c6a48]"
+                                        : "border-[#fecdca] bg-[#fef3f2] text-[#b42318]"
+                                }`}
+                            >
+                                {notice.text}
                             </div>
                         )}
 
@@ -313,7 +429,11 @@ export default function EditOwnerPropertyPage() {
 
                                     {(maxImages === undefined ||
                                         property.images.length < maxImages) && (
-                                        <label className="mt-4 flex h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-[#c5c6cd] bg-[#f8f9fa] text-[#00696b] transition hover:border-[#00696b] hover:bg-[#dff7f5]">
+                                        <label
+                                            className={`mt-4 flex h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-[#c5c6cd] bg-[#f8f9fa] text-[#00696b] transition hover:border-[#00696b] hover:bg-[#dff7f5] ${
+                                                addImagesMutation.isPending ? "pointer-events-none opacity-50" : ""
+                                            }`}
+                                        >
                                             <span className="text-sm font-semibold">
                                                 Add photos
                                             </span>
@@ -322,6 +442,7 @@ export default function EditOwnerPropertyPage() {
                                                 type="file"
                                                 accept="image/jpeg,image/png,image/webp"
                                                 multiple
+                                                disabled={addImagesMutation.isPending}
                                                 className="sr-only"
                                                 onChange={(e) => handleFiles(e.target.files)}
                                             />
@@ -335,39 +456,101 @@ export default function EditOwnerPropertyPage() {
                                     )}
 
                                     <div className="mt-4 grid grid-cols-2 gap-3">
-                                        {property.images.map((image, index) => (
-                                            <div
-                                                key={image.publicId || image.url}
-                                                className="group relative aspect-[1.3/1] overflow-hidden rounded-xl border border-[#e1e3e4] bg-[#f3f4f5]"
-                                            >
-                                                <Image
-                                                    src={image.url}
-                                                    alt={`${property.title} photo ${index + 1}`}
-                                                    fill
-                                                    sizes="(max-width: 1024px) 50vw, 25vw"
-                                                    className="object-cover"
-                                                />
+                                        {property.images.map((image, index) => {
+                                            const targetId =
+                                                image.publicId ||
+                                                (image as unknown as { _id?: string })._id ||
+                                                image.url;
+                                            const isDeletingThis = deletingId === targetId;
 
-                                                {property.images.length > 1 && (
-                                                    <button
-                                                        type="button"
-                                                        disabled={removeImageMutation.isPending}
-                                                        aria-label="Remove photo"
-                                                        title="Remove photo"
-                                                        onClick={() =>
-                                                            removeImageMutation.mutate(
-                                                                image.publicId
-                                                            )
-                                                        }
-                                                        className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-[#191c1d]/75 text-white opacity-0 transition hover:bg-[#b42318] group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                                    >
-                                                        <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                                        </svg>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
+                                            return (
+                                                <div
+                                                    key={targetId}
+                                                    className="group relative aspect-[1.3/1] overflow-hidden rounded-xl border border-[#e1e3e4] bg-[#f3f4f5]"
+                                                >
+                                                    <Image
+                                                        src={image.url}
+                                                        alt={`${property.title} photo ${index + 1}`}
+                                                        fill
+                                                        sizes="(max-width: 1024px) 50vw, 25vw"
+                                                        className="cursor-pointer object-cover transition group-hover:scale-105"
+                                                        onClick={() => setViewingIndex(index)}
+                                                    />
+
+                                                    {/* Cover badge or Make Cover button */}
+                                                    {index === 0 ? (
+                                                        <span className="absolute left-1.5 top-1.5 rounded-md bg-[#00696b] px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                                                            Cover
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            disabled={setCoverMutation.isPending}
+                                                            onClick={() => setCoverMutation.mutate(index)}
+                                                            title="Set as cover photo"
+                                                            className="absolute left-1.5 top-1.5 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm opacity-0 transition group-hover:opacity-100 hover:bg-[#00696b]"
+                                                        >
+                                                            Set Cover
+                                                        </button>
+                                                    )}
+
+                                                    {/* Action buttons (View & Delete) */}
+                                                    <div className="absolute right-1.5 top-1.5 flex gap-1">
+                                                        <button
+                                                            type="button"
+                                                            title="View full photo"
+                                                            onClick={() => setViewingIndex(index)}
+                                                            className="grid h-7 w-7 place-items-center rounded-full bg-[#191c1d]/75 text-white opacity-0 transition hover:bg-[#00696b] group-hover:opacity-100"
+                                                        >
+                                                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            disabled={
+                                                                removeImageMutation.isPending ||
+                                                                addImagesMutation.isPending ||
+                                                                property.images.length <= 1
+                                                            }
+                                                            aria-label="Remove photo"
+                                                            title={
+                                                                property.images.length <= 1
+                                                                    ? "At least one photo is required"
+                                                                    : "Remove photo"
+                                                            }
+                                                            onClick={() => {
+                                                                if (property.images.length <= 1) {
+                                                                    setNotice({
+                                                                        type: "error",
+                                                                        text: "At least one photo is required.",
+                                                                    });
+                                                                    return;
+                                                                }
+                                                                removeImageMutation.mutate(targetId);
+                                                            }}
+                                                            className={`grid h-7 w-7 place-items-center rounded-full bg-[#191c1d]/75 text-white transition hover:bg-[#b42318] ${
+                                                                property.images.length <= 1
+                                                                    ? "cursor-not-allowed opacity-40"
+                                                                    : "opacity-0 group-hover:opacity-100"
+                                                            }`}
+                                                        >
+                                                            <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+
+                                                    {isDeletingThis && (
+                                                        <div className="absolute inset-0 grid place-items-center bg-black/40 backdrop-blur-[1px]">
+                                                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
                                     {property.images.length <= 1 && (
@@ -379,6 +562,131 @@ export default function EditOwnerPropertyPage() {
                             </aside>
                         </div>
                     </>
+                )}
+
+                {/* Lightbox Modal for Viewing Entire Image */}
+                {viewingIndex !== null && property && property.images[viewingIndex] && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+                        onClick={() => setViewingIndex(null)}
+                    >
+                        <div
+                            className="relative flex w-full max-w-3xl max-h-[90vh] flex-col overflow-hidden rounded-2xl bg-[#191c1d] p-5 text-white shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm font-semibold text-[#e1e3e4]">
+                                        Photo {viewingIndex + 1} of {property.images.length}
+                                    </span>
+                                    {viewingIndex === 0 && (
+                                        <span className="rounded-md bg-[#00696b] px-2 py-0.5 text-xs font-bold text-white">
+                                            Cover Photo
+                                        </span>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setViewingIndex(null)}
+                                    aria-label="Close image preview"
+                                    className="grid h-8 w-8 place-items-center rounded-full bg-white/10 transition hover:bg-white/20 text-white"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Uncropped Full View */}
+                            <div className="relative my-4 flex min-h-[300px] max-h-[65vh] flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/50 p-2">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src={property.images[viewingIndex].url}
+                                    alt={`Full view photo ${viewingIndex + 1}`}
+                                    className="max-h-[60vh] max-w-full rounded-lg object-contain"
+                                />
+
+                                {property.images.length > 1 && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setViewingIndex((prev) =>
+                                                    prev !== null
+                                                        ? (prev - 1 + property.images.length) % property.images.length
+                                                        : 0
+                                                )
+                                            }
+                                            aria-label="Previous photo"
+                                            className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/60 text-xl font-bold text-white backdrop-blur-sm transition hover:bg-black"
+                                        >
+                                            ‹
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setViewingIndex((prev) =>
+                                                    prev !== null
+                                                        ? (prev + 1) % property.images.length
+                                                        : 0
+                                                )
+                                            }
+                                            aria-label="Next photo"
+                                            className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/60 text-xl font-bold text-white backdrop-blur-sm transition hover:bg-black"
+                                        >
+                                            ›
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Modal Footer Controls */}
+                            <div className="flex items-center justify-between border-t border-white/10 pt-3">
+                                <div>
+                                    {viewingIndex !== 0 && (
+                                        <button
+                                            type="button"
+                                            disabled={setCoverMutation.isPending}
+                                            onClick={() => {
+                                                setCoverMutation.mutate(viewingIndex);
+                                                setViewingIndex(0);
+                                            }}
+                                            className="rounded-xl bg-[#00696b] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#004f51] disabled:opacity-50"
+                                        >
+                                            Set as Cover Photo
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-2">
+                                    {property.images.length > 1 && (
+                                        <button
+                                            type="button"
+                                            disabled={removeImageMutation.isPending}
+                                            onClick={() => {
+                                                const targetId =
+                                                    property.images[viewingIndex].publicId ||
+                                                    (property.images[viewingIndex] as unknown as { _id?: string })._id ||
+                                                    property.images[viewingIndex].url;
+                                                removeImageMutation.mutate(targetId);
+                                                setViewingIndex(null);
+                                            }}
+                                            className="rounded-xl bg-[#b42318] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#8c1512] disabled:opacity-50"
+                                        >
+                                            Delete Photo
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewingIndex(null)}
+                                        className="rounded-xl border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </main>
         </DashboardShell>

@@ -101,6 +101,11 @@ export default async function PropertyDetailPage({
         },
     ];
 
+    const ownerId =
+        typeof property.owner === "object" && property.owner !== null
+            ? (property.owner as { _id?: string })._id?.toString() ?? ""
+            : String(property.ownerInfo?.id ?? property.owner ?? "");
+
     return (
         <>
             <Navbar />
@@ -202,7 +207,7 @@ export default async function PropertyDetailPage({
 
                             <StartChatButton
                                 propertyId={property._id}
-                                ownerId={property.ownerInfo?.id ?? property.owner}
+                                ownerId={ownerId}
                             />
 
                             <button
