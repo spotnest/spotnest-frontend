@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPaymentOrder, verifyPayment } from "../services/paymentService";
+import { queryKeysForDashboardScope } from "@/src/modules/dashboard/constants/realtimeQueryKeys";
 
 export const useCreatePaymentOrder = () =>
     useMutation({
@@ -11,11 +12,11 @@ export const useVerifyPayment = () => {
     return useMutation({
         mutationFn: verifyPayment,
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ["bookings"] });
-            void queryClient.invalidateQueries({ queryKey: ["tenant"] });
-            void queryClient.invalidateQueries({ queryKey: ["my-rental"] });
-            void queryClient.invalidateQueries({ queryKey: ["owner-rentals"] });
-            void queryClient.invalidateQueries({ queryKey: ["tenant-payments"] });
+            // Same keys the realtime "payment" event refreshes (bookings,
+            // tenant dashboard/payments, tenant rental, owner rentals).
+            for (const queryKey of queryKeysForDashboardScope.payment) {
+                void queryClient.invalidateQueries({ queryKey });
+            }
         },
     });
 };

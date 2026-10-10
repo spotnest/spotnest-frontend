@@ -5,6 +5,7 @@ import { useAdminDashboard } from "../hooks/useAdminDashboard";
 import type { DashboardUser } from "../types/dashboard";
 import { IconName } from "../../types/iconName";
 import { Icon } from "../../components/Icon";
+import { RealtimeStatusNotice } from "@/src/components/common/RealtimeStatusNotice";
 
 function formatRelativeTime(value: string): string {
     const elapsed = Date.now() - new Date(value).getTime();
@@ -64,10 +65,12 @@ export default function AdminDashboard() {
 
     const { overview, recentActivities, recentUsers, recentProperties } = data;
     const stats = [
-        { label: "Total users", value: overview.totalUsers, change: "Current total", note: "registered accounts", icon: "users" as IconName, tone: "teal" },
-        { label: "Total properties", value: overview.totalProperties, change: "No property data", note: "available yet", icon: "home" as IconName, tone: "ink" },
-        { label: "Active listings", value: overview.activeListings, change: "No property data", note: "available yet", icon: "chart" as IconName, tone: "teal" },
-        { label: "Pending requests", value: overview.pendingRequests, change: "No booking data", note: "available yet", icon: "inbox" as IconName, tone: "warm" },
+        { label: "Total users", value: overview.totalUsers.toLocaleString(), change: `${overview.totalOwners.toLocaleString()} owners`, note: "registered accounts", icon: "users" as IconName, tone: "teal" },
+        { label: "Total properties", value: overview.totalProperties.toLocaleString(), change: `${overview.activeListings.toLocaleString()} live`, note: "across all owners", icon: "home" as IconName, tone: "ink" },
+        { label: "Active listings", value: overview.activeListings.toLocaleString(), change: `${(overview.totalProperties - overview.activeListings).toLocaleString()} not live`, note: "pending, inactive or archived", icon: "chart" as IconName, tone: "teal" },
+        { label: "Pending requests", value: overview.pendingRequests.toLocaleString(), change: "Rental requests", note: "awaiting owner decision", icon: "inbox" as IconName, tone: "warm" },
+        { label: "Active rentals", value: overview.activeRentals.toLocaleString(), change: overview.overduePayments > 0 ? `${overview.overduePayments.toLocaleString()} overdue` : "No overdue rent", note: "payments", icon: "home" as IconName, tone: overview.overduePayments > 0 ? "warm" : "teal" },
+        { label: "Payments received", value: `₹${overview.paymentsReceivedTotal.toLocaleString("en-IN")}`, change: `${overview.paymentsReceivedCount.toLocaleString()} payments`, note: "completed via Razorpay", icon: "chart" as IconName, tone: "ink" },
     ];
     const actions = [
         { label: "Manage users", description: "View all accounts", href: "/users", icon: "users" as IconName },
@@ -92,11 +95,13 @@ export default function AdminDashboard() {
                 </div>
             </section>
 
-            <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Platform statistics">
+            <RealtimeStatusNotice className="mt-6" />
+
+            <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Platform statistics">
                 {stats.map((stat) => (
                     <article key={stat.label} className="rounded-2xl border border-[#e1e3e4] bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.035)]">
                         <div className="flex items-start justify-between gap-3"><p className="text-sm font-medium text-[#44474d]">{stat.label}</p><span className={`grid h-9 w-9 place-items-center rounded-xl ${stat.tone === "teal" ? "bg-[#d9f4f3] text-[#00696b]" : stat.tone === "warm" ? "bg-[#fff0dc] text-[#95611d]" : "bg-[#eef0f1] text-[#191c1d]"}`}><Icon name={stat.icon} className="h-[17px] w-[17px]" /></span></div>
-                        <p className="mt-5 text-3xl font-bold tracking-[-0.04em] text-[#191c1d]">{stat.value.toLocaleString()}</p>
+                        <p className="mt-5 text-3xl font-bold tracking-[-0.04em] text-[#191c1d]">{stat.value}</p>
                         <p className="mt-2 text-xs"><span className={stat.tone === "warm" ? "font-semibold text-[#95611d]" : "font-semibold text-[#00696b]"}>{stat.change}</span><span className="ml-1.5 text-[#75777e]">{stat.note}</span></p>
                     </article>
                 ))}
