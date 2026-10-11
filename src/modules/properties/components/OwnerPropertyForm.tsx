@@ -1,18 +1,18 @@
 "use client";
 
 import axios from "axios";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import {
     PROPERTY_TYPES,
 } from "../utils/filters";
+import { useSubscription } from "@/src/modules/subscriptions/hooks/useSubscription";
 import {
     type OwnerPropertyFormValues,
     type Property,
     type PropertyAddress,
     type PropertyType,
 } from "../types";
-
-const MAX_IMAGES = 8;
 
 // Common amenities offered as one-tap toggle chips (custom entries still work).
 const AMENITY_SUGGESTIONS = [
@@ -56,6 +56,9 @@ export default function OwnerPropertyForm({
         initial?.propertyType ?? "apartment"
     );
     const [price, setPrice] = useState(initial?.price != null ? String(initial.price) : "");
+    const [advanceAmount, setAdvanceAmount] = useState(
+        initial?.advanceAmount != null ? String(initial.advanceAmount) : initial?.price != null ? String(initial.price) : ""
+    );
     const [bedrooms, setBedrooms] = useState(initial?.bedrooms != null ? String(initial.bedrooms) : "1");
     const [bathrooms, setBathrooms] = useState(initial?.bathrooms != null ? String(initial.bathrooms) : "1");
     const [areaSqFt, setAreaSqFt] = useState(initial?.areaSqFt != null ? String(initial.areaSqFt) : "");
@@ -67,6 +70,11 @@ export default function OwnerPropertyForm({
     const [customAmenity, setCustomAmenity] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Photo allowance comes from the server, never from a constant here, so a
+    // plan change takes effect without a frontend release.
+    const subscriptionQuery = useSubscription();
+    const maxImages = subscriptionQuery.data?.maxImages;
 
     const toggleAmenity = (amenity: string) => {
         setAmenities((current) =>
@@ -85,7 +93,8 @@ export default function OwnerPropertyForm({
 
     const handleFiles = (list: FileList | null) => {
         if (!list) return;
-        const next = Array.from(list).slice(0, MAX_IMAGES);
+        // Cap client-side for UX only — the server enforces the real limit.
+        const next = Array.from(list).slice(0, maxImages ?? undefined);
         setFiles(next);
     };
 
@@ -95,11 +104,14 @@ export default function OwnerPropertyForm({
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (submitting) return;
         setError(null);
 
         const numericPrice = Number(price);
+        const numericAdvanceAmount = advanceAmount.trim() ? Number(advanceAmount) : numericPrice;
         const numericBedrooms = Number(bedrooms);
         const numericBathrooms = Number(bathrooms);
+        const numericAreaSqFt = areaSqFt.trim() ? Number(areaSqFt) : undefined;
 
         if (showImages && files.length === 0) {
             setError("Add at least one photo so tenants know what the property looks like.");
@@ -118,12 +130,20 @@ export default function OwnerPropertyForm({
             setError("Monthly price must be greater than 0.");
             return;
         }
+        if (!Number.isFinite(numericAdvanceAmount) || numericAdvanceAmount <= 0) {
+            setError("Advance amount must be greater than 0.");
+            return;
+        }
         if (!Number.isInteger(numericBedrooms) || numericBedrooms < 0) {
             setError("Bedrooms must be a whole number.");
             return;
         }
         if (!Number.isInteger(numericBathrooms) || numericBathrooms < 0) {
             setError("Bathrooms must be a whole number.");
+            return;
+        }
+        if (numericAreaSqFt !== undefined && (!Number.isFinite(numericAreaSqFt) || numericAreaSqFt <= 0)) {
+            setError("Area must be greater than 0, or left blank.");
             return;
         }
         if (!address.street.trim() || !address.city.trim() || !address.state.trim() || !address.zipCode.trim() || !address.country.trim()) {
@@ -136,10 +156,11 @@ export default function OwnerPropertyForm({
             description: description.trim(),
             propertyType,
             price: numericPrice,
+            advanceAmount: numericAdvanceAmount,
             bedrooms: numericBedrooms,
             bathrooms: numericBathrooms,
-            ...(areaSqFt.trim()
-                ? { areaSqFt: Number(areaSqFt) }
+            ...(numericAreaSqFt !== undefined
+                ? { areaSqFt: numericAreaSqFt }
                 : {}),
             amenities,
             address: Object.fromEntries(
@@ -163,7 +184,7 @@ export default function OwnerPropertyForm({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form noValidate onSubmit={handleSubmit} className="space-y-6">
             {error && (
                 <div
                     role="alert"
@@ -211,6 +232,19 @@ export default function OwnerPropertyForm({
                             placeholder="15000"
                             className={inputClass}
                         />
+                    </label>
+
+                    <label>
+                        <span className={labelClass}>Advance payment (₹)</span>
+                        <input
+                            type="number"
+                            min="1"
+                            value={advanceAmount}
+                            onChange={(e) => setAdvanceAmount(e.target.value)}
+                            placeholder={price || "15000"}
+                            className={inputClass}
+                        />
+                        <span className="mt-1 block text-xs text-[#75777e]">Leave blank to use one month&apos;s rent.</span>
                     </label>
 
                     <label>
@@ -271,11 +305,10 @@ export default function OwnerPropertyForm({
                                 key={amenity}
                                 type="button"
                                 onClick={() => toggleAmenity(amenity)}
-                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                                    selected
-                                        ? "border-[#00696b] bg-[#00696b] text-white"
-                                        : "border-[#c5c6cd] bg-white text-[#44474d] hover:border-[#00696b] hover:text-[#00696b]"
-                                }`}
+                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${selected
+                                    ? "border-[#00696b] bg-[#00696b] text-white"
+                                    : "border-[#c5c6cd] bg-white text-[#44474d] hover:border-[#00696b] hover:text-[#00696b]"
+                                    }`}
                             >
                                 {amenity}
                             </button>
@@ -375,9 +408,32 @@ export default function OwnerPropertyForm({
                 <section className="rounded-2xl border border-[#e1e3e4] bg-white p-6">
                     <h2 className="text-lg font-bold text-[#191c1d]">Photos</h2>
                     <p className="mt-1 text-xs leading-5 text-[#75777e]">
-                        Up to {MAX_IMAGES} photos, JPG / PNG / WebP. The first one
-                        becomes the listing cover.
+                        {maxImages === undefined ? (
+                            <>
+                                JPG / PNG / WebP. The first one becomes the
+                                listing cover.
+                            </>
+                        ) : (
+                            <>
+                                {files.length} / {maxImages} photos allowed on
+                                your plan. JPG / PNG / WebP. The first one becomes
+                                the listing cover.
+                            </>
+                        )}
                     </p>
+
+                    {maxImages !== undefined && files.length >= maxImages && (
+                        <p className="mt-2 text-xs font-semibold text-[#95611d]">
+                            Photo limit reached for this listing.{" "}
+                            <Link
+                                href="/owner/subscription"
+                                className="underline hover:text-[#00696b]"
+                            >
+                                Upgrade your plan
+                            </Link>{" "}
+                            for more photos.
+                        </p>
+                    )}
 
                     <label className="mt-4 flex h-28 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-[#c5c6cd] bg-[#f8f9fa] text-[#00696b] transition hover:border-[#00696b] hover:bg-[#dff7f5]">
                         <svg aria-hidden="true" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">

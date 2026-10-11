@@ -25,10 +25,12 @@ export interface PropertyAddress {
 export interface Property {
     _id: string;
     owner: string;
+    ownerInfo?: { id: string; name: string; image?: string };
     title: string;
     description: string;
     propertyType: PropertyType;
     price: number;
+    advanceAmount?: number;
     bedrooms: number;
     bathrooms: number;
     areaSqFt?: number;
@@ -120,11 +122,13 @@ export interface OwnerPropertyInput {
     description: string;
     propertyType: PropertyType;
     price: number;
+    advanceAmount: number;
     bedrooms: number;
     bathrooms: number;
     areaSqFt?: number;
     amenities: string[];
     address: PropertyAddress;
+    images?: PropertyImage[];
 }
 
-export interface OwnerPropertyFormValues extends OwnerPropertyInput {}
+export type OwnerPropertyFormValues = OwnerPropertyInput;

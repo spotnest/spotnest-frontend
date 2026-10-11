@@ -3,7 +3,6 @@
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 
 import type {
     MaintenanceRequest,
@@ -200,23 +199,20 @@ export function EmptyRental({
                 will appear here.
             </p>
 
-            <Link
-                href="/properties"
-                className="
-                    mt-5
-                    inline-flex
-                    rounded-xl
-                    bg-[#00696b]
-                    px-4
-                    py-2.5
-                    text-sm
-                    font-bold
-                    text-white
-                    hover:bg-[#004f51]
-                "
-            >
-                Browse properties
-            </Link>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <a
+                    href="/bookings"
+                    className="inline-flex items-center justify-center rounded-lg bg-[#00696b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#004f51]"
+                >
+                    View My Bookings
+                </a>
+                <a
+                    href="/properties"
+                    className="inline-flex items-center justify-center rounded-lg border border-[#c5c6cd] bg-white px-4 py-2.5 text-sm font-semibold text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                >
+                    Browse Properties
+                </a>
+            </div>
         </div>
     );
 }

@@ -40,7 +40,7 @@ export default function DashboardShell({
             !isAuthenticated &&
             status !== "loading"
         ) {
-            router.push("/login");
+            router.replace("/");
         }
     }, [isInitialized, isAuthenticated, status, router]);
 
@@ -55,7 +55,7 @@ export default function DashboardShell({
             dispatch(signedOut());
             setIsLoggingOut(false);
             setIsProfileOpen(false);
-            router.push("/login");
+            router.replace("/");
         }
     };
 

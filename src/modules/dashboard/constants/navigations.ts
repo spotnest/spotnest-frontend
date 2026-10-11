@@ -1,3 +1,4 @@
+import { dashboardChatPathForRole, dashboardNotificationsPathForRole, tenantDashboardRoutes } from "@/src/constants/routes";
 import { IconName } from "../types/iconName";
 
 export interface NavigationItem {
@@ -13,21 +14,38 @@ export const adminNavigation: NavigationItem[] = [
     { label: "Properties", href: "/admin/properties", icon: "home" as IconName },
     { label: "Requests", href: "/requests/owner-approvals", icon: "inbox" as IconName },
     { label: "Reports", href: "/admin/dashboard#reports", icon: "chart" as IconName },
+    { label: "Notifications", href: dashboardNotificationsPathForRole("admin"), icon: "bell" as IconName },
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];
 
 export const tenantNavigation: NavigationItem[] = [
-    { label: "Dashboard", href: "/tenant/dashboard", icon: "grid" as IconName },
-    { label: "My Rental / Properties", href: "/tenant/dashboard/rental", icon: "home" as IconName },
-    { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
-    { label: "Payments", href: "/tenant/dashboard/payments", icon: "clock" as IconName },
-    { label: "Maintenance", href: "/tenant/dashboard/maintenance", icon: "alert" as IconName },
-    { label: "Settings", href: "/settings", icon: "settings" as IconName },
+    { label: "Dashboard", href: tenantDashboardRoutes.home, icon: "grid" as IconName },
+    { label: "My Rental / Properties", href: tenantDashboardRoutes.rental, icon: "home" as IconName },
+    { label: "Payments", href: tenantDashboardRoutes.payments, icon: "clock" as IconName },
+    { label: "Maintenance", href: tenantDashboardRoutes.maintenance, icon: "alert" as IconName },
+    { label: "Notifications", href: tenantDashboardRoutes.notifications, icon: "bell" as IconName },
+    { label: "Chat", href: tenantDashboardRoutes.chat, icon: "chat" as IconName },
 ];
-
 export const ownerNavigation: NavigationItem[] = [
     { label: "Dashboard", href: "/owner/dashboard", icon: "grid" as IconName },
     { label: "Properties", href: "/owner/properties", icon: "home" as IconName },
-    { label: "Requests", href: "/bookings", icon: "inbox" as IconName },
+    { label: "Requests", href: "/owner/requests", icon: "inbox" as IconName },
+    { label: "Rentals", href: "/owner/rentals", icon: "users" as IconName },
+    { label: "Maintenance", href: "/owner/dashboard/maintenance", icon: "alert" as IconName },
+    {
+        label: "Subscription",
+        href: "/owner/subscription",
+        icon: "sparkles" as IconName,
+    },
+    {
+        label: "Notifications",
+        href: dashboardNotificationsPathForRole("owner"),
+        icon: "bell" as IconName,
+    },
+    {
+        label: "Chat",
+        href: dashboardChatPathForRole("owner"),
+        icon: "chat" as IconName,
+    },
     { label: "Settings", href: "/settings", icon: "settings" as IconName },
 ];

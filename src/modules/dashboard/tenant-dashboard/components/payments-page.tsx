@@ -11,11 +11,15 @@ import {
 } from "./components";
 
 import { useTenantPayments } from "../hooks/hooks";
+import RazorpayPayButton from "@/src/modules/payments/components/RazorpayPayButton";
 
 export default function TenantPaymentsPage() {
     const query = useTenantPayments();
 
     const data = query.data;
+    const outstandingMonthlyPayment = data?.payments
+        .filter((payment) => payment.type === "MONTHLY_RENT" && payment.status.toLowerCase() !== "paid" && payment.billingMonth)
+        .sort((left, right) => (left.dueDate ?? "").localeCompare(right.dueDate ?? ""))[0];
 
     return (
         <PageState
@@ -69,6 +73,23 @@ export default function TenantPaymentsPage() {
                     />
                 ) : (
                     <>
+                        {data.rental.bookingId && outstandingMonthlyPayment?.billingMonth && (
+                            <section className="flex flex-col gap-4 rounded-xl border border-[#e1e3e4] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h2 className="font-semibold text-[#191c1d]">Monthly rent · {outstandingMonthlyPayment.billingMonth}</h2>
+                                    <p className="mt-1 text-sm text-[#75777e]">
+                                        {money(outstandingMonthlyPayment.amount)} due {date(outstandingMonthlyPayment.dueDate)}.
+                                    </p>
+                                </div>
+                                <RazorpayPayButton
+                                    bookingId={data.rental.bookingId}
+                                    type="MONTHLY_RENT"
+                                    billingMonth={outstandingMonthlyPayment.billingMonth}
+                                    label="Pay Monthly Rent"
+                                />
+                            </section>
+                        )}
+
                         <div
                             className="
                                 grid
@@ -78,7 +99,7 @@ export default function TenantPaymentsPage() {
                             "
                         >
                             <Card
-                                title="Security deposit"
+                                title="Advance payment"
                                 value={money(
                                     data.rental.securityDeposit
                                 )}

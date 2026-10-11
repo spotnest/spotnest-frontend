@@ -6,9 +6,7 @@ import type {
   PropertyStatus,
   PropertyType,
 } from "../types/property";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+import { API_BASE_URL } from "@/src/lib/apiConfig";
 
 /**
  * Normalizes raw backend property documents (including legacy DB records)
@@ -50,15 +48,15 @@ export function normalizeProperty(raw: Record<string, unknown>): Property {
 
   const imagesArr = Array.isArray(raw.images)
     ? raw.images.map((img: unknown) => {
-        if (typeof img === "string") {
-          return { url: img, publicId: "" };
-        }
-        const imgObj = img as Record<string, unknown> | undefined;
-        return {
-          url: String(imgObj?.url || ""),
-          publicId: String(imgObj?.publicId || ""),
-        };
-      })
+      if (typeof img === "string") {
+        return { url: img, publicId: "" };
+      }
+      const imgObj = img as Record<string, unknown> | undefined;
+      return {
+        url: String(imgObj?.url || ""),
+        publicId: String(imgObj?.publicId || ""),
+      };
+    })
     : [];
 
   const rawOwner = raw.owner as Record<string, unknown> | string | undefined;
@@ -67,10 +65,18 @@ export function normalizeProperty(raw: Record<string, unknown>): Property {
     : (rawOwner && typeof rawOwner === "object" && rawOwner._id
       ? String(rawOwner._id)
       : String(raw.ownerId || ""));
+  const ownerInfo = rawOwner && typeof rawOwner === "object" && rawOwner._id
+    ? {
+      id: String(rawOwner._id),
+      name: String(rawOwner.name || "Property owner"),
+      ...(rawOwner.image ? { image: String(rawOwner.image) } : {}),
+    }
+    : undefined;
 
   return {
     _id: String(raw._id || raw.id || ""),
     owner: ownerStr,
+    ...(ownerInfo ? { ownerInfo } : {}),
     title: String(raw.title || raw.name || "Untitled Property"),
     description: String(raw.description || ""),
     propertyType: (raw.propertyType || "apartment") as PropertyType,
@@ -108,7 +114,7 @@ export async function getProperties(
 ): Promise<PropertyListResponse> {
   const query = buildQueryString(params);
 
-  const response = await fetch(`${API_URL}/properties${query}`, {
+  const response = await fetch(`${API_BASE_URL}/properties${query}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -145,7 +151,7 @@ export async function getProperties(
 export async function getProperty(
   id: string
 ): Promise<Property> {
-  const response = await fetch(`${API_URL}/properties/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -168,4 +174,4 @@ export async function getProperty(
   const rawProperty = data.property || data.data || data;
 
   return normalizeProperty(rawProperty);
-}
+}

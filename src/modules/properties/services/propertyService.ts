@@ -1,4 +1,5 @@
 import api from "@/src/lib/axios";
+import { API_BASE_URL } from "@/src/lib/apiConfig";
 import type {
     AdminProperty,
     AdminPropertyListParams,
@@ -10,8 +11,6 @@ import type {
     PropertyListParams,
     PropertyListResponse,
 } from "../types";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 // The listing fetch runs on the server (page.tsx). Using native fetch lets
 // Next.js's Data Cache hold each query-string variant for 5 minutes and tag
@@ -102,8 +101,11 @@ export const addPropertyImages = async (id: string, files: File[]): Promise<Prop
     return data;
 };
 
-export const removePropertyImage = async (id: string, publicId: string) => {
-    const { data } = await api.post<{ message: string }>(
+export const removePropertyImage = async (
+    id: string,
+    publicId: string
+): Promise<{ message: string; property?: Property }> => {
+    const { data } = await api.post<{ message: string; property?: Property }>(
         `/properties/${id}/images/remove`,
         { publicId }
     );

@@ -13,6 +13,11 @@ export async function getNotifications(): Promise<Notification[]> {
     return Array.isArray(data) ? data : data.notifications;
 }
 
+export async function getUnreadNotificationCount(): Promise<number> {
+    const response = await api.get<{ data: { count: number } }>(`${notificationsPath}/unread-count`);
+    return response.data.data.count;
+}
+
 export async function markNotificationAsRead(id: string): Promise<Notification> {
     const response = await api.patch<{ data: Notification }>(
         `${notificationsPath}/${id}/read`,

@@ -3,6 +3,7 @@ export type IconName =
     | "users"
     | "home"
     | "inbox"
+    | "chat"
     | "chart"
     | "settings"
     | "search"
@@ -15,4 +16,5 @@ export type IconName =
     | "check"
     | "clock"
     | "alert"
-    | "logout";
+    | "logout"
+    | "sparkles";
