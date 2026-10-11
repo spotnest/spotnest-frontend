@@ -20,13 +20,15 @@ const adminProperties: QueryKey = ["admin-properties"];
 const adminProperty: QueryKey = ["admin-property"];
 const adminUsers: QueryKey = ["admin-users"];
 
+const maintenanceAll: QueryKey = ["maintenance"];
+
 export const queryKeysForDashboardScope: Record<DashboardScope, QueryKey[]> = {
     booking: [bookingKeys.all, ownerDashboardKeys.summary, adminDashboard, tenantAll],
     rental: [tenantAll, tenantRental, tenantAgreement, ownerRentals, ownerDashboardKeys.summary, adminDashboard, bookingKeys.all],
     payment: [tenantAll, tenantRental, ownerRentals, ownerDashboardKeys.summary, adminDashboard, bookingKeys.all],
     property: [ownerProperties, ownerProperty, adminProperties, adminProperty, ownerDashboardKeys.summary, adminDashboard],
     user: [adminDashboard, adminUsers, ownerApprovalRequestsQueryKey],
-    maintenance: [tenantAll, ownerDashboardKeys.summary],
+    maintenance: [maintenanceAll, tenantAll, ownerDashboardKeys.summary],
 };
 
 /** Everything that can change while the socket is disconnected. */
