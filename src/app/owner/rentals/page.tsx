@@ -136,7 +136,7 @@ export default function OwnerRentalsPage() {
         <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10">
             <div className="flex items-center gap-3">
                 <Link
-                    href="/owner"
+                    href="/owner/dashboard"
                     className="inline-flex items-center gap-1 text-sm font-semibold text-[#00696b] hover:underline"
                 >
                     <ArrowLeft className="h-4 w-4" /> Back to Dashboard

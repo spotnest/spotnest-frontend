@@ -19,20 +19,24 @@ import {
 } from "@/src/modules/auth/services/authServices";
 
 import { useAdminVisits } from "@/src/modules/visits/hooks/useAdminVisits";
+import AdminVisitCard from "@/src/modules/visits/components/AdminVisitCard";
 
 import { dashboardPathForRole } from "@/src/constants/routes";
 import { useAppSelector } from "@/src/store/hook";
-import AdminVisitCard from "@/src/modules/visits/components/AdminVisitCard";
-
 
 const messageFromError = (
     error: unknown,
     fallback: string
-) =>
-    axios.isAxiosError(error) &&
-    typeof error.response?.data?.message === "string"
-        ? error.response.data.message
-        : fallback;
+): string => {
+    if (
+        axios.isAxiosError(error) &&
+        typeof error.response?.data?.message === "string"
+    ) {
+        return error.response.data.message;
+    }
+
+    return fallback;
+};
 
 export default function OwnerApprovalRequestsPage() {
     const router = useRouter();
@@ -43,17 +47,7 @@ export default function OwnerApprovalRequestsPage() {
     );
 
     const isAdmin = user?.role === "admin";
-
-    const requestsQuery = useOwnerApprovalRequests(
-        isInitialized && isAdmin
-    );
-
-    const visitsQuery = useAdminVisits({
-        page: 1,
-        limit: 20,
-    });
-   console.log("Admin visits:", visitsQuery.data);
-console.log("Admin visits error:", visitsQuery.error);
+    const canLoadAdminData = isInitialized && isAdmin;
 
     const [activeRequestId, setActiveRequestId] =
         useState<string | null>(null);
@@ -61,29 +55,34 @@ console.log("Admin visits error:", visitsQuery.error);
     const [feedback, setFeedback] = useState("");
     const [error, setError] = useState("");
 
+    const requestsQuery = useOwnerApprovalRequests(
+        canLoadAdminData
+    );
+
+    const visitsQuery = useAdminVisits(
+        {
+            page: 1,
+            limit: 20,
+        },
+        canLoadAdminData
+    );
+
     useEffect(() => {
         if (isInitialized && user && !isAdmin) {
             router.replace(
                 dashboardPathForRole(user.role)
             );
         }
-    }, [
-        isAdmin,
-        isInitialized,
-        router,
-        user,
-    ]);
+    }, [isInitialized, isAdmin, router, user]);
 
     const refreshApprovalData = async () => {
         await Promise.all([
             queryClient.invalidateQueries({
                 queryKey: ownerApprovalRequestsQueryKey,
             }),
-
             queryClient.invalidateQueries({
                 queryKey: ["admin-dashboard"],
             }),
-
             queryClient.invalidateQueries({
                 queryKey: ["admin-users"],
             }),
@@ -96,20 +95,21 @@ console.log("Admin visits error:", visitsQuery.error);
         onSuccess: async (data) => {
             setFeedback(data.message);
             setError("");
-
             await refreshApprovalData();
         },
 
-        onError: (mutationError) =>
+        onError: (mutationError: unknown) => {
             setError(
                 messageFromError(
                     mutationError,
                     "Unable to approve this request."
                 )
-            ),
+            );
+        },
 
-        onSettled: () =>
-            setActiveRequestId(null),
+        onSettled: () => {
+            setActiveRequestId(null);
+        },
     });
 
     const rejectMutation = useMutation({
@@ -118,24 +118,31 @@ console.log("Admin visits error:", visitsQuery.error);
         onSuccess: async (data) => {
             setFeedback(data.message);
             setError("");
-
             await refreshApprovalData();
         },
 
-        onError: (mutationError) =>
+        onError: (mutationError: unknown) => {
             setError(
                 messageFromError(
                     mutationError,
                     "Unable to reject this request."
                 )
-            ),
+            );
+        },
 
-        onSettled: () =>
-            setActiveRequestId(null),
+        onSettled: () => {
+            setActiveRequestId(null);
+        },
     });
 
     const approveRequest = (userId: string) => {
-        if (activeRequestId) return;
+        if (
+            activeRequestId ||
+            approveMutation.isPending ||
+            rejectMutation.isPending
+        ) {
+            return;
+        }
 
         setFeedback("");
         setError("");
@@ -148,7 +155,20 @@ console.log("Admin visits error:", visitsQuery.error);
         userId: string,
         reason: string
     ) => {
-        if (activeRequestId) return;
+        if (
+            activeRequestId ||
+            approveMutation.isPending ||
+            rejectMutation.isPending
+        ) {
+            return;
+        }
+
+        const trimmedReason = reason.trim();
+
+        if (!trimmedReason) {
+            setError("A rejection reason is required.");
+            return;
+        }
 
         setFeedback("");
         setError("");
@@ -156,7 +176,7 @@ console.log("Admin visits error:", visitsQuery.error);
 
         rejectMutation.mutate({
             userId,
-            reason,
+            reason: trimmedReason,
         });
     };
 
@@ -210,36 +230,37 @@ console.log("Admin visits error:", visitsQuery.error);
                         <div className="rounded-2xl border border-[#f0b5ae] bg-[#fff0ee] px-5 py-8 text-sm text-[#b42318]">
                             Unable to load approval requests.
                             Please refresh and try again.
+                            <button
+                                type="button"
+                                onClick={() => requestsQuery.refetch()}
+                                className="ml-2 font-semibold underline"
+                            >
+                                Retry
+                            </button>
                         </div>
                     ) : requestsQuery.data?.length ? (
                         <div className="grid gap-4 lg:grid-cols-2">
-                            {requestsQuery.data.map(
-                                (request) => (
-                                    <OwnerApprovalRequestCard
-                                        key={request.id}
-                                        request={request}
-                                        isProcessing={
-                                            activeRequestId ===
-                                                request.id &&
-                                            (approveMutation.isPending ||
-                                                rejectMutation.isPending)
-                                        }
-                                        onApprove={
-                                            approveRequest
-                                        }
-                                        onReject={
-                                            rejectRequest
-                                        }
-                                    />
-                                )
-                            )}
+                            {requestsQuery.data.map((request) => (
+                                <OwnerApprovalRequestCard
+                                    key={request.id}
+                                    request={request}
+                                    isProcessing={
+                                        activeRequestId === request.id &&
+                                        (
+                                            approveMutation.isPending ||
+                                            rejectMutation.isPending
+                                        )
+                                    }
+                                    onApprove={approveRequest}
+                                    onReject={rejectRequest}
+                                />
+                            ))}
                         </div>
                     ) : (
                         <div className="rounded-2xl border border-dashed border-[#c5c6cd] bg-white px-5 py-12 text-center">
                             <p className="text-sm font-bold text-[#191c1d]">
                                 No approval requests
                             </p>
-
                             <p className="mt-1 text-sm text-[#75777e]">
                                 New Property Owner requests
                                 will appear here.
@@ -247,30 +268,41 @@ console.log("Admin visits error:", visitsQuery.error);
                         </div>
                     )}
                 </section>
-                    <section
-                        className="mt-10 rounded-2xl border border-[#e1e3e4] bg-white p-5 shadow-sm sm:p-6"
-                        aria-label="Visit requests"
-                    >
-                        <div className="flex flex-col gap-1">
-                            <h2 className="text-xl font-bold tracking-[-0.02em] text-[#191c1d]">
-                                Visit Requests
-                            </h2>
 
-                            <p className="text-sm text-[#75777e]">
-                                Monitor property visit requests and their current status.
-                            </p>
-                        </div>
+                <section
+                    className="mt-10 rounded-2xl border border-[#e1e3e4] bg-white p-5 shadow-sm sm:p-6"
+                    aria-label="Visit requests"
+                >
+                    <div className="flex flex-col gap-1">
+                        <h2 className="text-xl font-bold tracking-[-0.02em] text-[#191c1d]">
+                            Visit Requests
+                        </h2>
 
-                        <div className="mt-6">
-                            {visitsQuery.isLoading ? (
-                                <div className="rounded-xl border border-[#e1e3e4] bg-[#fafafa] px-5 py-10 text-center text-sm text-[#75777e]">
-                                    Loading visit requests...
-                                </div>
-                            ) : visitsQuery.isError ? (
-                                <div className="rounded-xl border border-[#f0b5ae] bg-[#fff0ee] px-5 py-8 text-sm text-[#b42318]">
-                                    Unable to load visit requests. Please refresh and try again.
-                                </div>
-                            ) : visitsQuery.data?.visits.length ? (
+                        <p className="text-sm text-[#75777e]">
+                            Monitor property visit requests and
+                            their current status.
+                        </p>
+                    </div>
+
+                    <div className="mt-6">
+                        {visitsQuery.isLoading ? (
+                            <div className="rounded-xl border border-[#e1e3e4] bg-[#fafafa] px-5 py-10 text-center text-sm text-[#75777e]">
+                                Loading visit requests...
+                            </div>
+                        ) : visitsQuery.isError ? (
+                            <div className="rounded-xl border border-[#f0b5ae] bg-[#fff0ee] px-5 py-8 text-sm text-[#b42318]">
+                                Unable to load visit requests.
+                                Please refresh and try again.
+                                <button
+                                    type="button"
+                                    onClick={() => visitsQuery.refetch()}
+                                    className="ml-2 font-semibold underline"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        ) : visitsQuery.data?.visits.length ? (
+                            <>
                                 <div className="grid gap-4 lg:grid-cols-2">
                                     {visitsQuery.data.visits.map((visit) => (
                                         <AdminVisitCard
@@ -279,19 +311,26 @@ console.log("Admin visits error:", visitsQuery.error);
                                         />
                                     ))}
                                 </div>
-                            ) : (
-                                <div className="rounded-xl border border-dashed border-[#c5c6cd] bg-[#fafafa] px-5 py-12 text-center">
-                                    <p className="text-sm font-bold text-[#191c1d]">
-                                        No visit requests
-                                    </p>
 
-                                    <p className="mt-1 text-sm text-[#75777e]">
-                                        New property visit requests will appear here.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </section>
+                                <p className="mt-4 text-sm text-[#75777e]">
+                                    Showing {visitsQuery.data.visits.length}
+                                    {" "}of {visitsQuery.data.pagination.total}
+                                    {" "}visit requests.
+                                </p>
+                            </>
+                        ) : (
+                            <div className="rounded-xl border border-dashed border-[#c5c6cd] bg-[#fafafa] px-5 py-12 text-center">
+                                <p className="text-sm font-bold text-[#191c1d]">
+                                    No visit requests
+                                </p>
+                                <p className="mt-1 text-sm text-[#75777e]">
+                                    New property visit requests
+                                    will appear here.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </section>
             </main>
         </DashboardShell>
     );
