@@ -13,7 +13,8 @@ export const useVerifyPayment = () => {
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ["bookings"] });
             void queryClient.invalidateQueries({ queryKey: ["tenant"] });
-            void queryClient.invalidateQueries({ queryKey: ["my-rental"] });
+            void queryClient.invalidateQueries({ queryKey: ["tenant-rental"] });
+            void queryClient.invalidateQueries({ queryKey: ["tenant-agreement"] });
             void queryClient.invalidateQueries({ queryKey: ["owner-rentals"] });
             void queryClient.invalidateQueries({ queryKey: ["tenant-payments"] });
         },

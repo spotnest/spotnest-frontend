@@ -9,10 +9,20 @@ import {
     terminateRental,
 } from "../services/rentalService";
 
-export const useMyRental = () => {
+export const useMyRental = (bookingId?: string) => {
     return useQuery({
-        queryKey: ["tenant-rental"],
-        queryFn: getMyRental,
+        queryKey: ["tenant-rental", bookingId ?? "latest"],
+        queryFn: () => getMyRental(bookingId),
+        refetchInterval: (query) => {
+            const agreement = query.state.data?.agreement;
+            if (
+                agreement?.status === "PENDING_OWNER" ||
+                agreement?.status === "APPROVED_PENDING_PAYMENT"
+            ) {
+                return 3000;
+            }
+            return false;
+        },
     });
 };
 
@@ -23,17 +33,39 @@ export const useAgreement = (agreementId?: string) => {
     });
 };
 
+
 export const useAcceptAgreement = () => {
     const queryClient = useQueryClient();
+
     return useMutation({
-        mutationFn: (agreementId: string) => acceptAgreement(agreementId),
+        mutationFn: ({
+            agreementId,
+            acceptedTerms,
+        }: {
+            agreementId: string;
+            acceptedTerms: boolean;
+        }) => acceptAgreement(agreementId, acceptedTerms),
+
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["tenant-rental"] });
-            queryClient.invalidateQueries({ queryKey: ["tenant-agreement"] });
-            queryClient.invalidateQueries({ queryKey: ["tenant-payments"] });
+            void queryClient.invalidateQueries({
+                queryKey: ["tenant-rental"],
+            });
+            void queryClient.invalidateQueries({
+                queryKey: ["tenant-agreement"],
+            });
+            void queryClient.invalidateQueries({
+                queryKey: ["tenant-payments"],
+            });
+            void queryClient.invalidateQueries({
+                queryKey: ["bookings"],
+            });
+            void queryClient.invalidateQueries({
+                queryKey: ["owner-rentals"],
+            });
         },
     });
 };
+
 
 export const useOwnerRentals = () => {
     return useQuery({
@@ -47,8 +79,10 @@ export const useConfirmAgreement = () => {
     return useMutation({
         mutationFn: (agreementId: string) => confirmAgreement(agreementId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["owner-rentals"] });
-            queryClient.invalidateQueries({ queryKey: ["tenant-rental"] });
+            void queryClient.invalidateQueries({ queryKey: ["owner-rentals"] });
+            void queryClient.invalidateQueries({ queryKey: ["tenant-rental"] });
+            void queryClient.invalidateQueries({ queryKey: ["bookings"] });
+            void queryClient.invalidateQueries({ queryKey: ["tenant-agreement"] });
         },
     });
 };

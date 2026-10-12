@@ -15,7 +15,7 @@ import { useCreateMaintenance } from "../hooks/hooks";
 export const money = (amount: number) =>
     `₹${amount.toLocaleString("en-IN")}`;
 
-export const date = (value?: string) =>
+export const date = (value?: string | null) =>
     value
         ? new Intl.DateTimeFormat("en-IN", {
             day: "2-digit",
