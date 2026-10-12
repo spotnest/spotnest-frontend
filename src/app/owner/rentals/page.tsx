@@ -248,13 +248,22 @@ export default function OwnerRentalsPage() {
                                                                 className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${
                                                                     occ.agreementStatus === "ACTIVE"
                                                                         ? "bg-[#d9f4f3] text-[#00696b]"
-                                                                        : occ.agreementStatus === "PENDING_OWNER"
-                                                                          ? "bg-[#dbeafe] text-[#1e4f91]"
-                                                                          : "bg-[#fff3cd] text-[#765b00]"
+                                                                        : occ.agreementStatus === "APPROVED_PENDING_PAYMENT"
+                                                                          ? "bg-[#e0f2fe] text-[#0369a1]"
+                                                                          : occ.agreementStatus === "PENDING_OWNER"
+                                                                            ? "bg-[#dbeafe] text-[#1e4f91]"
+                                                                            : occ.agreementStatus === "EXPIRED"
+                                                                              ? "bg-[#fee2e2] text-[#991b1b]"
+                                                                              : "bg-[#fff3cd] text-[#765b00]"
                                                                 }`}
                                                             >
                                                                 {occ.agreementStatus}
                                                             </span>
+                                                            {occ.agreementStatus === "APPROVED_PENDING_PAYMENT" && occ.paymentDeadline && (
+                                                                <span className="block text-[11px] font-medium text-amber-700 mt-1">
+                                                                    Deadline: {new Date(occ.paymentDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                                                </span>
+                                                            )}
                                                         </td>
                                                         <td className="py-3">
                                                             <span
