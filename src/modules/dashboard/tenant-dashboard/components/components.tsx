@@ -10,6 +10,10 @@ import type {
     TenantPayment,
     TenantRental,
 } from "../types/types";
+import type { MaintenancePriority } from "@/src/modules/maintenance/types/maintenance";
+import { PRIORITY_OPTIONS } from "@/src/modules/maintenance/constants/maintenance";
+import PriorityBadge from "@/src/modules/maintenance/components/PriorityBadge";
+import StatusBadge from "@/src/modules/maintenance/components/StatusBadge";
 import { useCreateMaintenance } from "../hooks/hooks";
 
 export const money = (amount: number) =>
@@ -609,9 +613,10 @@ export function MaintenanceForm() {
     const [description, setDescription] =
         useState("");
 
-    const [priority, setPriority] = useState<
-        "low" | "medium" | "high" | "urgent"
-    >("medium");
+    const [priority, setPriority] =
+        useState<MaintenancePriority>(
+            "Normal"
+        );
 
     const [category, setCategory] =
         useState("");
@@ -641,7 +646,7 @@ export function MaintenanceForm() {
                     setTitle("");
                     setDescription("");
                     setCategory("");
-                    setPriority("medium");
+                    setPriority("Normal");
                 },
             }
         );
@@ -779,21 +784,16 @@ export function MaintenanceForm() {
                             focus:border-[#00696b]
                         "
                     >
-                        <option value="low">
-                            Low
-                        </option>
-
-                        <option value="medium">
-                            Medium
-                        </option>
-
-                        <option value="high">
-                            High
-                        </option>
-
-                        <option value="urgent">
-                            Urgent
-                        </option>
+                        {PRIORITY_OPTIONS.map(
+                            (option) => (
+                                <option
+                                    key={option.value}
+                                    value={option.value}
+                                >
+                                    {option.label}
+                                </option>
+                            )
+                        )}
                     </select>
                 </label>
 
@@ -950,19 +950,27 @@ export function MaintenanceList({
                             >
                                 Created{" "}
                                 {date(request.createdAt)}
-                                {" · "}
-                                {request.priority}
-                                {" priority"}
-
                                 {request.category
                                     ? ` · ${request.category}`
                                     : ""}
                             </p>
                         </div>
 
-                        <Status
-                            value={request.status}
-                        />
+                        <div
+                            className="
+                                flex
+                                items-center
+                                gap-2
+                            "
+                        >
+                            <PriorityBadge
+                                priority={request.priority}
+                            />
+
+                            <StatusBadge
+                                status={request.status}
+                            />
+                        </div>
                     </div>
 
                     <p
@@ -975,7 +983,7 @@ export function MaintenanceList({
                         {request.description}
                     </p>
 
-                    {request.ownerResponse && (
+                    {request.rejectionReason && (
                         <p
                             className="
                                 mt-4
@@ -995,11 +1003,11 @@ export function MaintenanceList({
                                 Owner update:{" "}
                             </span>
 
-                            {request.ownerResponse}
+                            {request.rejectionReason}
                         </p>
                     )}
 
-                    {request.resolution && (
+                    {request.resolutionNote && (
                         <p
                             className="
                                 mt-3
@@ -1011,7 +1019,7 @@ export function MaintenanceList({
                                 Resolution:{" "}
                             </span>
 
-                            {request.resolution}
+                            {request.resolutionNote}
                         </p>
                     )}
 
