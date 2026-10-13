@@ -6,6 +6,10 @@ export interface DashboardOverview {
     pendingRequests: number;
     pendingOwnerCount: number;
     pendingUserVerification: number;
+    activeRentals: number;
+    overduePayments: number;
+    paymentsReceivedTotal: number;
+    paymentsReceivedCount: number;
 }
 
 export interface DashboardUser {

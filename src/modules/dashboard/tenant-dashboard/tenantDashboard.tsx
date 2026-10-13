@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/src/store/hook";
 import { tenantDashboardRoutes } from "@/src/constants/routes";
 import { NotificationList } from "@/src/modules/notifications/components/NotificationList";
-import { useMarkNotificationAsRead, useNotifications } from "@/src/modules/notifications/hooks/useNotifications";
+import { useMarkNotificationAsRead, useNotifications, useUnreadNotificationCount } from "@/src/modules/notifications/hooks/useNotifications";
+import { RealtimeStatusNotice } from "@/src/components/common/RealtimeStatusNotice";
 import type { Notification } from "@/src/modules/notifications/types/notification";
 import {
     Card,
@@ -26,6 +27,7 @@ export default function TenantDashboard() {
     const query = useTenantDashboard();
     const myRentalQuery = useMyRental();
     const notificationsQuery = useNotifications();
+    const unreadCount = useUnreadNotificationCount().data ?? 0;
     const markNotificationAsRead = useMarkNotificationAsRead();
     const user = useAppSelector((state) => state.auth.user);
     const userId = user?.id;
@@ -45,6 +47,7 @@ export default function TenantDashboard() {
     return (
         <PageState loading={query.isLoading} error={query.error}>
             <div className="space-y-8">
+                <RealtimeStatusNotice className="mx-6 mt-6 lg:mx-10" />
                 {inquiry && inquiry.status === "PENDING" && (
                     <div className="mx-6 mt-6 lg:mx-10 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 shadow-sm">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -74,7 +77,6 @@ export default function TenantDashboard() {
                         </div>
                     </div>
                 )}
-
                 {!query.data?.rental ? (
                     <div className="p-6 lg:p-10">
                         <p className="text-sm font-semibold text-[#00696b]">Tenant dashboard</p>
@@ -87,7 +89,10 @@ export default function TenantDashboard() {
 
                 <section className="px-6 pb-8 lg:px-10" aria-labelledby="tenant-recent-notifications">
                     <div className="mb-4 flex items-center justify-between">
-                        <h2 id="tenant-recent-notifications" className="text-xl font-bold text-[#191c1d]">Recent notifications</h2>
+                        <h2 id="tenant-recent-notifications" className="flex items-center gap-2 text-xl font-bold text-[#191c1d]">
+                            Recent notifications
+                            {unreadCount > 0 && <span className="rounded-full bg-[#d9f4f3] px-2 py-0.5 text-xs font-bold text-[#00696b]">{unreadCount > 99 ? "99+" : unreadCount} unread</span>}
+                        </h2>
                         <Link href={tenantDashboardRoutes.notifications} className="text-sm font-bold text-[#00696b] hover:underline">View all</Link>
                     </div>
                     <div className="overflow-hidden rounded-2xl border border-[#e1e3e4] bg-white">

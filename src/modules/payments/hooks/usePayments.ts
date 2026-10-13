@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPaymentOrder, verifyPayment } from "../services/paymentService";
+import { queryKeysForDashboardScope } from "@/src/modules/dashboard/constants/realtimeQueryKeys";
 
 export const useCreatePaymentOrder = () =>
     useMutation({
