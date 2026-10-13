@@ -54,16 +54,17 @@ export interface TenantRentalResponse {
         leaseStart: string;
         leaseEnd: string;
         terms: string;
-        tenantAcceptedAt?: string;
-        ownerAcceptedAt?: string;
+        tenantAcceptedAt?: string | null;
+        ownerAcceptedAt?: string | null;
+        paymentDeadline?: string | null;
     } | null;
     payments: Array<{
         id: string;
         type: string;
         amount: number;
         status: string;
-        dueDate?: string;
-        paidAt?: string;
+        dueDate?: string | null;
+        paidAt?: string | null;
         billingMonth?: string;
         razorpayOrderId?: string;
         created_at: string;
@@ -98,16 +99,20 @@ export interface OwnerRentalItem {
         status: string;
         agreementStatus: string;
         agreementId?: string;
-        tenantAcceptedAt?: string;
-        ownerAcceptedAt?: string;
+        tenantAcceptedAt?: string | null;
+        ownerAcceptedAt?: string | null;
+        paymentDeadline?: string | null;
         monthlyPaymentStatus: string;
         latestPaymentAmount?: number;
         latestPaymentMonth?: string;
     }>;
 }
 
-export const getMyRental = async (): Promise<TenantRentalResponse | null> => {
-    const response = await axios.get("/rentals/my-rental");
+export const getMyRental = async (bookingId?: string): Promise<TenantRentalResponse | null> => {
+    const url = bookingId
+        ? `/rentals/my-rental?bookingId=${encodeURIComponent(bookingId)}`
+        : "/rentals/my-rental";
+    const response = await axios.get(url);
     return response.data.data;
 };
 
@@ -117,10 +122,19 @@ export const getAgreement = async (agreementId?: string) => {
     return response.data.data;
 };
 
-export const acceptAgreement = async (agreementId: string) => {
-    const response = await axios.post(`/rentals/agreements/${agreementId}/accept`);
+
+export const acceptAgreement = async (
+    agreementId: string,
+    acceptedTerms: boolean
+) => {
+    const response = await axios.post(
+        `/rentals/agreements/${agreementId}/accept`,
+        { acceptedTerms }
+    );
+
     return response.data;
 };
+
 
 export const confirmAgreement = async (agreementId: string) => {
     const response = await axios.post(`/rentals/owner/agreements/${agreementId}/confirm`);

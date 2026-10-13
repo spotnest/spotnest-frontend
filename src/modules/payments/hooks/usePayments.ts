@@ -12,11 +12,12 @@ export const useVerifyPayment = () => {
     return useMutation({
         mutationFn: verifyPayment,
         onSuccess: () => {
-            // Same keys the realtime "payment" event refreshes (bookings,
-            // tenant dashboard/payments, tenant rental, owner rentals).
-            for (const queryKey of queryKeysForDashboardScope.payment) {
-                void queryClient.invalidateQueries({ queryKey });
-            }
+            void queryClient.invalidateQueries({ queryKey: ["bookings"] });
+            void queryClient.invalidateQueries({ queryKey: ["tenant"] });
+            void queryClient.invalidateQueries({ queryKey: ["tenant-rental"] });
+            void queryClient.invalidateQueries({ queryKey: ["tenant-agreement"] });
+            void queryClient.invalidateQueries({ queryKey: ["owner-rentals"] });
+            void queryClient.invalidateQueries({ queryKey: ["tenant-payments"] });
         },
     });
 };

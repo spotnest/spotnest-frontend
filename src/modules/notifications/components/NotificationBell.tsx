@@ -40,13 +40,37 @@ export function NotificationBell() {
         };
     }, []);
 
-    const handleNotificationClick = (notification: Notification) => {
-        if (!notification.isRead && userId) {
-            if (user?.role) markRead.mutate({ notificationId: notification.id, userId, role: user.role });
-        }
-        setOpen(false);
-        if (notification.targetUrl) router.push(notification.targetUrl);
-    };
+    
+const handleNotificationClick = (notification: Notification) => {
+    // Keep the rest of your existing handler below.
+    if (!notification.isRead && userId && user?.role) {
+        markRead.mutate({
+            notificationId: notification.id,
+            userId,
+            role: user.role,
+        });
+    }
+
+    setOpen(false);
+
+    // Prefer the explicit destination provided by the backend.
+    if (notification.targetUrl) {
+        router.push(notification.targetUrl);
+        return;
+    }
+
+    // Fallback: open the associated property.
+    const propertyId = notification.data?.propertyId;
+
+    if (propertyId) {
+        router.push(`/properties/${propertyId}`);
+        return;
+    }
+
+    // Final fallback when no destination or property ID exists.
+    router.push("/properties");
+};
+
 
     return <div className="relative" ref={containerRef}>
         <button type="button" aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} aria-expanded={open} onClick={() => setOpen((value) => !value)} className="relative grid h-10 w-10 place-items-center rounded-full border border-[#e1e3e4] bg-white text-[#44474d] transition hover:bg-[#f3f4f5]">

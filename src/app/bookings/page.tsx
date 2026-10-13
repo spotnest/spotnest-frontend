@@ -101,7 +101,15 @@ export default function BookingsPage() {
                                             Booking #{booking._id.slice(-6).toUpperCase()}
                                         </p>
                                         <h2 className="mt-1 text-xl font-semibold text-[#191c1d]">
-                                            {booking.status === "PENDING" ? "Waiting for Owner Approval" : booking.status === "REJECTED" ? "Rental Request Rejected" : booking.status.replaceAll("_", " ")}
+                                            {booking.status === "PENDING"
+                                                ? "Waiting for Owner Review"
+                                                : booking.status === "REJECTED"
+                                                  ? "Rental Request Rejected"
+                                                  : booking.status === "EXPIRED"
+                                                    ? "Rental Request Expired"
+                                                    : booking.status === "APPROVED"
+                                                      ? "Rental Request Approved — Agreement Required"
+                                                      : booking.status.replaceAll("_", " ")}
                                         </h2>
                                         <p className="mt-1 text-sm text-[#75777e]">{bookingPropertyTitle(booking.propertyId)}</p>
                                     </div>
@@ -138,13 +146,25 @@ export default function BookingsPage() {
                                         <p className="mt-1 font-medium text-[#191c1d]">{formatPrice(booking.advanceAmount)}</p>
                                     </div>
                                 </div>
-                                {booking.status === "APPROVED" && booking.paymentStatus === "ADVANCE_PAYMENT_PENDING" && (
-                                    <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#eef0f1] pt-4">
-                                        <div>
-                                            <p className="font-semibold text-[#191c1d]">Advance payment required</p>
-                                            <p className="mt-1 text-sm text-[#75777e]">{formatPrice(booking.advanceAmount)}</p>
-                                        </div>
-                                        <RazorpayPayButton bookingId={booking._id} type="ADVANCE" label="Pay Advance" />
+
+                                {booking.status === "EXPIRED" && (
+                                    <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4" role="alert">
+                                        <p className="font-semibold text-red-800">Rental request expired</p>
+                                        <p className="mt-1 text-sm text-red-700">
+                                            This rental request has expired. Please submit a new rental request.
+                                        </p>
+                                        <Link
+                                            href={`/properties/${typeof booking.propertyId === "string" ? booking.propertyId : booking.propertyId._id}`}
+                                            className="mt-3 inline-block text-sm font-semibold text-red-800 underline"
+                                        >
+                                            Submit a new rental request for this property →
+                                        </Link>
+                                    </div>
+                                )}
+
+                                {booking.status === "APPROVED" && (
+                                    <div className="mt-5 border-t border-[#eef0f1] pt-4">
+                                        <RazorpayPayButton bookingId={booking._id} type="ADVANCE" label={`Pay Advance (${formatPrice(booking.advanceAmount)})`} />
                                     </div>
                                 )}
                                 {(booking.paymentStatus === "PAID" || ["CONFIRMED", "ACTIVE"].includes(booking.status)) && (
