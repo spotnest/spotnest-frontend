@@ -13,6 +13,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { useAppDispatch } from "@/src/store/hook";
+import { userUpdated } from "@/src/store/slices/authSlice";
+import { getCurrentUser } from "@/src/modules/auth/services/authServices";
 import {
     useCreatePaymentOrder,
     useVerifyPayment,
@@ -69,12 +73,15 @@ export default function RazorpayPayButton({
     agreement: agreementProp,
 }: RazorpayPayButtonProps) {
     const router = useRouter();
+    const dispatch = useAppDispatch();
 
+    const queryClient = useQueryClient();
     const createOrder = useCreatePaymentOrder();
     const verify = useVerifyPayment();
     const acceptMutation = useAcceptAgreement();
     const rentalQuery = useMyRental(bookingId);
 
+    const [isRetryingAgreement, setIsRetryingAgreement] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pendingVerification, setPendingVerification] =
@@ -153,11 +160,28 @@ export default function RazorpayPayButton({
         remainingMs > 0;
 
     const remainingSeconds = Math.ceil(remainingMs / 1000);
-    const countdownMinutes = Math.floor(remainingSeconds / 60);
+    const countdownDays = Math.floor(remainingSeconds / 86400);
+    const countdownHours = Math.floor((remainingSeconds % 86400) / 3600);
+    const countdownMinutes = Math.floor((remainingSeconds % 3600) / 60);
     const countdownSecs = remainingSeconds % 60;
-    const countdownText = `${countdownMinutes
-        .toString()
-        .padStart(2, "0")}:${countdownSecs.toString().padStart(2, "0")}`;
+
+    let countdownText = `${countdownMinutes.toString().padStart(2, "0")}:${countdownSecs.toString().padStart(2, "0")}`;
+    if (countdownDays > 0) {
+        countdownText = `${countdownDays}d ${countdownHours.toString().padStart(2, "0")}h ${countdownMinutes.toString().padStart(2, "0")}m`;
+    } else if (countdownHours > 0) {
+        countdownText = `${countdownHours.toString().padStart(2, "0")}:${countdownMinutes.toString().padStart(2, "0")}:${countdownSecs.toString().padStart(2, "0")}`;
+    }
+
+    const handleRetryAgreement = async () => {
+        setIsRetryingAgreement(true);
+        try {
+            await queryClient.invalidateQueries({ queryKey: ["tenant-rental"] });
+            await queryClient.invalidateQueries({ queryKey: ["bookings"] });
+            await rentalQuery.refetch();
+        } finally {
+            setIsRetryingAgreement(false);
+        }
+    };
 
     const isVerificationRetry = pendingVerification !== null;
 
@@ -195,13 +219,36 @@ export default function RazorpayPayButton({
     const verifyAndContinue = async (
         payload: PaymentVerificationPayload
     ) => {
-        await verify.mutateAsync(payload);
+        const verifyResult = await verify.mutateAsync(payload);
 
         setPendingVerification(null);
 
         if (type === "ADVANCE") {
+            // Update auth state in Redux so user role transitions to tenant immediately
+            if (verifyResult?.user) {
+                dispatch(userUpdated(verifyResult.user));
+            } else {
+                try {
+                    const freshUser = await getCurrentUser();
+                    if (freshUser?.user) {
+                        dispatch(userUpdated(freshUser.user));
+                    }
+                } catch {
+                    // Non-fatal if session refresh fails
+                }
+            }
+
+            // Invalidate query caches
+            await queryClient.invalidateQueries({ queryKey: ["tenant"] });
+            await queryClient.invalidateQueries({ queryKey: ["bookings"] });
+            await queryClient.invalidateQueries({ queryKey: ["tenant-rental"] });
+            await queryClient.invalidateQueries({ queryKey: ["tenant-agreement"] });
+            await queryClient.invalidateQueries({ queryKey: ["tenant-payments"] });
+            await queryClient.invalidateQueries({ queryKey: ["tenant", "dashboard"] });
             await rentalQuery.refetch();
-            router.push("/rental");
+
+            // Navigate tenant directly to Tenant Dashboard
+            router.push("/tenant/dashboard");
         } else {
             router.refresh();
         }
@@ -334,10 +381,11 @@ export default function RazorpayPayButton({
 
                                 <button
                                     type="button"
-                                    onClick={() => rentalQuery.refetch()}
-                                    className="text-sm font-semibold text-teal-800 underline"
+                                    onClick={handleRetryAgreement}
+                                    disabled={isRetryingAgreement}
+                                    className="text-sm font-semibold text-teal-800 underline disabled:opacity-50"
                                 >
-                                    Retry loading agreement
+                                    {isRetryingAgreement ? "Retrying..." : "Retry loading agreement"}
                                 </button>
                             </div>
                         ) : agreement ? (
@@ -561,12 +609,12 @@ export default function RazorpayPayButton({
                                             </div>
                                         ) : (
                                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                                <div>
+                                                 <div>
                                                     <p className="text-sm font-bold text-amber-900">
                                                         Owner Approved — Advance Payment Required
                                                     </p>
                                                     <p className="text-xs text-amber-800">
-                                                        Complete your advance payment before the 2-minute deadline expires.
+                                                        Complete your advance payment before the 72-hour deadline expires.
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-2">
@@ -631,18 +679,31 @@ export default function RazorpayPayButton({
                                 </div>
                             </>
                         ) : (
-                            <div className="space-y-3">
-                                <p className="text-sm text-amber-800">
-                                    No rental agreement details were returned for this rental request.
+                            <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4">
+                                <p className="text-sm font-semibold text-amber-900">
+                                    Rental agreement is ready for generation or retrieval.
+                                </p>
+                                <p className="text-xs text-amber-800">
+                                    Click retry below to load your agreement terms and payment details.
                                 </p>
 
                                 <button
                                     type="button"
-                                    onClick={() => rentalQuery.refetch()}
-                                    className="inline-flex items-center gap-2 text-sm font-semibold text-teal-800 underline"
+                                    onClick={handleRetryAgreement}
+                                    disabled={isRetryingAgreement}
+                                    className="inline-flex items-center gap-2 rounded-lg bg-[#00696b] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#004f51] disabled:opacity-50"
                                 >
-                                    Retry loading agreement
-                                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                                    {isRetryingAgreement ? (
+                                        <>
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            Loading agreement...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                                            Retry loading agreement
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         )}

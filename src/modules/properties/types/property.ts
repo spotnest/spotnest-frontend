@@ -38,6 +38,8 @@ export interface Property {
   address: PropertyAddress;
   images: PropertyImage[];
   status: PropertyStatus;
+  isOccupied?: boolean;
+  occupiedUntil?: string | null;
   created_at: string;
   updated_at: string;
 }

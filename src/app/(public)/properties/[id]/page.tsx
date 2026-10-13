@@ -200,6 +200,8 @@ export default async function PropertyDetailPage({
                                 propertyTitle={property.title}
                                 propertyPrice={property.price}
                                 advanceAmount={property.advanceAmount ?? property.price}
+                                isOccupied={property.isOccupied}
+                                occupiedUntil={property.occupiedUntil}
                             />
                             <VisitRequestButton
                                 propertyId={property._id}

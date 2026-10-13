@@ -69,6 +69,16 @@ export interface TenantRentalResponse {
         razorpayOrderId?: string;
         created_at: string;
     }>;
+    inquiry?: {
+        bookingId: string;
+        propertyTitle?: string;
+        startDate: string;
+        endDate: string;
+        deadline: string;
+        question: string;
+        status: string;
+        deemedConsentNotice: string;
+    } | null;
 }
 
 export interface OwnerRentalItem {
@@ -165,4 +175,121 @@ export const setRentSplit = async (
 export const terminateRental = async (rentalId: string, reason?: string) => {
     const response = await axios.post(`/rentals/owner/${rentalId}/terminate`, { reason });
     return response.data;
+};
+
+export interface OwnerAgreementItem {
+    _id: string;
+    rental: {
+        _id: string;
+        status: string;
+        splitMode?: string;
+    };
+    property: {
+        _id: string;
+        title: string;
+        address?: { city: string; state: string; street?: string };
+        propertyType?: string;
+        price?: number;
+        images?: Array<{ url: string }>;
+    };
+    tenant: {
+        _id: string;
+        name: string;
+        email: string;
+        phone?: string;
+    };
+    monthlyRent: number;
+    securityDepositShare: number;
+    maintenanceFee?: number;
+    paymentFrequency?: string;
+    noticePeriodDays?: number;
+    leaseStart: string;
+    leaseEnd: string;
+    terms: string;
+    status: string;
+    tenantAcceptedAt?: string | null;
+    ownerAcceptedAt?: string | null;
+    paymentDeadline?: string | null;
+    version?: number;
+    deliveryStatus?: "PENDING" | "DELIVERED" | "FAILED";
+    deliveryError?: string;
+    created_at: string;
+    updated_at: string;
+    history?: Array<{
+        version: number;
+        terms: string;
+        monthlyRent: number;
+        securityDepositShare: number;
+        modifiedAt: string;
+        note?: string;
+    }>;
+}
+
+export interface CreateManualAgreementPayload {
+    propertyId: string;
+    tenantEmail: string;
+    monthlyRent: number;
+    securityDeposit: number;
+    maintenanceFee?: number;
+    paymentFrequency?: "monthly";
+    noticePeriodDays?: number;
+    leaseStart: string;
+    leaseEnd: string;
+    terms?: string;
+    autoSend?: boolean;
+}
+
+export interface UpdateAgreementPayload {
+    terms?: string;
+    monthlyRent?: number;
+    securityDepositShare?: number;
+    maintenanceFee?: number;
+    leaseStart?: string;
+    leaseEnd?: string;
+    noticePeriodDays?: number;
+    revisionNote?: string;
+}
+
+export interface TenantLookupResponse {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    role: string;
+    isEligible: boolean;
+}
+
+export const getOwnerAgreements = async (): Promise<OwnerAgreementItem[]> => {
+    const response = await axios.get("/rentals/owner/agreements");
+    return response.data.data;
+};
+
+export const getOwnerAgreement = async (agreementId: string): Promise<OwnerAgreementItem> => {
+    const response = await axios.get(`/rentals/owner/agreements/${agreementId}`);
+    return response.data.data;
+};
+
+export const createManualAgreement = async (payload: CreateManualAgreementPayload) => {
+    const response = await axios.post("/rentals/owner/agreements/manual", payload);
+    return response.data;
+};
+
+export const updateAgreement = async (agreementId: string, payload: UpdateAgreementPayload) => {
+    const response = await axios.put(`/rentals/owner/agreements/${agreementId}`, payload);
+    return response.data;
+};
+
+export const deleteOrCancelAgreement = async (agreementId: string) => {
+    const response = await axios.delete(`/rentals/owner/agreements/${agreementId}`);
+    return response.data;
+};
+
+export const resendAgreementNotification = async (agreementId: string) => {
+    const response = await axios.post(`/rentals/owner/agreements/${agreementId}/resend`);
+    return response.data;
+};
+
+export const lookupTenant = async (email: string): Promise<TenantLookupResponse | null> => {
+    const response = await axios.get(`/rentals/owner/tenants/lookup?email=${encodeURIComponent(email)}`);
+    return response.data.data;
 };

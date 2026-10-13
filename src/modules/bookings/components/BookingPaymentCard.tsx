@@ -13,6 +13,8 @@ interface BookingPaymentCardProps {
     propertyTitle: string;
     propertyPrice: number;
     advanceAmount: number;
+    isOccupied?: boolean;
+    occupiedUntil?: string | null;
 }
 
 export default function BookingPaymentCard({
@@ -20,6 +22,8 @@ export default function BookingPaymentCard({
     propertyTitle,
     propertyPrice,
     advanceAmount,
+    isOccupied,
+    occupiedUntil,
 }: BookingPaymentCardProps) {
     const router = useRouter();
     const user = useAppSelector((state) => state.auth.user);
@@ -30,6 +34,24 @@ export default function BookingPaymentCard({
     const [requestCreated, setRequestCreated] = useState(false);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const occupiedEndDate = occupiedUntil ? new Date(occupiedUntil) : null;
+    let minStartDate = todayStr;
+    let formattedOccupiedUntil = "";
+
+    if (isOccupied && occupiedEndDate && !isNaN(occupiedEndDate.getTime())) {
+        formattedOccupiedUntil = occupiedEndDate.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
+        const nextDay = new Date(occupiedEndDate.getTime() + 24 * 60 * 60 * 1000);
+        const nextDayStr = nextDay.toISOString().slice(0, 10);
+        if (nextDayStr > minStartDate) {
+            minStartDate = nextDayStr;
+        }
+    }
 
     const existingBooking = myBookings.find((b) => {
         const pId = typeof b.propertyId === "string" ? b.propertyId : (b.propertyId as { _id?: string })?._id;
@@ -90,7 +112,7 @@ export default function BookingPaymentCard({
                 </p>
                 <button
                     type="button"
-                    onClick={() => router.push("/tenant/dashboard/rental")}
+                    onClick={() => router.push("/tenant/dashboard")}
                     className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-[#00696b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#004f51]"
                 >
                     Go to Tenant Portal →
@@ -140,6 +162,14 @@ export default function BookingPaymentCard({
                     </span>
                     .
                 </p>
+                {existingBooking.tenantInquiry?.status === "PENDING" && (
+                    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-left">
+                        <p className="text-xs font-bold text-amber-900">Property Currently Occupied</p>
+                        <p className="mt-1 text-xs text-amber-800">
+                            This property is currently occupied. We have contacted the current tenant regarding their move-out schedule and will update you within 3 days.
+                        </p>
+                    </div>
+                )}
                 <button
                     type="button"
                     onClick={() => router.push(`/bookings?bookingId=${existingBooking._id}`)}
@@ -154,6 +184,18 @@ export default function BookingPaymentCard({
     // Default State: New rental request form
     return (
         <div className="mt-6 space-y-3">
+            {isOccupied && formattedOccupiedUntil && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-900 shadow-xs">
+                    <p className="font-bold flex items-center gap-1.5 text-amber-900">
+                        <span className="inline-block h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                        Property Currently Occupied
+                    </p>
+                    <p className="mt-1 text-amber-800 leading-relaxed">
+                        This property is leased until <strong>{formattedOccupiedUntil}</strong>. Any new rental request must start after this date.
+                    </p>
+                </div>
+            )}
+
             <div className="rounded-xl border border-[#dfe3e6] bg-[#f8f9fa] p-3">
                 <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-[#75777e]">Monthly rent</span>
@@ -170,10 +212,10 @@ export default function BookingPaymentCard({
                     Rental starts
                     <input
                         type="date"
-                        min={new Date().toISOString().slice(0, 10)}
+                        min={minStartDate}
                         value={startDate}
                         onChange={(event) => setStartDate(event.target.value)}
-                        className="mt-1 h-11 w-full rounded-lg border border-[#c5c6cd] bg-white px-3 text-sm"
+                        className="mt-1 h-11 w-full rounded-lg border border-[#c5c6cd] bg-white px-3 text-sm focus:border-[#00696b] focus:outline-none"
                         required
                     />
                 </label>
@@ -181,10 +223,10 @@ export default function BookingPaymentCard({
                     Rental ends
                     <input
                         type="date"
-                        min={startDate || new Date().toISOString().slice(0, 10)}
+                        min={startDate || minStartDate}
                         value={endDate}
                         onChange={(event) => setEndDate(event.target.value)}
-                        className="mt-1 h-11 w-full rounded-lg border border-[#c5c6cd] bg-white px-3 text-sm"
+                        className="mt-1 h-11 w-full rounded-lg border border-[#c5c6cd] bg-white px-3 text-sm focus:border-[#00696b] focus:outline-none"
                         required
                     />
                 </label>

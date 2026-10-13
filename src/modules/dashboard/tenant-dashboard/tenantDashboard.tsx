@@ -18,15 +18,20 @@ import {
     money,
 } from "./components/components";
 import { useTenantDashboard } from "./hooks/hooks";
+import { useMyRental } from "@/src/modules/rentals/hooks/useRentals";
+import { Clock, ArrowRight } from "lucide-react";
 import type { TenantDashboardData, TenantRental } from "./types/types";
 
 export default function TenantDashboard() {
     const query = useTenantDashboard();
+    const myRentalQuery = useMyRental();
     const notificationsQuery = useNotifications();
     const markNotificationAsRead = useMarkNotificationAsRead();
     const user = useAppSelector((state) => state.auth.user);
     const userId = user?.id;
     const router = useRouter();
+
+    const inquiry = myRentalQuery.data?.inquiry;
 
     const handleNotificationClick = (notification: Notification) => {
         if (!notification.isRead && userId) {
@@ -40,6 +45,36 @@ export default function TenantDashboard() {
     return (
         <PageState loading={query.isLoading} error={query.error}>
             <div className="space-y-8">
+                {inquiry && inquiry.status === "PENDING" && (
+                    <div className="mx-6 mt-6 lg:mx-10 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex items-start gap-3.5">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-200/80 text-amber-900">
+                                    <Clock className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <span className="inline-block rounded-md bg-amber-200/80 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-900">
+                                        Action Required · 3-Day Deadline
+                                    </span>
+                                    <h3 className="mt-1 font-bold text-amber-950 text-base">
+                                        Move-Out Schedule & Rental Renewal Inquiry
+                                    </h3>
+                                    <p className="text-sm text-amber-800/90 mt-0.5 max-w-2xl leading-relaxed">
+                                        Another applicant has requested to rent {inquiry.propertyTitle || "your property"} after your lease ends. Please indicate if you will end your lease or wish to extend.
+                                    </p>
+                                </div>
+                            </div>
+                            <Link
+                                href="/tenant/dashboard/rental"
+                                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#00696b] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#004f51]"
+                            >
+                                Respond Now
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
                 {!query.data?.rental ? (
                     <div className="p-6 lg:p-10">
                         <p className="text-sm font-semibold text-[#00696b]">Tenant dashboard</p>

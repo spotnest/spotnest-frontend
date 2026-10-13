@@ -18,6 +18,27 @@ export interface BookingUser {
     image?: string;
 }
 
+export type TenantInquiryStatus =
+    | "PENDING"
+    | "ACCEPTED_MOVE_OUT"
+    | "WANTS_EXTENSION"
+    | "CUSTOM_MESSAGE"
+    | "EXPIRED_DEEMED_CONSENT";
+
+export type TenantInquiryChoice = "MOVE_OUT" | "EXTEND" | "CUSTOM";
+
+export interface TenantInquiry {
+    currentTenantId: string;
+    currentRentalId?: string;
+    status: TenantInquiryStatus;
+    deadline: string;
+    question: string;
+    respondedAt?: string;
+    responseChoice?: TenantInquiryChoice;
+    responseMessage?: string;
+    deemedConsentApplied?: boolean;
+}
+
 export interface Booking {
     _id: string;
     propertyId: string | BookingProperty;
@@ -32,6 +53,7 @@ export interface Booking {
     decisionNote?: string;
     userId: string | BookingUser;
     notes?: string;
+    tenantInquiry?: TenantInquiry;
     created_at: string;
     updated_at: string;
 }
