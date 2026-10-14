@@ -57,3 +57,16 @@ export const updateMaintenanceStatus = async (
     const response = await axios.patch<MaintenanceRequest>(`/maintenance/${id}/status`, payload);
     return response.data;
 };
+
+export const getAdminRequests = async (params?: {
+    status?: string;
+    category?: string;
+    priority?: string;
+}): Promise<ListMaintenanceResponse> => {
+    const response = await axios.get<ListMaintenanceResponse>("/maintenance/admin/all", {
+        params,
+    });
+    return response.data;
+};
+
+

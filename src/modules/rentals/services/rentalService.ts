@@ -293,3 +293,66 @@ export const lookupTenant = async (email: string): Promise<TenantLookupResponse 
     const response = await axios.get(`/rentals/owner/tenants/lookup?email=${encodeURIComponent(email)}`);
     return response.data.data;
 };
+
+export interface AdminRentalItem {
+    id: string;
+    bookingId: string;
+    property?: {
+        _id: string;
+        title: string;
+        propertyType?: string;
+        address?: { street?: string; city?: string; state?: string; zipCode?: string };
+        price?: number;
+        images?: Array<{ url: string }>;
+    } | null;
+    owner?: {
+        _id: string;
+        name: string;
+        email: string;
+        phone?: string;
+    } | null;
+    monthlyRent: number;
+    securityDeposit: number;
+    leaseStart: string;
+    leaseEnd: string;
+    status: string;
+    splitMode: string;
+    occupants: Array<{
+        tenant?: {
+            _id: string;
+            name: string;
+            email: string;
+            phone?: string;
+        } | null;
+        rentAmount: number;
+        securityDepositShare: number;
+        status: string;
+    }>;
+    agreement?: {
+        id: string;
+        status: string;
+        monthlyRent: number;
+        securityDepositShare: number;
+        leaseStart: string;
+        leaseEnd: string;
+        tenantAcceptedAt?: string | null;
+        ownerAcceptedAt?: string | null;
+        paymentDeadline?: string | null;
+    } | null;
+    isGracePeriodActive: boolean;
+    gracePeriodEndsAt: string;
+}
+
+export const getAdminRentals = async (params?: { status?: string; search?: string }): Promise<AdminRentalItem[]> => {
+    const response = await axios.get("/rentals/admin/all", { params });
+    return response.data.data;
+};
+
+export const adminTerminateRental = async (
+    rentalId: string,
+    reason?: string
+): Promise<{ message: string; rental: unknown }> => {
+    const response = await axios.post(`/rentals/admin/${rentalId}/terminate`, { reason });
+    return response.data;
+};
+

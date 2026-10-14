@@ -55,7 +55,7 @@ export const getAdminPropertyById = async (id: string): Promise<AdminProperty> =
     return data;
 };
 
-export const updatePropertyStatus = async (id: string, status: "active" | "inactive") => {
+export const updatePropertyStatus = async (id: string, status: "active" | "inactive" | "archived") => {
     const { data } = await api.patch<{ message: string }>(`/properties/${id}/status`, { status });
     return data;
 };
@@ -64,6 +64,12 @@ export const archiveProperty = async (id: string) => {
     const { data } = await api.delete<{ message: string }>(`/properties/${id}`);
     return data;
 };
+
+export const adminDeleteProperty = async (id: string) => {
+    const { data } = await api.delete<{ message: string }>(`/properties/admin/${id}`);
+    return data;
+};
+
 
 // /properties/mine/all — returns a bare array (no pagination wrapper).
 export const getMyProperties = async (): Promise<Property[]> => {
