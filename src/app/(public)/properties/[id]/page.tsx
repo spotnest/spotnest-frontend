@@ -12,9 +12,7 @@ import {
     propertyTypeLabels,
 } from "@/src/modules/properties/utils/format";
 import type { Property } from "@/src/modules/properties";
-import VisitRequestButton from "@/src/modules/visits/components/VisitRequestButton";
-import { StartChatButton } from "@/src/modules/chat";
-import BookingPaymentCard from "@/src/modules/bookings/components/BookingPaymentCard";
+import PropertySidebarActions from "@/src/modules/properties/components/PropertySidebarActions";
 
 export const revalidate = 300;
 
@@ -101,10 +99,11 @@ export default async function PropertyDetailPage({
         },
     ];
 
-    const ownerId =
-        typeof property.owner === "object" && property.owner !== null
-            ? (property.owner as { _id?: string })._id?.toString() ?? ""
-            : String(property.ownerInfo?.id ?? property.owner ?? "");
+    const ownerObj = typeof property.owner === "object" && property.owner !== null ? (property.owner as { _id?: string; name?: string; email?: string; phone?: string }) : null;
+    const ownerId = ownerObj?._id?.toString() ?? property.ownerInfo?.id ?? String(property.owner ?? "");
+    const ownerName = ownerObj?.name || property.ownerInfo?.name;
+    const ownerEmail = ownerObj?.email;
+    const ownerPhone = ownerObj?.phone;
 
     return (
         <>
@@ -185,40 +184,19 @@ export default async function PropertyDetailPage({
                             </section>
                         </div>
 
-                        <aside className="h-fit rounded-2xl border border-[#e1e3e4] bg-white p-6 shadow-xs">
-                            <h2 className="text-lg font-bold tracking-tight text-[#191c1d]">
-                                Interested in this property?
-                            </h2>
-
-                            <p className="mt-2 text-sm leading-6 text-[#75777e]">
-                                Request a visit or contact the property owner
-                                to learn more.
-                            </p>
-
-                            <BookingPaymentCard
-                                propertyId={property._id}
-                                propertyTitle={property.title}
-                                propertyPrice={property.price}
-                                advanceAmount={property.advanceAmount ?? property.price}
-                                isOccupied={property.isOccupied}
-                                occupiedUntil={property.occupiedUntil}
-                            />
-                            <VisitRequestButton
-                                propertyId={property._id}
-                            />
-
-                            <StartChatButton
-                                propertyId={property._id}
-                                ownerId={ownerId}
-                            />
-
-                            <button
-                                type="button"
-                                className="mt-3 w-full rounded-lg border border-[#191c1d] px-4 py-3 text-sm font-semibold text-[#191c1d] transition hover:bg-[#191c1d] hover:text-white"
-                            >
-                                Contact Owner
-                            </button>
-                        </aside>
+                        <PropertySidebarActions
+                            propertyId={property._id}
+                            propertyTitle={property.title}
+                            propertyPrice={property.price}
+                            advanceAmount={property.advanceAmount ?? property.price}
+                            isOccupied={property.isOccupied}
+                            occupiedUntil={property.occupiedUntil}
+                            ownerId={ownerId}
+                            ownerName={ownerName}
+                            ownerEmail={ownerEmail}
+                            ownerPhone={ownerPhone}
+                            propertyStatus={property.status}
+                        />
                     </div>
                 </div>
             </main>

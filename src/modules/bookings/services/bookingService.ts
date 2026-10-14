@@ -39,3 +39,11 @@ export const respondToTenantInquiry = async (input: {
     });
     return response.data.data;
 };
+
+export const getAdminBookings = async (status?: string): Promise<Booking[]> => {
+    const response = await api.get<ApiResponse<Booking[]>>("/bookings/admin/all", {
+        params: status ? { status } : undefined,
+    });
+    return response.data.data;
+};
+

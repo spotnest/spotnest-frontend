@@ -308,6 +308,7 @@ export default function OwnerApprovalRequestsPage() {
                                         <AdminVisitCard
                                             key={visit._id}
                                             visit={visit}
+                                            onRefresh={() => visitsQuery.refetch()}
                                         />
                                     ))}
                                 </div>
