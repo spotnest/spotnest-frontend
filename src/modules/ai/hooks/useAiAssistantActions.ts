@@ -1,15 +1,26 @@
 "use client";
 
-import {
-    createContext,
-    useCallback,
-    useContext,
-    useMemo,
-    useRef,
-    useState,
-    type ReactNode,
-} from "react";
+import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+
+import { useAppDispatch, useAppStore } from "@/src/store/hook";
+import {
+    broadenStepApplied,
+    errorCleared,
+    errorOccurred,
+    fallbackStepsGenerated,
+    lastUserMessageStored,
+    lastUserTurnDropped,
+    matchesResolved,
+    messageAppended,
+    searchRequirementsApplied,
+    searchStarted,
+    searchStopped,
+    thinkingStarted,
+    thinkingStopped,
+    turnEnded,
+    turnStarted,
+} from "@/src/store/slices/aiAssistantSlice";
 
 import { extractCriteria, generateAiReply, searchProperties } from "../services/aiService";
 import {
@@ -20,92 +31,29 @@ import {
     mergeCriteria,
 } from "../utils/criteria";
 import { rankProperties, summariseMatchesForPrompt } from "../utils/matching";
-import { ASSISTANT_NAME, buildPrompt } from "../constants/assistant";
-import type {
-    ChatMessage,
-    FallbackStep,
-    MatchedProperty,
-    PropertySearchCriteria,
-} from "../types/ai";
+import { buildPrompt } from "../constants/assistant";
+import type { ChatMessage, MatchedProperty, PropertySearchCriteria } from "../types/ai";
+import { aiSearchQueryKey } from "./useAiAssistant";
 
-let messageSeq = 0;
-const nextId = (role: string) => `${role}-${(messageSeq += 1)}`;
-
-interface AiAssistantValue {
-    isOpen: boolean;
-    open: () => void;
-    close: () => void;
-
-    messages: ChatMessage[];
-    /** The active criteria applied to the currently displayed results (original or relaxed fallback). */
-    criteria: PropertySearchCriteria;
-    /** The user's original requirements preserved across broadening passes. */
-    originalCriteria: PropertySearchCriteria;
-    criteriaSummary: string;
-
-    matches: MatchedProperty[];
-    /** True once a search has run, so the results area knows to render. */
-    hasSearched: boolean;
-    /** True when current results are from a broadened/relaxed fallback search. */
-    isBroadened: boolean;
-    /** True if there are more fallback steps available to broaden. */
-    canBroaden: boolean;
-    attemptedSteps: string[];
-
-    isThinking: boolean;
-    isSearching: boolean;
-    error: string | null;
-    dismissError: () => void;
-
-    sendMessage: (text: string) => Promise<void>;
-    retryLastMessage: () => Promise<void>;
-    broadenSearch: () => Promise<void>;
-    clearResults: () => void;
-}
-
-const AiAssistantContext = createContext<AiAssistantValue | null>(null);
-
-export const useAiAssistantContext = (): AiAssistantValue => {
-    const ctx = useContext(AiAssistantContext);
-    if (!ctx) {
-        throw new Error("useAiAssistantContext must be used inside <AiAssistantProvider>");
-    }
-    return ctx;
-};
-
-/** Query key for the AI-driven search, kept alongside the property keys. */
-export const aiSearchQueryKey = (criteria: PropertySearchCriteria) =>
-    ["properties", "ai-search", criteria] as const;
-
-export function AiAssistantProvider({ children }: { children: ReactNode }) {
+/**
+ * The AI assistant's async orchestration: requirement collection, AI
+ * processing, property matching and progressive broadening.
+ *
+ * All shared state lives in the `aiAssistant` Redux slice; this hook only
+ * dispatches into it and reads the latest state through the store, so every
+ * component that calls it drives the same single source of truth.
+ */
+export const useAiAssistantActions = () => {
     const queryClient = useQueryClient();
+    const dispatch = useAppDispatch();
+    const store = useAppStore();
 
-    const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
-
-    // Separate original requirements from active fallback criteria so broadening
-    // never overwrites user preferences.
-    const [originalCriteria, setOriginalCriteria] = useState<PropertySearchCriteria>({});
-    const [activeCriteria, setActiveCriteria] = useState<PropertySearchCriteria>({});
-
-    const [fallbackSteps, setFallbackSteps] = useState<FallbackStep[]>([]);
-    const [currentStepIndex, setCurrentStepIndex] = useState<number>(-1);
-    const [attemptedSteps, setAttemptedSteps] = useState<string[]>([]);
-
-    const [matches, setMatches] = useState<MatchedProperty[]>([]);
-    const [hasSearched, setHasSearched] = useState(false);
-    const [isThinking, setIsThinking] = useState(false);
-    const [isSearching, setIsSearching] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    // Guards against overlapping turns (double-click, Enter spam) so one user
-    // message never fires two extraction + search passes.
-    const inFlight = useRef(false);
-    const lastUserMessage = useRef<string | null>(null);
-
-    const appendMessage = useCallback((role: ChatMessage["role"], content: string) => {
-        setMessages((current) => [...current, { id: nextId(role), role, content }]);
-    }, []);
+    const appendMessage = useCallback(
+        (role: ChatMessage["role"], content: string) => {
+            dispatch(messageAppended({ role, content }));
+        },
+        [dispatch]
+    );
 
     /**
      * Runs the real search for a set of criteria and publishes the ranked
@@ -114,7 +62,7 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
      */
     const runSearch = useCallback(
         async (next: PropertySearchCriteria): Promise<MatchedProperty[]> => {
-            setIsSearching(true);
+            dispatch(searchStarted());
             try {
                 const records = await queryClient.fetchQuery({
                     queryKey: aiSearchQueryKey(next),
@@ -123,14 +71,13 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
                 });
 
                 const ranked = rankProperties(records, next);
-                setMatches(ranked);
-                setHasSearched(true);
+                dispatch(matchesResolved(ranked));
                 return ranked;
             } finally {
-                setIsSearching(false);
+                dispatch(searchStopped());
             }
         },
-        [queryClient]
+        [dispatch, queryClient]
     );
 
     /**
@@ -146,16 +93,19 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
      * Stops once all steps are exhausted. Never increases the budget indefinitely.
      */
     const broadenSearch = useCallback(async () => {
-        if (inFlight.current) return;
+        const state = store.getState().aiAssistant;
+        if (state.isTurnInFlight) return;
+
+        const { originalCriteria } = state;
 
         // Ensure fallback steps exist based on the user's original criteria
-        let steps = fallbackSteps;
+        let steps = state.fallbackSteps;
         if (steps.length === 0 && hasAnyCriteria(originalCriteria)) {
             steps = generateFallbackSteps(originalCriteria);
-            setFallbackSteps(steps);
+            dispatch(fallbackStepsGenerated(steps));
         }
 
-        const nextStepIndex = currentStepIndex + 1;
+        const nextStepIndex = state.currentStepIndex + 1;
 
         if (steps.length === 0 || nextStepIndex >= steps.length) {
             appendMessage(
@@ -166,14 +116,18 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
         }
 
         const step = steps[nextStepIndex];
-        inFlight.current = true;
-        setError(null);
-        setIsSearching(true);
+        dispatch(turnStarted());
+        dispatch(errorCleared());
+        dispatch(searchStarted());
 
         try {
-            setCurrentStepIndex(nextStepIndex);
-            setAttemptedSteps((prev) => [...prev, step.id]);
-            setActiveCriteria(step.criteria);
+            dispatch(
+                broadenStepApplied({
+                    stepIndex: nextStepIndex,
+                    stepId: step.id,
+                    criteria: step.criteria,
+                })
+            );
 
             const ranked = await runSearch(step.criteria);
             const remainingSteps = steps.length - 1 - nextStepIndex;
@@ -197,17 +151,22 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
                 );
             }
         } catch {
-            setError("Could not widen the search. Please try again.");
+            dispatch(errorOccurred("Could not widen the search. Please try again."));
         } finally {
-            setIsSearching(false);
-            inFlight.current = false;
+            dispatch(searchStopped());
+            dispatch(turnEnded());
         }
-    }, [appendMessage, currentStepIndex, fallbackSteps, originalCriteria, runSearch]);
+    }, [appendMessage, dispatch, runSearch, store]);
 
     const handleTurn = useCallback(
         async (text: string) => {
             const trimmed = text.trim();
-            if (!trimmed || inFlight.current) return;
+            if (!trimmed || store.getState().aiAssistant.isTurnInFlight) return;
+
+            // Snapshot of the transcript before this turn's bubbles are added:
+            // buildPrompt takes the prior history plus the new message.
+            const history = store.getState().aiAssistant.messages;
+            const { originalCriteria, matches } = store.getState().aiAssistant;
 
             const lower = trimmed.toLowerCase();
 
@@ -249,15 +208,15 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
                         city: targetCity,
                     };
 
-                    setOriginalCriteria(nextCriteria);
-                    setActiveCriteria(nextCriteria);
-                    const steps = generateFallbackSteps(nextCriteria);
-                    setFallbackSteps(steps);
-                    setCurrentStepIndex(-1);
-                    setAttemptedSteps([]);
+                    dispatch(
+                        searchRequirementsApplied({
+                            criteria: nextCriteria,
+                            fallbackSteps: generateFallbackSteps(nextCriteria),
+                        })
+                    );
 
-                    inFlight.current = true;
-                    setIsSearching(true);
+                    dispatch(turnStarted());
+                    dispatch(searchStarted());
                     try {
                         const ranked = await runSearch(nextCriteria);
                         const desc = describeCriteria(nextCriteria);
@@ -275,10 +234,12 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
                             );
                         }
                     } catch {
-                        setError("Could not search the nearby location. Please try again.");
+                        dispatch(
+                            errorOccurred("Could not search the nearby location. Please try again.")
+                        );
                     } finally {
-                        setIsSearching(false);
-                        inFlight.current = false;
+                        dispatch(searchStopped());
+                        dispatch(turnEnded());
                     }
                     return;
                 } else {
@@ -303,41 +264,43 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
                     lower.includes("recommend"));
 
             if (isComparison) {
-                inFlight.current = true;
-                lastUserMessage.current = trimmed;
-                setError(null);
+                dispatch(turnStarted());
+                dispatch(lastUserMessageStored(trimmed));
+                dispatch(errorCleared());
                 appendMessage("user", trimmed);
-                setIsThinking(true);
+                dispatch(thinkingStarted());
                 try {
                     const context = `\nThe user is currently looking at these real SpotNest listings:\n${summariseMatchesForPrompt(
                         matches
                     )}\nAnswer using only these details. If something is not listed, say it is not specified.`;
                     const reply = await generateAiReply(
-                        `${buildPrompt(messages, trimmed)}${context}`
+                        `${buildPrompt(history, trimmed)}${context}`
                     );
                     appendMessage("assistant", reply);
                 } catch (err: unknown) {
                     const fromResponse = (err as { response?: { data?: { message?: string } } })
                         ?.response?.data?.message;
                     const fallback = err instanceof Error ? err.message : undefined;
-                    setError(
-                        fromResponse ||
-                            fallback ||
-                            "Could not reach the assistant. Check your connection and try again."
+                    dispatch(
+                        errorOccurred(
+                            fromResponse ||
+                                fallback ||
+                                "Could not reach the assistant. Check your connection and try again."
+                        )
                     );
                 } finally {
-                    setIsThinking(false);
-                    inFlight.current = false;
+                    dispatch(thinkingStopped());
+                    dispatch(turnEnded());
                 }
                 return;
             }
 
             // 4. Standard conversational turn: extract criteria against original requirements
-            inFlight.current = true;
-            lastUserMessage.current = trimmed;
-            setError(null);
+            dispatch(turnStarted());
+            dispatch(lastUserMessageStored(trimmed));
+            dispatch(errorCleared());
             appendMessage("user", trimmed);
-            setIsThinking(true);
+            dispatch(thinkingStarted());
 
             try {
                 const extraction = await extractCriteria(trimmed, originalCriteria);
@@ -346,8 +309,8 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
                     // If the user's message had search intent but yielded no new fields (e.g. vague broaden)
                     const extractedHasFields = hasAnyCriteria(extraction.criteria);
                     if (!extractedHasFields && !extraction.reset && hasAnyCriteria(originalCriteria)) {
-                        setIsThinking(false);
-                        inFlight.current = false;
+                        dispatch(thinkingStopped());
+                        dispatch(turnEnded());
                         await broadenSearch();
                         return;
                     }
@@ -364,12 +327,12 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
                     }
 
                     // Update original requirements and reset active fallback progression
-                    setOriginalCriteria(nextCriteria);
-                    setActiveCriteria(nextCriteria);
-                    const steps = generateFallbackSteps(nextCriteria);
-                    setFallbackSteps(steps);
-                    setCurrentStepIndex(-1);
-                    setAttemptedSteps([]);
+                    dispatch(
+                        searchRequirementsApplied({
+                            criteria: nextCriteria,
+                            fallbackSteps: generateFallbackSteps(nextCriteria),
+                        })
+                    );
 
                     const ranked = await runSearch(nextCriteria);
                     const description = describeCriteria(nextCriteria);
@@ -399,96 +362,39 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
                     : "";
 
                 const reply = await generateAiReply(
-                    `${buildPrompt(messages, trimmed)}${context}`
+                    `${buildPrompt(history, trimmed)}${context}`
                 );
                 appendMessage("assistant", reply);
             } catch (err: unknown) {
                 const fromResponse = (err as { response?: { data?: { message?: string } } })
                     ?.response?.data?.message;
                 const fallback = err instanceof Error ? err.message : undefined;
-                setError(
-                    fromResponse ||
-                        fallback ||
-                        "Could not reach the assistant. Check your connection and try again."
+                dispatch(
+                    errorOccurred(
+                        fromResponse ||
+                            fallback ||
+                            "Could not reach the assistant. Check your connection and try again."
+                    )
                 );
             } finally {
-                setIsThinking(false);
-                inFlight.current = false;
+                dispatch(thinkingStopped());
+                dispatch(turnEnded());
             }
         },
-        [appendMessage, broadenSearch, matches, messages, originalCriteria, runSearch]
+        [appendMessage, broadenSearch, dispatch, runSearch, store]
     );
 
     const retryLastMessage = useCallback(async () => {
-        const last = lastUserMessage.current;
+        const last = store.getState().aiAssistant.lastUserMessage;
         if (!last) return;
         // Drop the failed turn's user bubble so the retry doesn't duplicate it.
-        setMessages((current) => {
-            const index = [...current].reverse().findIndex((m) => m.role === "user");
-            if (index === -1) return current;
-            const absolute = current.length - 1 - index;
-            return current.slice(0, absolute);
-        });
+        dispatch(lastUserTurnDropped());
         await handleTurn(last);
-    }, [handleTurn]);
+    }, [dispatch, handleTurn, store]);
 
-    const clearResults = useCallback(() => {
-        setOriginalCriteria({});
-        setActiveCriteria({});
-        setFallbackSteps([]);
-        setCurrentStepIndex(-1);
-        setAttemptedSteps([]);
-        setMatches([]);
-        setHasSearched(false);
-    }, []);
-
-    const isBroadened = currentStepIndex >= 0;
-    const canBroaden = hasSearched && currentStepIndex + 1 < fallbackSteps.length;
-
-    const value = useMemo<AiAssistantValue>(
-        () => ({
-            isOpen,
-            open: () => setIsOpen(true),
-            close: () => setIsOpen(false),
-            messages,
-            criteria: activeCriteria,
-            originalCriteria,
-            criteriaSummary: describeCriteria(activeCriteria),
-            matches,
-            hasSearched,
-            isBroadened,
-            canBroaden,
-            attemptedSteps,
-            isThinking,
-            isSearching,
-            error,
-            dismissError: () => setError(null),
-            sendMessage: handleTurn,
-            retryLastMessage,
-            broadenSearch,
-            clearResults,
-        }),
-        [
-            activeCriteria,
-            attemptedSteps,
-            broadenSearch,
-            canBroaden,
-            clearResults,
-            error,
-            handleTurn,
-            hasSearched,
-            isBroadened,
-            isOpen,
-            isSearching,
-            isThinking,
-            matches,
-            messages,
-            originalCriteria,
-            retryLastMessage,
-        ]
-    );
-
-    return <AiAssistantContext.Provider value={value}>{children}</AiAssistantContext.Provider>;
-}
-
-export { ASSISTANT_NAME };
+    return {
+        sendMessage: handleTurn,
+        retryLastMessage,
+        broadenSearch,
+    };
+};
