@@ -7,6 +7,9 @@ import PropertiesGrid from "@/src/modules/properties/components/PropertiesGrid";
 import PropertyFilters from "@/src/modules/properties/components/PropertyFilters";
 import PropertyListHeader from "@/src/modules/properties/components/PropertyListHeader";
 import { getProperties } from "@/src/modules/properties";
+import AIPropertyAssistant from "@/src/modules/ai/components/AIPropertyAssistant";
+import AiResultsSection from "@/src/modules/ai/components/AiResultsSection";
+import { AiAssistantProvider } from "@/src/modules/ai/context/AiAssistantProvider";
 import { parsePropertySearchParams, toApiParams } from "@/src/modules/properties/utils/filters";
 
 export const revalidate = 300;
@@ -29,15 +32,17 @@ export default async function PropertiesPage({
   // ?near=1. The default view below is 100% server-rendered.
   if (near) {
     return (
-      <>
+      <AiAssistantProvider>
         <Navbar />
         <main className="bg-[#f8f9fa] px-4 pb-20 pt-10 sm:px-6 lg:px-10">
           <div className="mx-auto max-w-[1280px]">
+            <AiResultsSection />
             <NearMeSection />
           </div>
         </main>
         <Footer />
-      </>
+        <AIPropertyAssistant />
+      </AiAssistantProvider>
     );
   }
 
@@ -45,7 +50,7 @@ export default async function PropertiesPage({
   const data = await getProperties(toApiParams(params));
 
   return (
-    <>
+    <AiAssistantProvider>
       <Navbar />
       <main className="bg-[#f8f9fa] px-4 pb-20 pt-10 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-[1280px]">
@@ -64,6 +69,7 @@ export default async function PropertiesPage({
           </div>
 
           <div className="mt-10">
+            <AiResultsSection />
             <PropertiesGrid properties={data.items} />
             {data.pagination.pages > 1 && (
               <PaginationLinks
@@ -76,6 +82,7 @@ export default async function PropertiesPage({
         </div>
       </main>
       <Footer />
-    </>
+      <AIPropertyAssistant />
+    </AiAssistantProvider>
   );
 }
