@@ -1,21 +1,14 @@
-export type MaintenanceStatus =
-    | "PENDING"
-    | "ACCEPTED"
-    | "SCHEDULED"
-    | "IN_PROGRESS"
-    | "COMPLETED"
-    | "REJECTED"
-    | "CANCELLED";
+import type {
+    MAINTENANCE_CATEGORIES,
+    MAINTENANCE_PRIORITIES,
+    MAINTENANCE_STATUSES,
+} from "../constants/maintenance";
 
-export type MaintenanceCategory =
-    | "Plumbing"
-    | "Electrical"
-    | "Appliance"
-    | "Structural"
-    | "Cleaning"
-    | "Other";
-
-export type MaintenancePriority = "Low" | "Normal" | "High" | "Emergency";
+// Derived from the enum arrays so the values, the option lists and these types
+// cannot drift apart.
+export type MaintenanceStatus = (typeof MAINTENANCE_STATUSES)[number];
+export type MaintenanceCategory = (typeof MAINTENANCE_CATEGORIES)[number];
+export type MaintenancePriority = (typeof MAINTENANCE_PRIORITIES)[number];
 
 export interface MaintenanceImage {
     publicId?: string;

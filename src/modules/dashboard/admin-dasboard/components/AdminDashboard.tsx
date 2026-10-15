@@ -65,24 +65,74 @@ export default function AdminDashboard() {
 
     const { overview, recentActivities, recentUsers, recentProperties } = data;
     const stats = [
-        { label: "Total users", value: overview.totalUsers.toLocaleString(), change: `${overview.totalOwners.toLocaleString()} owners`, note: "registered accounts", icon: "users" as IconName, tone: "teal" },
-        { label: "Total properties", value: overview.totalProperties.toLocaleString(), change: `${overview.activeListings.toLocaleString()} live`, note: "across all owners", icon: "home" as IconName, tone: "ink" },
-        { label: "Active listings", value: overview.activeListings.toLocaleString(), change: `${(overview.totalProperties - overview.activeListings).toLocaleString()} not live`, note: "pending, inactive or archived", icon: "chart" as IconName, tone: "teal" },
-        { label: "Pending requests", value: overview.pendingRequests.toLocaleString(), change: "Rental requests", note: "awaiting owner decision", icon: "inbox" as IconName, tone: "warm" },
-        { label: "Active rentals", value: overview.activeRentals.toLocaleString(), change: overview.overduePayments > 0 ? `${overview.overduePayments.toLocaleString()} overdue` : "No overdue rent", note: "payments", icon: "home" as IconName, tone: overview.overduePayments > 0 ? "warm" : "teal" },
-        { label: "Payments received", value: `₹${overview.paymentsReceivedTotal.toLocaleString("en-IN")}`, change: `${overview.paymentsReceivedCount.toLocaleString()} payments`, note: "completed via Razorpay", icon: "chart" as IconName, tone: "ink" },
+        {
+            label: "Platform users",
+            value: overview.totalUsers.toLocaleString(),
+            change: `${overview.totalTenants.toLocaleString()} tenants · ${overview.totalOwners.toLocaleString()} owners`,
+            note: overview.blockedUsers > 0 ? `(${overview.blockedUsers} blocked)` : "all accounts",
+            icon: "users" as IconName,
+            tone: "teal",
+        },
+        {
+            label: "Total properties",
+            value: overview.totalProperties.toLocaleString(),
+            change: `${overview.activeListings.toLocaleString()} live`,
+            note: `${overview.inactiveListings.toLocaleString()} inactive, ${overview.archivedListings.toLocaleString()} archived`,
+            icon: "home" as IconName,
+            tone: "ink",
+        },
+        {
+            label: "Active rentals",
+            value: overview.activeRentals.toLocaleString(),
+            change:
+                overview.gracePeriodRentals > 0
+                    ? `${overview.gracePeriodRentals} in 3-day grace period`
+                    : "All active leases",
+            note: overview.overduePayments > 0 ? `(${overview.overduePayments} overdue rent)` : "payments current",
+            icon: "clock" as IconName,
+            tone: overview.gracePeriodRentals > 0 || overview.overduePayments > 0 ? "warm" : "teal",
+        },
+        {
+            label: "Revenue collected",
+            value: `₹${overview.paymentsReceivedTotal.toLocaleString("en-IN")}`,
+            change: `${overview.paymentsReceivedCount.toLocaleString()} transactions`,
+            note: "via Razorpay",
+            icon: "chart" as IconName,
+            tone: "ink",
+        },
+        {
+            label: "Late fees fine total",
+            value: `₹${(overview.lateFeesTotal ?? 0).toLocaleString("en-IN")}`,
+            change: "₹50/day overdue penalty",
+            note: "accrued after due date",
+            icon: "alert" as IconName,
+            tone: (overview.lateFeesTotal ?? 0) > 0 ? "warm" : "teal",
+        },
+        {
+            label: "Maintenance tickets",
+            value: (overview.totalMaintenance ?? 0).toLocaleString(),
+            change: `${(overview.pendingMaintenance ?? 0).toLocaleString()} pending action`,
+            note: "across platform",
+            icon: "alert" as IconName,
+            tone: (overview.pendingMaintenance ?? 0) > 0 ? "warm" : "teal",
+        },
     ];
+
     const actions = [
-        { label: "Manage users", description: "View all accounts", href: "/users", icon: "users" as IconName },
-        { label: "Review requests", description: `${overview.pendingRequests} requests`, href: "/bookings", icon: "inbox" as IconName },
-        { label: "View reports", description: "Track platform health", href: "/admin/dashboard#reports", icon: "chart" as IconName },
+        { label: "Manage users", description: `${overview.totalUsers} total accounts`, href: "/users", icon: "users" as IconName },
+        { label: "Properties", description: `${overview.activeListings} live listings`, href: "/admin/properties", icon: "home" as IconName },
+        { label: "Rentals & Leases", description: `${overview.activeRentals} tenancies`, href: "/admin/rentals", icon: "clock" as IconName },
+        { label: "Payments", description: `₹${overview.paymentsReceivedTotal.toLocaleString("en-IN")} collected`, href: "/admin/payments", icon: "chart" as IconName },
+        { label: "Maintenance", description: `${overview.pendingMaintenance ?? 0} pending tickets`, href: "/admin/maintenance", icon: "alert" as IconName },
+        { label: "Requests & Approvals", description: `${overview.pendingOwnerCount} owner requests`, href: "/requests/owner-approvals", icon: "inbox" as IconName },
     ];
+
     const pendingActions: Array<[string, string, IconName, string]> = [
         ...(overview.pendingOwnerCount > 0 ? [["Owner approvals", `${overview.pendingOwnerCount} owners waiting for approval`, "users" as IconName, "/requests/owner-approvals"] as [string, string, IconName, string]] : []),
-        ["Properties waiting for approval", `${overview.totalProperties - overview.activeListings} properties`, "home" as IconName, "/admin/properties"],
-        ["Requests to review", `${overview.pendingRequests} requests`, "inbox" as IconName, "/bookings"],
-        ["User verification", `${overview.pendingUserVerification} accounts`, "users" as IconName, "/users"],
-        ["Reports requiring review", "No report data", "alert" as IconName, "/admin/dashboard#reports"],
+        ["Properties review", `${overview.totalProperties - overview.activeListings} non-live properties`, "home" as IconName, "/admin/properties"],
+        ["Rental requests to review", `${overview.pendingRequests} requests`, "inbox" as IconName, "/bookings"],
+        ["User management", `${overview.pendingUserVerification} pending verifications`, "users" as IconName, "/users"],
+        ["Platform maintenance", `${overview.pendingMaintenance ?? 0} tickets awaiting resolution`, "alert" as IconName, "/admin/maintenance"],
     ];
 
     return (
@@ -90,8 +140,8 @@ export default function AdminDashboard() {
             <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
                 <div>
                     <p className="text-sm font-semibold text-[#00696b]">Admin overview</p>
-                    <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#191c1d]">SpotNest platform overview.</h1>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-[#44474d] sm:text-base">Here&apos;s what&apos;s happening across SpotNest today.</p>
+                    <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#191c1d]">SpotNest platform control & monitoring.</h1>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-[#44474d] sm:text-base">Real-time platform activity, financial health, leases, and system management.</p>
                 </div>
             </section>
 
@@ -109,11 +159,11 @@ export default function AdminDashboard() {
 
             <div className="mt-10 grid gap-8 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.8fr)]">
                 <section>
-                    <SectionHeading eyebrow="Your day at a glance" title="Recent activity" link="#activity" />
+                    <SectionHeading eyebrow="Real-time Platform Feed" title="Recent activity" link="#activity" />
                     <div id="activity" className="overflow-hidden rounded-2xl border border-[#e1e3e4] bg-white">
                         {recentActivities.length === 0 ? <p className="px-5 py-6 text-sm text-[#75777e] sm:px-6">No recent activity.</p> : recentActivities.map((item, index) => (
                             <div key={item.id} className={`flex items-center gap-4 px-5 py-4 sm:px-6 ${index < recentActivities.length - 1 ? "border-b border-[#eef0f1]" : ""}`}>
-                                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#d9f4f3] text-[#00696b]"><Icon name={item.icon} className="h-[17px] w-[17px]" /></span>
+                                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${item.tone === "warm" ? "bg-[#fff0dc] text-[#95611d]" : item.tone === "ink" ? "bg-[#f1f5f9] text-[#1e293b]" : "bg-[#d9f4f3] text-[#00696b]"}`}><Icon name={item.icon as IconName} className="h-[17px] w-[17px]" /></span>
                                 <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-[#191c1d]">{item.title}</p><p className="mt-1 truncate text-xs text-[#75777e]">{item.detail}</p></div>
                                 <time className="shrink-0 text-xs text-[#75777e]">{formatRelativeTime(item.createdAt)}</time>
                             </div>
@@ -131,7 +181,8 @@ export default function AdminDashboard() {
                 </section>
             </div>
 
-            <section className="mt-10"><SectionHeading eyebrow="Quick access" title="Common actions" /><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{actions.map((action) => <Link href={action.href} key={action.label} className="group flex items-center gap-3 rounded-2xl border border-[#e1e3e4] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[#9edbda] hover:shadow-[0_8px_24px_rgba(0,105,107,0.08)]"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#d9f4f3] text-[#00696b]"><Icon name={action.icon} className="h-[17px] w-[17px]" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-[#191c1d]">{action.label}</span><span className="mt-1 block text-xs text-[#75777e]">{action.description}</span></span><Icon name="arrow" className="h-4 w-4 shrink-0 text-[#75777e] transition group-hover:translate-x-0.5" /></Link>)}</div></section>
+            <section className="mt-10"><SectionHeading eyebrow="Quick access" title="Control Center" /><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{actions.map((action) => <Link href={action.href} key={action.label} className="group flex items-center gap-3 rounded-2xl border border-[#e1e3e4] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[#9edbda] hover:shadow-[0_8px_24px_rgba(0,105,107,0.08)]"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#d9f4f3] text-[#00696b]"><Icon name={action.icon} className="h-[17px] w-[17px]" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-[#191c1d]">{action.label}</span><span className="mt-1 block text-xs text-[#75777e]">{action.description}</span></span><Icon name="arrow" className="h-4 w-4 shrink-0 text-[#75777e] transition group-hover:translate-x-0.5" /></Link>)}</div></section>
+
 
             <div className="mt-10 grid gap-8 xl:grid-cols-[minmax(0,1.3fr)_minmax(380px,0.9fr)]">
                 <section className="min-w-0"><SectionHeading eyebrow="Listing pulse" title="Recent properties" link="/properties" /><div className="overflow-x-auto rounded-2xl border border-[#e1e3e4] bg-white"><table className="w-full min-w-[680px] border-collapse text-left"><thead><tr className="border-b border-[#eef0f1] text-[11px] font-bold uppercase tracking-[0.12em] text-[#75777e]"><th className="px-5 py-4 font-bold">Property</th><th className="px-3 py-4 font-bold">Location</th><th className="px-3 py-4 font-bold">Status</th><th className="px-5 py-4 text-right font-bold">Added</th></tr></thead><tbody>{recentProperties.length === 0 ? <tr><td colSpan={4} className="px-5 py-6 text-sm text-[#75777e]">No property data available yet.</td></tr> : recentProperties.map((property) => <tr key={property.name} className="border-b border-[#eef0f1] last:border-0"><td className="px-5 py-4"><p className="text-sm font-semibold text-[#191c1d]">{property.name}</p><p className="mt-1 text-xs text-[#75777e]">{property.owner}</p></td><td className="px-3 py-4 text-sm text-[#44474d]">{property.location}</td><td className="px-3 py-4"><Status>{property.status}</Status></td><td className="px-5 py-4 text-right text-xs text-[#75777e]">{property.date}</td></tr>)}</tbody></table></div></section>

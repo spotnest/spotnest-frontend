@@ -21,3 +21,63 @@ export const verifyPayment = async (
     const response = await api.post<ApiResponse<PaymentVerificationResult>>("/payments/verify", payload);
     return response.data.data;
 };
+
+export interface AdminPaymentItem {
+    _id: string;
+    bookingId?: string;
+    type: "ADVANCE" | "MONTHLY_RENT";
+    amount: number;
+    currency: string;
+    status: "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "OVERDUE";
+    billingMonth?: string;
+    dueDate?: string;
+    paidAt?: string;
+    lateFeeApplied?: number;
+    razorpayOrderId?: string;
+    razorpayPaymentId?: string;
+    created_at: string;
+    tenant?: {
+        _id: string;
+        name: string;
+        email: string;
+        phone?: string;
+    } | null;
+    owner?: {
+        _id: string;
+        name: string;
+        email: string;
+        phone?: string;
+    } | null;
+    property?: {
+        _id: string;
+        title: string;
+        address?: { street?: string; city?: string; state?: string };
+    } | null;
+}
+
+export interface AdminPaymentsSummary {
+    totalPaid: number;
+    totalLateFees: number;
+    totalAdvancePaid: number;
+    totalRentPaid: number;
+    paidCount: number;
+    pendingCount: number;
+    overdueCount: number;
+}
+
+export interface AdminPaymentsResponse {
+    summary: AdminPaymentsSummary;
+    payments: AdminPaymentItem[];
+}
+
+export const getAdminPayments = async (params?: {
+    status?: string;
+    type?: string;
+    search?: string;
+}): Promise<AdminPaymentsResponse> => {
+    const response = await api.get<{ success: boolean; data: AdminPaymentsResponse }>("/payments/admin/all", {
+        params,
+    });
+    return response.data.data;
+};
+
