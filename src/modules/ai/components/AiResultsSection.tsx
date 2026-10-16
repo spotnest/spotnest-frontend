@@ -4,8 +4,17 @@ import { Loader2, Sparkles, X } from "lucide-react";
 
 import PropertyCard from "@/src/modules/properties/components/PropertyCard";
 import type { PropertySummary } from "@/src/modules/properties/types";
-import { useAiAssistantContext } from "../context/AiAssistantProvider";
+import { useAppDispatch, useAppSelector } from "@/src/store/hook";
+import {
+    assistantOpened,
+    resultsCleared,
+    selectAiCanBroaden,
+    selectAiCriteriaSummary,
+    selectAiIsBroadened,
+} from "@/src/store/slices/aiAssistantSlice";
+import { useAiAssistantActions } from "../hooks/useAiAssistantActions";
 import { ASSISTANT_NAME } from "../constants/assistant";
+import { useEffect, useRef } from "react";
 
 /**
  * AI-matched results, rendered in the listing area above the normal grid.
@@ -16,22 +25,53 @@ import { ASSISTANT_NAME } from "../constants/assistant";
  * around the card rather than inside it, leaving PropertyCard untouched.
  */
 export default function AiResultsSection() {
-    const {
-        hasSearched,
-        matches,
-        isSearching,
-        criteriaSummary,
-        broadenSearch,
-        clearResults,
-        open,
-        isBroadened,
-        canBroaden,
-    } = useAiAssistantContext();
+    const dispatch = useAppDispatch();
+
+    const hasSearched = useAppSelector((state) => state.aiAssistant.hasSearched);
+    const matches = useAppSelector((state) => state.aiAssistant.matches);
+    const isSearching = useAppSelector((state) => state.aiAssistant.isSearching);
+    const criteriaSummary = useAppSelector(selectAiCriteriaSummary);
+    const isBroadened = useAppSelector(selectAiIsBroadened);
+    const canBroaden = useAppSelector(selectAiCanBroaden);
+
+    const { broadenSearch } = useAiAssistantActions();
+
+    const clearResults = () => dispatch(resultsCleared());
+    const open = () => dispatch(assistantOpened());
+
+    const sectionRef = useRef<HTMLElement | null>(null);
+    const searchStartedRef = useRef(false);
+
+    useEffect(() => {
+        // Track when a new property search starts.
+        if (isSearching) {
+            searchStartedRef.current = true;
+            return;
+        }
+
+        // Do not scroll for ordinary chat or comparison messages.
+        if (!searchStartedRef.current) return;
+
+        searchStartedRef.current = false;
+
+        // Scroll only when real matching properties are available.
+        if (matches.length === 0) return;
+
+        const frameId = window.requestAnimationFrame(() => {
+            sectionRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        });
+
+        return () => window.cancelAnimationFrame(frameId);
+    }, [isSearching, matches.length]);
 
     if (!hasSearched && !isSearching) return null;
 
     return (
         <section
+            ref={sectionRef}
             id="ai-results"
             aria-labelledby="ai-results-heading"
             className="mb-10 scroll-mt-24 rounded-3xl border border-[#00696b]/25 bg-gradient-to-b from-[#f2fbfa] to-white p-5 shadow-[0_10px_28px_rgba(0,105,107,0.08)] sm:p-6"
@@ -49,8 +89,8 @@ export default function AiResultsSection() {
                         {isSearching
                             ? "Searching properties…"
                             : matches.length > 0
-                              ? `${matches.length} matching ${matches.length === 1 ? "property" : "properties"}`
-                              : "No matching properties found"}
+                                ? `${matches.length} matching ${matches.length === 1 ? "property" : "properties"}`
+                                : "No matching properties found"}
                     </h2>
                     {criteriaSummary && (
                         <p className="mt-1 text-sm text-[#44474d]">{criteriaSummary}</p>

@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AlertTriangle, Loader2, RotateCcw, Send, Sparkles, X } from "lucide-react";
 
-import { useAiAssistantContext } from "../context/AiAssistantProvider";
+import { useAppDispatch, useAppSelector } from "@/src/store/hook";
+import {
+    assistantClosed,
+    assistantOpened,
+    errorCleared,
+    selectAiCriteriaSummary,
+} from "@/src/store/slices/aiAssistantSlice";
+import { useAiAssistantActions } from "../hooks/useAiAssistantActions";
 import { ASSISTANT_NAME, SUGGESTED_PROMPTS, WELCOME_MESSAGE } from "../constants/assistant";
 import type { ChatMessage } from "../types/ai";
 
@@ -26,11 +33,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             {!isUser && <AssistantAvatar className="mt-0.5 h-7 w-7" />}
 
             <div
-                className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-6 whitespace-pre-wrap break-words ${
-                    isUser
+                className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-6 whitespace-pre-wrap break-words ${isUser
                         ? "bg-[#00696b] text-white rounded-br-md"
                         : "border border-[#e1e3e4] bg-white text-[#191c1d] rounded-bl-md"
-                }`}
+                    }`}
             >
                 {message.content}
             </div>
@@ -45,20 +51,23 @@ function MessageBubble({ message }: { message: ChatMessage }) {
  * fetching and changes none of its existing markup.
  */
 export default function AIPropertyAssistant() {
-    const {
-        isOpen,
-        open,
-        close,
-        messages,
-        matches,
-        criteriaSummary,
-        isThinking,
-        isSearching,
-        error,
-        dismissError,
-        sendMessage,
-        retryLastMessage,
-    } = useAiAssistantContext();
+    const dispatch = useAppDispatch();
+
+    const isOpen = useAppSelector((state) => state.aiAssistant.isOpen);
+    const messages = useAppSelector((state) => state.aiAssistant.messages);
+    const matches = useAppSelector((state) => state.aiAssistant.matches);
+    const criteriaSummary = useAppSelector(selectAiCriteriaSummary);
+    const isThinking = useAppSelector((state) => state.aiAssistant.isThinking);
+    const isSearching = useAppSelector((state) => state.aiAssistant.isSearching);
+    const error = useAppSelector((state) => state.aiAssistant.error);
+
+    const { sendMessage, retryLastMessage } = useAiAssistantActions();
+
+    const open = () => dispatch(assistantOpened());
+    const dismissError = () => dispatch(errorCleared());
+    const close = useCallback(() => {
+        dispatch(assistantClosed());
+    }, [dispatch]);
 
     const [input, setInput] = useState("");
 

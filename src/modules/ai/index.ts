@@ -6,12 +6,8 @@ export {
     buildPrompt,
 } from "./constants/assistant";
 export { extractCriteria, generateAiReply, searchProperties } from "./services/aiService";
-export { aiKeys, useAiAssistant } from "./hooks/useAiAssistant";
-export {
-    AiAssistantProvider,
-    aiSearchQueryKey,
-    useAiAssistantContext,
-} from "./context/AiAssistantProvider";
+export { aiKeys, aiSearchQueryKey, useAiAssistant } from "./hooks/useAiAssistant";
+export { useAiAssistantActions } from "./hooks/useAiAssistantActions";
 export {
     amenityLabel,
     canonicalAmenity,
