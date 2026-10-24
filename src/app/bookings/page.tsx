@@ -53,9 +53,39 @@ export default function BookingsPage() {
                                             </div>
                                         </div>
                                         {booking.notes && <p className="mt-4 text-sm text-[#44474d]">{booking.notes}</p>}
+
+                                        {booking.tenantInquiry?.status === "PENDING" && (
+                                            <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                                                <p className="font-bold">Occupied Property — 3-Day Move-Out Inquiry in Progress</p>
+                                                <p className="mt-0.5 text-xs text-amber-800">
+                                                    Current tenant has until {new Date(booking.tenantInquiry.deadline).toLocaleString("en-IN")} to confirm move-out or extension.
+                                                    You cannot approve this request until the tenant responds or the 3-day deadline expires.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {booking.tenantInquiry?.status && booking.tenantInquiry.status !== "PENDING" && (
+                                            <div className="mt-3 rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900">
+                                                <p className="font-bold">Current Tenant Move-Out Status: {booking.tenantInquiry.status.replaceAll("_", " ")}</p>
+                                                {booking.tenantInquiry.responseMessage && (
+                                                    <p className="mt-0.5 text-xs text-teal-800">
+                                                        Tenant response: &quot;{booking.tenantInquiry.responseMessage}&quot;
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+
                                         {reviewBooking.isError && <p className="mt-3 text-sm text-red-700">Could not update this request.</p>}
                                         <div className="mt-5 flex flex-wrap gap-2">
-                                            <button type="button" disabled={reviewBooking.isPending} onClick={() => reviewBooking.mutate({ bookingId: booking._id, decision: "APPROVED" })} className="rounded-lg bg-[#00696b] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">Approve</button>
+                                            <button
+                                                type="button"
+                                                disabled={reviewBooking.isPending || (booking.tenantInquiry?.status === "PENDING" && new Date() < new Date(booking.tenantInquiry.deadline))}
+                                                onClick={() => reviewBooking.mutate({ bookingId: booking._id, decision: "APPROVED" })}
+                                                className="rounded-lg bg-[#00696b] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                                title={booking.tenantInquiry?.status === "PENDING" && new Date() < new Date(booking.tenantInquiry.deadline) ? "Cannot approve until current tenant responds or 3-day deadline expires" : undefined}
+                                            >
+                                                Approve
+                                            </button>
                                             <button type="button" disabled={reviewBooking.isPending} onClick={() => reviewBooking.mutate({ bookingId: booking._id, decision: "REJECTED" })} className="rounded-lg border border-[#b42318] px-4 py-2.5 text-sm font-semibold text-[#b42318] disabled:opacity-60">Reject</button>
                                         </div>
                                     </article>
@@ -101,7 +131,15 @@ export default function BookingsPage() {
                                             Booking #{booking._id.slice(-6).toUpperCase()}
                                         </p>
                                         <h2 className="mt-1 text-xl font-semibold text-[#191c1d]">
-                                            {booking.status === "PENDING" ? "Waiting for Owner Approval" : booking.status === "REJECTED" ? "Rental Request Rejected" : booking.status.replaceAll("_", " ")}
+                                            {booking.status === "PENDING"
+                                                ? "Waiting for Owner Review"
+                                                : booking.status === "REJECTED"
+                                                  ? "Rental Request Rejected"
+                                                  : booking.status === "EXPIRED"
+                                                    ? "Rental Request Expired"
+                                                    : booking.status === "APPROVED"
+                                                      ? "Rental Request Approved — Agreement Required"
+                                                      : booking.status.replaceAll("_", " ")}
                                         </h2>
                                         <p className="mt-1 text-sm text-[#75777e]">{bookingPropertyTitle(booking.propertyId)}</p>
                                     </div>
@@ -138,13 +176,34 @@ export default function BookingsPage() {
                                         <p className="mt-1 font-medium text-[#191c1d]">{formatPrice(booking.advanceAmount)}</p>
                                     </div>
                                 </div>
-                                {booking.status === "APPROVED" && booking.paymentStatus === "ADVANCE_PAYMENT_PENDING" && (
-                                    <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#eef0f1] pt-4">
-                                        <div>
-                                            <p className="font-semibold text-[#191c1d]">Advance payment required</p>
-                                            <p className="mt-1 text-sm text-[#75777e]">{formatPrice(booking.advanceAmount)}</p>
-                                        </div>
-                                        <RazorpayPayButton bookingId={booking._id} type="ADVANCE" label="Pay Advance" />
+
+                                {booking.status === "PENDING" && booking.tenantInquiry?.status === "PENDING" && (
+                                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                        <p className="font-bold text-amber-900">Property Currently Occupied</p>
+                                        <p className="mt-1 text-xs text-amber-800">
+                                            The property is currently occupied. We have contacted the current tenant regarding their move-out schedule and will update you within 3 days.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {booking.status === "EXPIRED" && (
+                                    <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4" role="alert">
+                                        <p className="font-semibold text-red-800">Rental request expired</p>
+                                        <p className="mt-1 text-sm text-red-700">
+                                            This rental request has expired. Please submit a new rental request.
+                                        </p>
+                                        <Link
+                                            href={`/properties/${typeof booking.propertyId === "string" ? booking.propertyId : booking.propertyId._id}`}
+                                            className="mt-3 inline-block text-sm font-semibold text-red-800 underline"
+                                        >
+                                            Submit a new rental request for this property →
+                                        </Link>
+                                    </div>
+                                )}
+
+                                {booking.status === "APPROVED" && (
+                                    <div className="mt-5 border-t border-[#eef0f1] pt-4">
+                                        <RazorpayPayButton bookingId={booking._id} type="ADVANCE" label={`Pay Advance (${formatPrice(booking.advanceAmount)})`} />
                                     </div>
                                 )}
                                 {(booking.paymentStatus === "PAID" || ["CONFIRMED", "ACTIVE"].includes(booking.status)) && (

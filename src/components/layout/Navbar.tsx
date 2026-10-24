@@ -70,28 +70,52 @@ export default function Navbar() {
                 <div className="hidden items-center gap-7 lg:flex">
                     <Link
                         href="/"
-                        className="border-b-2 border-[#191c1d] py-1 text-sm font-medium text-[#191c1d] transition hover:text-[#00696b]"
+                        className="py-1 text-sm font-medium text-[#191c1d] transition hover:text-[#00696b]"
                     >
                         Home
                     </Link>
 
                     <Link
                         href="/properties"
-                        className="border-b-2 border-transparent py-1 text-sm font-medium text-[#191c1d] transition hover:border-[#00696b] hover:text-[#00696b]"
+                        className="py-1 text-sm font-medium text-[#191c1d] transition hover:text-[#00696b]"
                     >
                         Properties
                     </Link>
 
+                    {user?.role === "admin" ? (
+                        <Link
+                            href="/admin/dashboard"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[#d9f4f3] px-3.5 py-1 text-xs font-bold text-[#00696b] transition hover:bg-[#b5e7e6]"
+                        >
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#00696b]" />
+                            Admin Workspace
+                        </Link>
+                    ) : user?.role === "owner" ? (
+                        <Link
+                            href="/owner/dashboard"
+                            className="py-1 text-sm font-medium text-[#00696b] transition hover:text-[#004f51]"
+                        >
+                            Owner Dashboard
+                        </Link>
+                    ) : user?.role === "tenant" ? (
+                        <Link
+                            href="/tenant/dashboard"
+                            className="py-1 text-sm font-medium text-[#00696b] transition hover:text-[#004f51]"
+                        >
+                            Tenant Dashboard
+                        </Link>
+                    ) : null}
+
                     <Link
                         href="/about"
-                        className="border-b-2 border-transparent py-1 text-sm font-medium text-[#191c1d] transition hover:border-[#00696b] hover:text-[#00696b]"
+                        className="py-1 text-sm font-medium text-[#191c1d] transition hover:text-[#00696b]"
                     >
                         About
                     </Link>
 
                     <Link
                         href="/contact"
-                        className="border-b-2 border-transparent py-1 text-sm font-medium text-[#191c1d] transition hover:border-[#00696b] hover:text-[#00696b]"
+                        className="py-1 text-sm font-medium text-[#191c1d] transition hover:text-[#00696b]"
                     >
                         Contact
                     </Link>
@@ -140,13 +164,117 @@ export default function Navbar() {
                                 </button>
 
                                 {profileMenuOpen && (
-                                    <div className="absolute right-0 top-12 z-50 w-44 overflow-hidden rounded-xl border border-[#e1e3e4] bg-white py-1 shadow-lg">
+                                    <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-2xl border border-[#e1e3e4] bg-white py-2 shadow-xl">
+                                        <div className="border-b border-[#eef0f1] px-4 py-2">
+                                            <p className="truncate text-xs font-bold text-[#191c1d]">{user.name}</p>
+                                            <p className="truncate text-[11px] text-[#75777e]">{user.email}</p>
+                                            <span className="mt-1 inline-block rounded bg-[#d9f4f3] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#00696b]">
+                                                {user.role}
+                                            </span>
+                                        </div>
+
+                                        {user.role === "admin" ? (
+                                            <>
+                                                <Link
+                                                    href="/admin/dashboard"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-2 text-xs font-bold text-[#00696b] transition hover:bg-[#d9f4f3]"
+                                                >
+                                                    Admin Dashboard
+                                                </Link>
+                                                <Link
+                                                    href="/users"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-1.5 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                                >
+                                                    User Management
+                                                </Link>
+                                                <Link
+                                                    href="/admin/properties"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-1.5 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                                >
+                                                    Properties
+                                                </Link>
+                                                <Link
+                                                    href="/admin/rentals"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-1.5 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                                >
+                                                    Rentals & Leases
+                                                </Link>
+                                                <Link
+                                                    href="/admin/payments"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-1.5 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                                >
+                                                    Payments & Revenue
+                                                </Link>
+                                                <Link
+                                                    href="/admin/maintenance"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-1.5 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                                >
+                                                    Maintenance Tracker
+                                                </Link>
+                                                <Link
+                                                    href="/requests/owner-approvals"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-1.5 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                                >
+                                                    Approvals & Visits
+                                                </Link>
+                                            </>
+                                        ) : user.role === "owner" ? (
+                                            <>
+                                                <Link
+                                                    href="/owner/dashboard"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-2 text-xs font-semibold text-[#00696b] transition hover:bg-[#d9f4f3]"
+                                                >
+                                                    Owner Dashboard
+                                                </Link>
+                                                <Link
+                                                    href="/owner/properties"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-1.5 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                                >
+                                                    My Properties
+                                                </Link>
+                                                <Link
+                                                    href="/owner/requests"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-1.5 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                                >
+                                                    Rental Requests
+                                                </Link>
+                                            </>
+                                        ) : user.role === "tenant" ? (
+                                            <>
+                                                <Link
+                                                    href="/tenant/dashboard"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-2 text-xs font-semibold text-[#00696b] transition hover:bg-[#d9f4f3]"
+                                                >
+                                                    Tenant Dashboard
+                                                </Link>
+                                                <Link
+                                                    href="/rental"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="block px-4 py-1.5 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                                >
+                                                    My Rental
+                                                </Link>
+                                            </>
+                                        ) : null}
+
+                                        <div className="my-1.5 border-t border-[#eef0f1]" />
                                         <Link
                                             href="/profile"
                                             onClick={() => setProfileMenuOpen(false)}
-                                            className="block px-4 py-2.5 text-sm font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
+                                            className="block px-4 py-2 text-xs font-medium text-[#191c1d] transition hover:bg-[#f3f4f5]"
                                         >
-                                            Profile
+                                            Profile Settings
                                         </Link>
                                         <button
                                             type="button"
@@ -155,7 +283,7 @@ export default function Navbar() {
                                                 setProfileMenuOpen(false);
                                                 void logout();
                                             }}
-                                            className="block w-full px-4 py-2.5 text-left text-sm font-medium text-[#ba1a1a] transition hover:bg-[#ffdad6]/40 disabled:opacity-60"
+                                            className="block w-full px-4 py-2 text-left text-xs font-bold text-[#ba1a1a] transition hover:bg-[#ffdad6]/40 disabled:opacity-60"
                                         >
                                             {isLoggingOut ? "Logging out..." : "Logout"}
                                         </button>

@@ -164,6 +164,7 @@ export default function AdminPropertiesPage() {
                                         <AdminPropertyCard
                                             key={property._id}
                                             property={property}
+                                            onRefresh={() => propertiesQuery.refetch()}
                                         />
                                     ),
                                 )}

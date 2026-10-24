@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
+import aiAssistantReducer from "./slices/aiAssistantSlice";
 import authReducer from "./slices/authSlice";
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       auth: authReducer,
+      aiAssistant: aiAssistantReducer,
     },
   });
 };

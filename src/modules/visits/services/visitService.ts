@@ -238,3 +238,17 @@ export const completeVisit = async (
 
     return data;
 };
+
+// -----------------------------------------------------
+// ADMIN DELETE VISIT
+// -----------------------------------------------------
+
+export const adminDeleteVisit = async (
+    visitId: string
+): Promise<{ message: string }> => {
+    const { data } = await api.delete<{ message: string }>(
+        `/visits/admin/${visitId}`
+    );
+
+    return data;
+};

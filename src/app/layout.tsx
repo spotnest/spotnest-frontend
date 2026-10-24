@@ -24,14 +24,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-<ReduxProvider>
-  <QueryProvider>
-    <AuthProvider>{children}</AuthProvider>
-  </QueryProvider>
-</ReduxProvider>
+        <ReduxProvider>
+          <QueryProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </QueryProvider>
+        </ReduxProvider>
       </body>
     </html>
   );

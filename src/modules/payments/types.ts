@@ -1,3 +1,5 @@
+import type { AuthUser } from "@/src/modules/auth/types/auth";
+
 export interface RazorpayOrderData {
     orderId: string;
     amount: number;
@@ -18,4 +20,5 @@ export interface PaymentVerificationResult {
     bookingId: string;
     paymentStatus: "PAID" | "PENDING" | "FAILED";
     bookingStatus: "APPROVED" | "CONFIRMED" | "ACTIVE";
+    user?: AuthUser;
 }

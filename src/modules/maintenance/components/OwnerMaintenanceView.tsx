@@ -7,6 +7,12 @@ import {
     useUpdateMaintenanceStatus,
 } from "../hooks/useMaintenance";
 import type { MaintenanceRequest, MaintenanceStatus } from "../types/maintenance";
+import {
+    ALL_FILTER,
+    CATEGORY_OPTIONS,
+    PRIORITY_OPTIONS,
+    STATUS_OPTIONS,
+} from "../constants/maintenance";
 import StatusBadge from "./StatusBadge";
 import PriorityBadge from "./PriorityBadge";
 import StatusTimeline from "./StatusTimeline";
@@ -14,9 +20,9 @@ import PhotoGallery from "./PhotoGallery";
 
 export const OwnerMaintenanceView: React.FC = () => {
     // Filters & Pagination
-    const [statusFilter, setStatusFilter] = useState<string>("ALL");
-    const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
-    const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+    const [statusFilter, setStatusFilter] = useState<string>(ALL_FILTER);
+    const [priorityFilter, setPriorityFilter] = useState<string>(ALL_FILTER);
+    const [categoryFilter, setCategoryFilter] = useState<string>(ALL_FILTER);
     const [search, setSearch] = useState<string>("");
     const [page, setPage] = useState<number>(1);
 
@@ -199,14 +205,12 @@ export const OwnerMaintenanceView: React.FC = () => {
                         }}
                         className="w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 font-medium focus:border-[#00696b] focus:ring-[#00696b]"
                     >
-                        <option value="ALL">All Statuses</option>
-                        <option value="PENDING">Pending</option>
-                        <option value="ACCEPTED">Accepted</option>
-                        <option value="SCHEDULED">Scheduled</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="COMPLETED">Completed</option>
-                        <option value="REJECTED">Rejected</option>
-                        <option value="CANCELLED">Cancelled</option>
+                        <option value={ALL_FILTER}>All Statuses</option>
+                        {STATUS_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <div>
@@ -219,11 +223,12 @@ export const OwnerMaintenanceView: React.FC = () => {
                         }}
                         className="w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 font-medium focus:border-[#00696b] focus:ring-[#00696b]"
                     >
-                        <option value="ALL">All Priorities</option>
-                        <option value="Low">Low</option>
-                        <option value="Normal">Normal</option>
-                        <option value="High">High</option>
-                        <option value="Emergency">Emergency</option>
+                        <option value={ALL_FILTER}>All Priorities</option>
+                        {PRIORITY_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <div>
@@ -236,13 +241,12 @@ export const OwnerMaintenanceView: React.FC = () => {
                         }}
                         className="w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 font-medium focus:border-[#00696b] focus:ring-[#00696b]"
                     >
-                        <option value="ALL">All Categories</option>
-                        <option value="Plumbing">Plumbing</option>
-                        <option value="Electrical">Electrical</option>
-                        <option value="Appliance">Appliance</option>
-                        <option value="Structural">Structural</option>
-                        <option value="Cleaning">Cleaning</option>
-                        <option value="Other">Other</option>
+                        <option value={ALL_FILTER}>All Categories</option>
+                        {CATEGORY_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <div>

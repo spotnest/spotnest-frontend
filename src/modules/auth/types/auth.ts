@@ -6,12 +6,28 @@ export interface AdminUser {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   status: "active" | "inactive" | "suspended";
   isVerified: boolean;
+  isBlock?: boolean;
   verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
+  rejectionReason?: string;
+  image?: string;
   createdAt: string;
 }
+
+export interface AdminUpdateUserPayload {
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: UserRole;
+  status?: "active" | "inactive" | "suspended" | "blocked";
+  isBlock?: boolean;
+  isVerified?: boolean;
+  verificationStatus?: "unsubmitted" | "pending" | "approved" | "rejected";
+}
+
 
 export interface OwnerApprovalRequest {
   id: string;
