@@ -12,26 +12,48 @@ import type {
     PropertyListResponse,
 } from "../types";
 
-// The listing fetch runs on the server (page.tsx). Using native fetch lets
-// Next.js's Data Cache hold each query-string variant for 5 minutes and tag
-// it for on-demand revalidation. Axios (below) bypasses the Data Cache, so
-// the server list path steers clear of it.
+// The listing fetch runs on the server (page.tsx), so avoid serving stale
+// listings from Next.js's Data Cache.
 export const getProperties = async (params: PropertyListParams = {}): Promise<PropertyListResponse> => {
-    const searchParams = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined && value !== null && value !== "") {
-            searchParams.set(key, String(value));
+    try {
+        const searchParams = new URLSearchParams();
+        for (const [key, value] of Object.entries(params)) {
+            if (value !== undefined && value !== null && value !== "") {
+                searchParams.set(key, String(value));
+            }
         }
+        const query = searchParams.toString();
+        const response = await fetch(`${API_BASE_URL}/properties${query ? `?${query}` : ""}`, {
+            cache: "no-store",
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch properties (${response.status})`);
+        }
+
+        const data = await response.json() as Partial<PropertyListResponse> | null;
+        const items = Array.isArray(data?.items) ? data.items : [];
+
+        return {
+            items,
+            pagination: data?.pagination ?? {
+                page: params.page ?? 1,
+                limit: params.limit ?? 10,
+                total: items.length,
+                pages: Math.ceil(items.length / (params.limit ?? 10)) || 1,
+            },
+        };
+    } catch (error) {
+        console.error("Failed to fetch properties:", error);
+        return {
+            items: [],
+            pagination: {
+                page: params.page ?? 1,
+                limit: params.limit ?? 10,
+                total: 0,
+                pages: 1,
+            },
+        };
     }
-    const query = searchParams.toString();
-    const url = `${API_BASE_URL}/properties${query ? `?${query}` : ""}`;
-    const response = await fetch(url, {
-        next: { revalidate: 300, tags: ["properties"] },
-    });
-    if (!response.ok) {
-        throw new Error(`Failed to fetch properties (${response.status})`);
-    }
-    return response.json() as Promise<PropertyListResponse>;
 };
 
 // /properties/nearby returns the raw body — no { success, data } wrapper.
