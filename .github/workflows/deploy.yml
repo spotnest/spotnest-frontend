@@ -1,0 +1,36 @@
+name: Build and Deploy Next.js Frontend to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Next.js Application
+        env:
+          NEXT_PUBLIC_API_URL: https://spotnest-backend-2026-cqcta0b7ebb6g8dg.indiasouthcentral-01.azurewebsites.net/api/v1
+          NEXT_PUBLIC_SOCKET_URL: https://spotnest-backend-2026-cqcta0b7ebb6g8dg.indiasouthcentral-01.azurewebsites.net
+        run: npm run build
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'spotnest-app-2026'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .

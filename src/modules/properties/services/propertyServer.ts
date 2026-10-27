@@ -112,40 +112,54 @@ const buildQueryString = (params?: PropertyListParams) => {
 export async function getProperties(
   params?: PropertyListParams
 ): Promise<PropertyListResponse> {
-  const query = buildQueryString(params);
+  try {
+    const query = buildQueryString(params);
+    const response = await fetch(`${API_BASE_URL}/properties${query}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
 
-  const response = await fetch(`${API_BASE_URL}/properties${query}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-    next: {
-      revalidate: 60,
-      tags: ["properties"],
-    },
-  });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch properties (${response.status})`);
+    }
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch properties");
+    const data = await response.json() as {
+      items?: unknown;
+      pagination?: PropertyListResponse["pagination"];
+    } | null;
+    const rawItems = Array.isArray(data?.items)
+      ? data.items.filter(
+        (item): item is Record<string, unknown> =>
+          item !== null && typeof item === "object" && !Array.isArray(item)
+      )
+      : [];
+    const items = rawItems.map(normalizeProperty);
+    const limit = params?.limit ?? 10;
+
+    return {
+      items,
+      pagination: data?.pagination ?? {
+        page: params?.page ?? 1,
+        limit,
+        total: items.length,
+        pages: Math.ceil(items.length / limit) || 1,
+      },
+    };
+  } catch (error) {
+    console.error("Failed to fetch properties:", error);
+    return {
+      items: [],
+      pagination: {
+        page: params?.page ?? 1,
+        limit: params?.limit ?? 10,
+        total: 0,
+        pages: 1,
+      },
+    };
   }
-
-  const data = await response.json();
-  const rawItems = Array.isArray(data.items)
-    ? data.items
-    : (Array.isArray(data.properties)
-      ? data.properties
-      : (Array.isArray(data) ? data : []));
-
-  const items = rawItems.map(normalizeProperty);
-
-  const pagination = data.pagination || {
-    page: params?.page || 1,
-    limit: params?.limit || 10,
-    total: items.length,
-    pages: Math.ceil(items.length / (params?.limit || 10)) || 1,
-  };
-
-  return { items, pagination };
 }
 
 export async function getProperty(

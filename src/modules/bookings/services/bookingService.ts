@@ -26,3 +26,24 @@ export const reviewBooking = async (input: { bookingId: string; decision: "APPRO
     const response = await api.patch<ApiResponse<Booking>>(`/bookings/${bookingId}/review`, { decision });
     return response.data.data;
 };
+
+export const respondToTenantInquiry = async (input: {
+    bookingId: string;
+    choice: "MOVE_OUT" | "EXTEND" | "CUSTOM";
+    message?: string;
+}): Promise<Booking> => {
+    const { bookingId, choice, message } = input;
+    const response = await api.post<ApiResponse<Booking>>(`/bookings/${bookingId}/inquiry-response`, {
+        choice,
+        ...(message ? { message } : {}),
+    });
+    return response.data.data;
+};
+
+export const getAdminBookings = async (status?: string): Promise<Booking[]> => {
+    const response = await api.get<ApiResponse<Booking[]>>("/bookings/admin/all", {
+        params: status ? { status } : undefined,
+    });
+    return response.data.data;
+};
+

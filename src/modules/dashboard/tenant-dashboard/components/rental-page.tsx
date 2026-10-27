@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     Loader2,
@@ -17,6 +17,7 @@ import {
     useAcceptAgreement,
     useMyRental,
 } from "@/src/modules/rentals/hooks/useRentals";
+import { useRespondToInquiry } from "@/src/modules/bookings/hooks/useBookings";
 
 import RazorpayPayButton from "@/src/modules/payments/components/RazorpayPayButton";
 
@@ -44,6 +45,18 @@ export default function TenantRentalPage() {
     const myOccupant = data?.myOccupant;
     const occupants = data?.occupants ?? [];
     const payments = data?.payments ?? [];
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && data?.inquiry) {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has("inquiryBookingId") || params.has("inquiry") || params.has("bookingId")) {
+                const el = document.getElementById("tenant-inquiry-section");
+                if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }
+        }
+    }, [data?.inquiry]);
 
     const handleOpenAgreement = () => {
         setHasAcceptedTerms(false);
@@ -151,6 +164,15 @@ export default function TenantRentalPage() {
                         >[0]["rental"]
                     }
                 />
+
+                {data?.inquiry && data.inquiry.status === "PENDING" && (
+                    <div id="tenant-inquiry-section">
+                        <TenantExtensionInquiryCard
+                            inquiry={data.inquiry}
+                            onSuccess={() => rentalQuery.refetch()}
+                        />
+                    </div>
+                )}
 
                 {agreement?.status === "PENDING_TENANT" && (
                     <div className="flex flex-col gap-4 rounded-2xl border border-[#ffe082] bg-[#fff8e1] p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -695,5 +717,171 @@ export default function TenantRentalPage() {
                 </div>
             )}
         </PageState>
+    );
+}
+
+function TenantExtensionInquiryCard({
+    inquiry,
+    onSuccess,
+}: {
+    inquiry: {
+        bookingId: string;
+        startDate: string;
+        endDate: string;
+        deadline: string;
+        question: string;
+        status: string;
+        deemedConsentNotice: string;
+    };
+    onSuccess?: () => void;
+}) {
+    const respondMutation = useRespondToInquiry();
+    const [choice, setChoice] = useState<"MOVE_OUT" | "EXTEND" | "CUSTOM">("MOVE_OUT");
+    const [customMessage, setCustomMessage] = useState("");
+    const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const deadlineDate = new Date(inquiry.deadline);
+    const now = new Date();
+    const msLeft = Math.max(0, deadlineDate.getTime() - now.getTime());
+    const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
+    const daysLeft = Math.floor(hoursLeft / 24);
+    const remainingHours = hoursLeft % 24;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        try {
+            await respondMutation.mutateAsync({
+                bookingId: inquiry.bookingId,
+                choice,
+                ...(choice === "CUSTOM" ? { message: customMessage } : {}),
+            });
+            setSubmitted(true);
+            onSuccess?.();
+        } catch (err: unknown) {
+            const msg =
+                (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                (err as Error)?.message ||
+                "Failed to submit response.";
+            setError(msg);
+        }
+    };
+
+    if (submitted) {
+        return (
+            <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-6 text-emerald-950 shadow-xs">
+                <div className="flex items-center gap-3">
+                    <CheckCircle className="h-6 w-6 text-emerald-600 shrink-0" />
+                    <div>
+                        <h3 className="font-bold text-emerald-900">Response Submitted Successfully</h3>
+                        <p className="mt-1 text-sm text-emerald-800">
+                            Your answer has been sent to the property owner. Thank you for confirming your schedule!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-2xl border-2 border-amber-400 bg-amber-50/80 p-6 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <span className="inline-block rounded-full bg-amber-200 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-900">
+                        Action Required · 3-Day Window
+                    </span>
+                    <h3 className="mt-2 text-lg font-bold text-[#191c1d]">
+                        Move-Out Schedule & Lease Renewal Inquiry
+                    </h3>
+                </div>
+                <div className="rounded-lg bg-white/80 px-3 py-1.5 border border-amber-200 text-xs font-semibold text-amber-900">
+                    ⏱ Time remaining: {daysLeft}d {remainingHours}h
+                </div>
+            </div>
+
+            <p className="mt-3 text-sm font-medium leading-relaxed text-[#333]">
+                {inquiry.question}
+            </p>
+
+            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+                <div className="space-y-2">
+                    <label className="flex items-center gap-3 rounded-xl border border-amber-200 bg-white p-3 cursor-pointer hover:bg-amber-50/50">
+                        <input
+                            type="radio"
+                            name="inquiryChoice"
+                            value="MOVE_OUT"
+                            checked={choice === "MOVE_OUT"}
+                            onChange={() => setChoice("MOVE_OUT")}
+                            className="h-4 w-4 accent-[#00696b]"
+                        />
+                        <span className="text-sm font-semibold text-[#191c1d]">
+                            Yes, I am okay. I will end the rent at that time.
+                        </span>
+                    </label>
+
+                    <label className="flex items-center gap-3 rounded-xl border border-amber-200 bg-white p-3 cursor-pointer hover:bg-amber-50/50">
+                        <input
+                            type="radio"
+                            name="inquiryChoice"
+                            value="EXTEND"
+                            checked={choice === "EXTEND"}
+                            onChange={() => setChoice("EXTEND")}
+                            className="h-4 w-4 accent-[#00696b]"
+                        />
+                        <span className="text-sm font-semibold text-[#191c1d]">
+                            No, I am considering extending my rental.
+                        </span>
+                    </label>
+
+                    <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-white p-3 cursor-pointer hover:bg-amber-50/50">
+                        <input
+                            type="radio"
+                            name="inquiryChoice"
+                            value="CUSTOM"
+                            checked={choice === "CUSTOM"}
+                            onChange={() => setChoice("CUSTOM")}
+                            className="mt-1 h-4 w-4 accent-[#00696b]"
+                        />
+                        <div className="w-full">
+                            <span className="text-sm font-semibold text-[#191c1d]">
+                                Send a custom message to the owner
+                            </span>
+                            {choice === "CUSTOM" && (
+                                <textarea
+                                    value={customMessage}
+                                    onChange={(e) => setCustomMessage(e.target.value)}
+                                    placeholder="Type your message or preferred dates here..."
+                                    rows={3}
+                                    required
+                                    className="mt-2 w-full rounded-lg border border-gray-300 p-2.5 text-xs text-gray-800 placeholder-gray-400 focus:border-[#00696b] focus:outline-none"
+                                />
+                            )}
+                        </div>
+                    </label>
+                </div>
+
+                <div className="rounded-lg bg-amber-100/70 p-3 text-xs text-amber-900 font-medium">
+                    {inquiry.deemedConsentNotice}
+                </div>
+
+                {error && <p className="text-xs font-semibold text-red-700">{error}</p>}
+
+                <button
+                    type="submit"
+                    disabled={respondMutation.isPending || (choice === "CUSTOM" && !customMessage.trim())}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#00696b] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#004f51] disabled:opacity-50"
+                >
+                    {respondMutation.isPending ? (
+                        <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Submitting...
+                        </>
+                    ) : (
+                        "Submit Response"
+                    )}
+                </button>
+            </form>
+        </div>
     );
 }

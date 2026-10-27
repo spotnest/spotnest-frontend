@@ -78,7 +78,19 @@ export default function TenantPaymentsPage() {
                                 <div>
                                     <h2 className="font-semibold text-[#191c1d]">Monthly rent · {outstandingMonthlyPayment.billingMonth}</h2>
                                     <p className="mt-1 text-sm text-[#75777e]">
-                                        {money(outstandingMonthlyPayment.amount)} due {date(outstandingMonthlyPayment.dueDate)}.
+                                        {outstandingMonthlyPayment.lateFee > 0 ? (
+                                            <>
+                                                <span className="font-semibold text-[#191c1d]">
+                                                    {money(outstandingMonthlyPayment.amount + outstandingMonthlyPayment.lateFee)}
+                                                </span>{" "}
+                                                <span className="text-[#ba1a1a]">
+                                                    (includes {money(outstandingMonthlyPayment.lateFee)} fine)
+                                                </span>{" "}
+                                                due {date(outstandingMonthlyPayment.dueDate)}.
+                                            </>
+                                        ) : (
+                                            `${money(outstandingMonthlyPayment.amount)} due ${date(outstandingMonthlyPayment.dueDate)}.`
+                                        )}
                                     </p>
                                 </div>
                                 <RazorpayPayButton

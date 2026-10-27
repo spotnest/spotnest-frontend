@@ -2,6 +2,7 @@ import api from "@/src/lib/axios";
 
 import type {
   AdminUser,
+  AdminUpdateUserPayload,
   AuthMessageResponse,
   AuthResponse,
   AuthUser,
@@ -110,14 +111,47 @@ export const getOwnerApprovalRequests = async (): Promise<
 
 //  Get all users.
 
-export const getAdminUsers = async (): Promise<AdminUser[]> => {
+export const getAdminUsers = async (params?: {
+  role?: string;
+  status?: string;
+  verificationStatus?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<AdminUser[]> => {
   const response = await api.get<{
     success: boolean;
     data: AdminUser[];
-  }>("/auth/admin/users");
+    pagination?: { page: number; limit: number; total: number; pages: number };
+  }>("/auth/admin/users", { params });
 
   return response.data.data;
 };
+
+export const adminUpdateUser = async (
+  userId: string,
+  payload: AdminUpdateUserPayload
+): Promise<AdminUser> => {
+  const response = await api.patch<{
+    success: boolean;
+    data: AdminUser;
+    message: string;
+  }>(`/auth/admin/users/${userId}`, payload);
+
+  return response.data.data;
+};
+
+export const adminDeleteUser = async (
+  userId: string
+): Promise<{ message: string }> => {
+  const response = await api.delete<{
+    success: boolean;
+    message: string;
+  }>(`/auth/admin/users/${userId}`);
+
+  return response.data;
+};
+
 
 
 // Approve an owner's verification.
