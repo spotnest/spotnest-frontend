@@ -3,7 +3,7 @@ import type { PropertyAddress } from "@/src/modules/properties/types";
 
 export type VisitStatus =
     | "pending"
-    | "approved"
+    | "accepted"
     | "rejected"
     | "rescheduled"
     | "cancelled"
@@ -172,7 +172,7 @@ export const approveVisit = async (
     payload: ApproveVisitPayload
 ): Promise<Visit> => {
     const { data } = await api.patch<Visit>(
-        `/visits/${visitId}/approve`,
+        `/visits/${visitId}/accept`,
         payload
     );
 

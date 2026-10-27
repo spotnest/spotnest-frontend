@@ -32,7 +32,7 @@ const statusStyles: Record<VisitStatus, string> = {
     pending:
         "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
 
-    approved:
+    accepted:
         "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
 
     rejected:
@@ -50,7 +50,7 @@ const statusStyles: Record<VisitStatus, string> = {
 
 const statusLabels: Record<VisitStatus, string> = {
     pending: "Pending",
-    approved: "Approved",
+    accepted: "Approved",
     rejected: "Rejected",
     rescheduled: "Rescheduled",
     cancelled: "Cancelled",
@@ -278,7 +278,7 @@ export default function OwnerRequestsPage() {
 
     const activeCount = visits.filter(
         (visit) =>
-            visit.status === "approved" ||
+            visit.status === "accepted" ||
             visit.status === "rescheduled"
     ).length;
 
@@ -618,7 +618,7 @@ export default function OwnerRequestsPage() {
                                                 )}
 
                                                 {(visit.status ===
-                                                    "approved" ||
+                                                    "accepted" ||
                                                     visit.status ===
                                                         "rescheduled") && (
                                                     <>

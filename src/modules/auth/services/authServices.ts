@@ -291,6 +291,33 @@ export const updateLocation = async (
 };
 
 /**
+ * Typeahead candidates for the location input, so typing "man" can offer
+ * "Mankavu, Kozhikode, ..." instead of making the user guess the exact name.
+ *
+ * Backend:
+ * GET /auth/location/suggest?q=man
+ *
+ * Returns a bare array. Read-only — saving still goes through
+ * updateLocation, which geocodes the chosen text server-side.
+ */
+export interface LocationSuggestion {
+  displayName: string;
+  lat: number;
+  lng: number;
+}
+
+export const suggestLocations = async (
+  q: string
+): Promise<LocationSuggestion[]> => {
+  const response = await api.get<LocationSuggestion[]>(
+    "/auth/location/suggest",
+    { params: { q } }
+  );
+
+  return response.data;
+};
+
+/**
  * Change the current user's password.
  *
  * Backend:
