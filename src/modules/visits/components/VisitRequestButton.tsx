@@ -23,7 +23,7 @@ const statusStyles: Record<VisitStatus, string> = {
     pending:
         "border-amber-200 bg-amber-50 text-amber-700",
 
-    accepted:
+    approved:
         "border-emerald-200 bg-emerald-50 text-emerald-700",
 
     rejected:
@@ -41,7 +41,7 @@ const statusStyles: Record<VisitStatus, string> = {
 
 const statusLabels: Record<VisitStatus, string> = {
     pending: "Pending",
-    accepted: "Approved",
+    approved: "Approved",
     rejected: "Rejected",
     rescheduled: "Rescheduled",
     cancelled: "Cancelled",
