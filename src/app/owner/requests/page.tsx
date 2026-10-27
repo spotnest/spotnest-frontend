@@ -60,7 +60,7 @@ const visitStatusStyles: Record<VisitStatus, string> = {
 
 const visitStatusLabels: Record<VisitStatus, string> = {
     pending: "Pending",
-    approved: "Approved",
+    accepted: "Approved",
     rejected: "Rejected",
     rescheduled: "Rescheduled",
     cancelled: "Cancelled",
